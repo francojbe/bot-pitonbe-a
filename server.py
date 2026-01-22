@@ -2,14 +2,15 @@ import os
 import requests
 import json
 import logging
-from typing import List, Optional, Any
-from fastapi import FastAPI, Request
+import asyncio
+from typing import List, Optional, Any, Dict
+from fastapi import FastAPI, Request, BackgroundTasks
 from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain.schema import HumanMessage, SystemMessage, AIMessage
 from supabase import create_client, Client
 
-# Logging profesional
+# Logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -25,179 +26,142 @@ EVOLUTION_API_KEY = os.getenv("EVOLUTION_API_KEY")
 INSTANCE_NAME = os.getenv("WHATSAPP_INSTANCE_NAME")
 
 # Inicializar
-app = FastAPI(title="WhatsApp RAG Bot Enterprise")
+app = FastAPI(title="WhatsApp RAG Bot Enterprise V2")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
-llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0.3, openai_api_key=OPENAI_API_KEY)
+llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0.1, openai_api_key=OPENAI_API_KEY) # Temp baja para matemáticas
 
-# --- GESTIÓN DE LEADS (CRM) ---
+# --- BUFFER DE MENSAJES (Memoria Volátil) ---
+# Diccionario para agrupar mensajes: { "569...": {"timer": Task, "messages": ["Hola", "precio"]} }
+message_buffer: Dict[str, Any] = {}
+BUFFER_DELAY = 4.0 # Segundos a esperar por más mensajes
+
+# --- GESTIÓN DE LEADS ---
 def get_or_create_lead(phone: str, push_name: str = None) -> str:
-    """Busca un lead por teléfono o lo crea si es nuevo. Retorna su UUID."""
     try:
-        # 1. Buscar lead existente
         response = supabase.table("leads").select("id, name").eq("phone_number", phone).execute()
-        
         if response.data:
-            lead_id = response.data[0]['id']
-            # Actualizar timestamp de última interacción
-            supabase.table("leads").update({"last_interaction": "now()"}).eq("id", lead_id).execute()
-            
-            # Si no teníamos nombre y WhatsApp nos da uno (pushName), tratar de guardarlo
-            if push_name and not response.data[0]['name']:
-                 supabase.table("leads").update({"name": push_name}).eq("id", lead_id).execute()
-            
-            return lead_id
+            supabase.table("leads").update({"last_interaction": "now()"}).eq("id", response.data[0]['id']).execute()
+            return response.data[0]['id']
         else:
-            # 2. Crear nuevo lead
-            print(f"✨ Nuevo Lead detectado: {phone}")
-            new_lead = {
-                "phone_number": phone,
-                "name": push_name, # Guardamos el nombre que sale en WhatsApp si existe
-                "status": "new"
-            }
+            new_lead = {"phone_number": phone, "name": push_name, "status": "new"}
             response = supabase.table("leads").insert(new_lead).execute()
             return response.data[0]['id']
-            
     except Exception as e:
-        logger.error(f"Error gestionando Lead: {e}")
+        logger.error(f"Error Lead: {e}")
         return None
 
-# --- FUNCIONES DE MEMORIA PRO ---
-def get_chat_history_pro(lead_id: str, limit: int = 10) -> List[Any]:
-    """Obtiene historial vinculado al LEAD UUID."""
+# --- HISTORIAL Y LOGS ---
+def get_chat_history_pro(lead_id: str, limit: int = 10):
     if not lead_id: return []
     try:
-        response = supabase.table("message_logs") \
-            .select("role, content") \
-            .eq("lead_id", lead_id) \
-            .order("created_at", desc=True) \
-            .limit(limit) \
-            .execute()
-        
-        mensajes_db = response.data[::-1]
-        
-        historial = []
-        for msg in mensajes_db:
-            if msg['role'] == 'user':
-                historial.append(HumanMessage(content=msg['content']))
-            else:
-                historial.append(AIMessage(content=msg['content']))
-        return historial
-    except Exception as e:
-        logger.error(f"Error historial PRO: {e}")
-        return []
+        response = supabase.table("message_logs").select("role, content").eq("lead_id", lead_id).order("created_at", desc=True).limit(limit).execute()
+        mensajes = []
+        for msg in response.data[::-1]:
+            if msg['role'] == 'user': mensajes.append(HumanMessage(content=msg['content']))
+            else: mensajes.append(AIMessage(content=msg['content']))
+        return mensajes
+    except: return []
 
-def save_message_pro(lead_id: str, phone: str, role: str, content: str, intent: str = None):
-    """Guarda mensaje con metadatos enriquecidos."""
+def save_message_pro(lead_id: str, phone: str, role: str, content: str):
     if not lead_id: return
     try:
         supabase.table("message_logs").insert({
-            "lead_id": lead_id,
-            "phone_number": phone,
-            "role": role,
-            "content": content,
-            "intent": intent, # Aquí podríamos poner lógica de clasificación
-            "metadata": {"source": "whatsapp_rag_v2"}
+            "lead_id": lead_id, "phone_number": phone, "role": role, "content": content
         }).execute()
-    except Exception as e:
-        logger.error(f"Error guardando logs PRO: {e}")
+    except Exception as e: logger.error(f"Error save logs: {e}")
 
-# --- INTELIGENCIA RAG ---
+# --- INTELIGENCIA ---
 def buscar_contexto(pregunta: str) -> str:
     try:
         vector = embeddings.embed_query(pregunta)
-        response = supabase.rpc("match_documents", {
-            "query_embedding": vector,
-            "match_threshold": 0.5,
-            "match_count": 3
-        }).execute()
-        
-        matches = response.data
-        if not matches: return ""
-        return "\n\n---\n\n".join([item['content'] for item in matches])
-    except Exception as e:
-        logger.error(f"Error RAG: {e}")
-        return ""
+        response = supabase.rpc("match_documents", {"query_embedding": vector, "match_threshold": 0.5, "match_count": 4}).execute()
+        if not response.data: return ""
+        return "\n\n---\n\n".join([item['content'] for item in response.data])
+    except: return ""
 
-def procesar_mensaje_ia_pro(lead_id: str, phone: str, pregunta: str) -> str:
+async def procesar_y_responder(phone: str, mensajes_acumulados: List[str], push_name: str):
+    """Procesa el bloque completo de mensajes."""
     try:
-        # 1. Recuperar contexto y memoria
-        contexto_rag = buscar_contexto(pregunta)
-        historial = get_chat_history_pro(lead_id)
+        texto_completo = " ".join(mensajes_acumulados)
+        logger.info(f"🤖 Procesando bloque para {phone}: {texto_completo}")
         
-        # 2. PROMPT MAESTRO (Versión Enterprise)
-        # Incluimos info del lead si la tenemos
-        system_prompt_text = f"""
-Eres el Asistente Comercial de **Pitrón Beña Impresión**.
-Tu objetivo: Vender y asesorar con precisión técnica usando SOLO la base de conocimiento.
+        lead_id = get_or_create_lead(phone, push_name)
+        historial = get_chat_history_pro(lead_id)
+        contexto = buscar_contexto(texto_completo)
+        
+        # PROMPT REFINADO V2
+        prompt = f"""
+Eres el Asistente Virtual Oficial de **Pitrón Beña Impresión y Terminaciones**.
+Tu tono es: Muy cordial, profesional, eficiente y usas emojis 🖨️✨.
 
 BASE DE CONOCIMIENTO (Verdad Absoluta):
-{contexto_rag}
+{contexto}
 
-ESTRATEGIA DE ATENCIÓN:
-1. **Identificación**: Si no sabes el nombre del cliente, pregúntalo amablemente al inicio.
-2. **Flujo de Cotización (The Funnel)**:
-   - FASE 1: Entender qué quiere (Producto). Da opciones numeradas.
-   - FASE 2: Obtener CANTIDAD explícita.
-   - FASE 3: Definir DISEÑO (¿Tiene o no tiene?).
-   - FASE 4: Cotización final con calculadora mental.
-     * Si no tiene diseño: Sumar $6.000 (o lo que diga el contexto).
-     * Precio Final = (Neto + Diseño) * 1.19 (IVA).
-3. **Personalidad**: Eres eficiente, usas emojis 🖨️✨ y eres muy educado.
+INSTRUCCIONES CLAVE:
+1. **Saludo Inicial**: Si el historial está vacío o saludan, preséntate:
+   "¡Hola! 👋 Bienvenido a Pitrón Beña Impresión y Terminaciones. Soy tu asistente virtual. ¿Con quién tengo el gusto y en qué puedo ayudarte hoy?"
+   (Si ya sabes el nombre, úsalo: "¡Hola Juan!").
 
-REGLAS DE SEGURIDAD:
-- JAMÁS inventes precios.
-- Si la info no está en el CONTEXTO, di "No tengo esa información en este momento" y ofrece derivar con un humano.
-- Datos bancarios SOLO al confirmar la venta explícitamente.
+2. **Cálculo Matemático (CRÍTICO)**:
+   - Usa esta fórmula exacta: (Neto + Diseño) * 1.19 = Total IVA Inc.
+   - Ejemplo: $74.000 neto * 1.19 = $88.060.
+   - NO REDONDEES el resultado final de forma extraña. Muestra el cálculo paso a paso en tu mente, pero en la respuesta solo el desglose final.
 
-Formato de Cotización Visual:
-🪪 *Producto:* ...
-📦 *Cantidad:* ...
-💰 *Neto:* ...
-💵 *TOTAL:* ... (IVA Inc.)
+3. **Flujo de Venta**:
+   - Identifica Producto -> Valida Cantidad -> Valida Diseño -> Cotiza.
+   - Si falta info, pregúntala antes de dar el precio.
+
+Formato de Cotización:
+🪪 *Producto:* [Nombre]
+📝 *Descripción:* [Opción]
+📦 *Cantidad:* [N]
+💰 *Neto:* $[Valor]
+🎨 *Diseño:* $[Valor]
+💵 *TOTAL:* $[Calculo Exacto] (IVA Inc.)
 """
         
-        system_message = SystemMessage(content=system_prompt_text)
+        system_img = SystemMessage(content=prompt)
+        messages_to_ai = [system_img] + historial + [HumanMessage(content=texto_completo)]
         
-        messages = [system_message] + historial + [HumanMessage(content=pregunta)]
+        respuesta = llm.invoke(messages_to_ai)
+        resp_content = respuesta.content
         
-        # 3. Invocar IA
-        resp_ia = llm.invoke(messages)
-        contenido_resp = resp_ia.content
+        # Guardar (User: texto completo, AI: respuesta)
+        save_message_pro(lead_id, phone, "user", texto_completo)
+        save_message_pro(lead_id, phone, "assistant", resp_content)
         
-        # 4. Guardar todo
-        save_message_pro(lead_id, phone, "user", pregunta)
-        save_message_pro(lead_id, phone, "assistant", contenido_resp)
-        
-        return contenido_resp
+        # Enviar
+        enviar_whatsapp(phone, resp_content)
 
     except Exception as e:
-        logger.error(f"Error Critical IA: {e}")
-        return "⚠️ Tuve un error de conexión interno. Por favor escríbeme de nuevo en 1 minuto."
+        logger.error(f"Error procesando bloque: {e}")
 
-# --- WEBHOOK WHATSAPP ---
+# --- CONTROLADOR DEL BUFFER ---
+async def buffer_manager(phone: str, push_name: str):
+    """Espera X segundos. Si no llegan más mensajes, dispara el proceso."""
+    await asyncio.sleep(BUFFER_DELAY)
+    
+    # Verificar si seguimos siendo la tarea activa (no hemos sido cancelados/reemplazados)
+    if phone in message_buffer:
+        data = message_buffer.pop(phone) # Sacamos los mensajes y limpiamos el buffer
+        mensajes = data["messages"]
+        # Disparar procesamiento en background real
+        await procesar_y_responder(phone, mensajes, push_name)
+
+# --- WEBHOOK ---
 def enviar_whatsapp(numero: str, texto: str):
     try:
         base_url = EVOLUTION_API_URL.rstrip('/')
         from urllib.parse import quote
         instance_encoded = quote(INSTANCE_NAME)
         url = f"{base_url}/message/sendText/{instance_encoded}"
-        
         payload = {
-            "number": numero,
-            "options": {"delay": 1500, "presence": "composing"}, # Delay para parecer humano
-            "textMessage": {"text": texto},
-            "text": texto
+            "number": numero, "options": {"delay": 1000, "presence": "composing"},
+            "textMessage": {"text": texto}, "text": texto
         }
-        
-        requests.post(
-            url, 
-            json=payload, 
-            headers={"apikey": EVOLUTION_API_KEY, "Content-Type": "application/json"}
-        ).raise_for_status()
-        
-    except Exception as e:
-        logger.error(f"Error enviando WhatsApp: {e}")
+        requests.post(url, json=payload, headers={"apikey": EVOLUTION_API_KEY, "Content-Type": "application/json"})
+    except Exception as e: logger.error(f"Error envío WA: {e}")
 
 @app.post("/webhook")
 async def webhook_whatsapp(request: Request):
@@ -211,33 +175,32 @@ async def webhook_whatsapp(request: Request):
         data = body.get("data", {})
         key = data.get("key", {})
         message = data.get("message", {})
-        push_name = data.get("pushName") # Nombre que tiene puesto el usuario en WhatsApp
         
-        if key.get("fromMe") or "g.us" in key.get("remoteJid", ""):
-            return {"status": "ignored"}
+        if key.get("fromMe") or "g.us" in key.get("remoteJid", ""): return {"status": "ignored"}
 
         texto = message.get("conversation") or message.get("extendedTextMessage", {}).get("text", "")
         if not texto: return {"status": "ignored"}
 
-        numero_full = key.get("remoteJid", "")
-        numero_limpio = numero_full.split("@")[0]
+        numero = key.get("remoteJid", "").split("@")[0]
+        push_name = data.get("pushName")
+
+        # --- LÓGICA DE BUFFER ---
+        # Si ya hay un timer corriendo para este numero, lo cancelamos (reset del reloj)
+        if numero in message_buffer:
+            message_buffer[numero]["timer"].cancel()
+            message_buffer[numero]["messages"].append(texto)
+        else:
+            message_buffer[numero] = {"messages": [texto]}
         
-        logger.info(f"📩 {numero_limpio} ({push_name}): {texto}")
+        # Iniciamos nuevo timer
+        task = asyncio.create_task(buffer_manager(numero, push_name))
+        message_buffer[numero]["timer"] = task
         
-        # 1. Obtener/Crear Lead (CRM)
-        lead_id = get_or_create_lead(numero_limpio, push_name)
-        
-        # 2. Procesar respuesta
-        resp_ia = procesar_mensaje_ia_pro(lead_id, numero_limpio, texto)
-        
-        # 3. Enviar
-        enviar_whatsapp(numero_limpio, resp_ia)
-        
-        return {"status": "processed"}
+        return {"status": "buffered"}
 
     except Exception as e:
-        logger.error(f"Crash en Webhook: {e}")
+        logger.error(f"Error webhook: {e}")
         return {"status": "error"}
 
 @app.get("/")
-def health(): return {"status": "online", "mode": "enterprise"}
+def health(): return {"status": "online", "buffer": "active"}
