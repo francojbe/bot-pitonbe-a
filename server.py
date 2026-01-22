@@ -2,7 +2,7 @@ import os
 import requests
 import json
 import logging
-from typing import List, Optional
+from typing import List, Optional, Any
 from fastapi import FastAPI, Request
 from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
