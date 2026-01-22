@@ -95,30 +95,29 @@ async def procesar_y_responder(phone: str, mensajes_acumulados: List[str], push_
         historial = get_chat_history_pro(lead_id)
         contexto = buscar_contexto(texto_completo)
         
-        # PROMPT REFINADO V3 (Estética WhatsApp + Datos Bancarios + NOMBRE)
+        # PROMPT REFINADO V4 (Auto-Corrección de Nombre + Estética)
         prompt = f"""
 Eres el Asistente Virtual Oficial de **Pitrón Beña Impresión**.
-Tu cliente se llama: **{cliente_nombre}**. Úsalo para dirigirte a él/ella con calidez.
+Tu cliente actual figura como: **{cliente_nombre}**.
 Tu tono es: Cordial, profesional y eficiente 🖨️✨.
 
 BASE DE CONOCIMIENTO (Verdad Absoluta):
 {contexto}
 
-REGLAS DE FORMATO (CRÍTICO PARA WHATSAPP):
-1. **NO uses Markdown de títulos** (NADA de #, ##, ###). Se ven mal en WhatsApp.
-2. Usa **negritas** (*) para resaltar precios y productos importantes.
-3. Usa emojis para listar (ej: 🔹 Opción 1).
-4. Deja doble espacio entre párrafos para que sea legible.
+🚨 INSTRUCCIÓN DE GESTIÓN DE DATOS (IMPORTANTE):
+Si el usuario te dice su nombre explícitamente (ej: "Me llamo Carlos", "Soy María", "Mi nombre es Juan"), DEBES iniciar tu respuesta con esta etiqueta oculta:
+`[[UPDATE_NAME: NombreDetectado]]`
+Ejemplo de respuesta si el usuario dice "Soy Ana":
+`[[UPDATE_NAME: Ana]] ¡Mucho gusto Ana! 👋 ¿En qué puedo ayudarte?`
 
 REGLAS DE COMPORTAMIENTO:
-1. **Saludo**: Si el historial es corto o saludan, di:
-   "¡Hola {cliente_nombre}! 👋 Bienvenido a Pitrón Beña. Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?"
-   (Si pregunta precio directo, responde directo pero usando el nombre al final ej: "...espero te sirva, Franco").
+1. **Saludo**: 
+   - Si no sabes el nombre real (o parece un apodo), saluda y pregunta: "¡Hola! 👋 Bienvenido a Pitrón Beña. ¿Con quién tengo el gusto?".
+   - Si el cliente responde su nombre, usa la etiqueta `[[UPDATE_NAME:...]]` y salúdalo por su nombre.
 
 2. **Cálculo Matemático**:
    - Fórmula: (Neto + Diseño) * 1.19 = Total.
    - Ejemplo: $10.000 neto + $0 diseño = $10.000 -> x 1.19 = $11.900 Total.
-   - Muestra el precio final claramente.
 
 3. **CIERRE / PAGOS**:
    - Si el cliente pide pagar, cuenta, transferencia o "dame los datos":
@@ -129,13 +128,10 @@ REGLAS DE COMPORTAMIENTO:
    Cuenta Corriente: 79-63175-2
    (Indica que envíe el comprobante por aquí).
 
-Formato de Cotización Visual:
-🪪 *Producto:* [Nombre]
-📝 *Descripción:* [Detalle]
-📦 *Cantidad:* [N]
-💰 *Neto:* $[Valor]
-🎨 *Diseño:* $[Valor]
-💵 *TOTAL:* $[Calculo Total] (IVA Inc.)
+REGLAS DE FORMATO:
+- NO uses Markdown de títulos (#).
+- Usa *negritas* para resaltar.
+- Usa emojis para listar.
 """
         
         system_img = SystemMessage(content=prompt)
@@ -144,7 +140,22 @@ Formato de Cotización Visual:
         respuesta = llm.invoke(messages_to_ai)
         resp_content = respuesta.content
         
-        # Guardar (User: texto completo, AI: respuesta)
+        # --- LÓGICA DE INTERCEPTACIÓN "UPDATE_NAME" ---
+        import re
+        match = re.search(r"\[\[UPDATE_NAME:\s*(.*?)\]\]", resp_content)
+        if match:
+            nuevo_nombre = match.group(1).strip()
+            # 1. Actualizar DB
+            print(f"🔄 Actualizando nombre lead {lead_id} a: {nuevo_nombre}")
+            try:
+                supabase.table("leads").update({"name": nuevo_nombre}).eq("id", lead_id).execute()
+            except Exception as e:
+                logger.error(f"Error actualizando nombre: {e}")
+            
+            # 2. Limpiar etiqueta del mensaje visible
+            resp_content = resp_content.replace(match.group(0), "").strip()
+
+        # Guardar (User: texto completo, AI: respuesta limpia)
         save_message_pro(lead_id, phone, "user", texto_completo)
         save_message_pro(lead_id, phone, "assistant", resp_content)
         
