@@ -1,14 +1,11 @@
 import os
 import requests
-from typing import Dict, Any
-from fastapi import FastAPI, Request, HTTPException
+import asyncio
+from typing import Dict, Any, List
+from fastapi import FastAPI, Request
 from dotenv import load_dotenv
-from pydantic import BaseModel
-
-# LangChain & Supabase Imports
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from langchain_community.vectorstores import SupabaseVectorStore
-from langchain.chains import RetrievalQA
+from langchain.schema import HumanMessage, SystemMessage
 from supabase import create_client, Client
 
 # Cargar variables de entorno
@@ -25,64 +22,66 @@ INSTANCE_NAME = os.getenv("WHATSAPP_INSTANCE_NAME")
 # Inicializar FastAPI
 app = FastAPI(title="WhatsApp RAG Bot")
 
-# Cliente Supabase
+# Cliente Supabase & OpenAI
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
+llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0.3, openai_api_key=OPENAI_API_KEY)
 
-# Vector Store (Conexión a la memoria)
-# Nota: Pasamos el cliente directamente. LangChain manejará la consulta.
-vector_store = SupabaseVectorStore(
-    client=supabase,
-    embedding=embeddings,
-    table_name="documents",
-    query_name="match_documents"
-)
+def buscar_contexto(pregunta: str) -> str:
+    """Busca fragmentos relevantes manualmente en Supabase."""
+    try:
+        # 1. Generar vector de la pregunta
+        vector_consuita = embeddings.embed_query(pregunta)
+        
+        # 2. RPC call a Supabase (Directo, sin LangChain de por medio)
+        # Asegúrate que la función 'match_documents' existe en tu DB
+        response = supabase.rpc(
+            "match_documents",
+            {
+                "query_embedding": vector_consuita,
+                "match_threshold": 0.5, # Umbral de similitud
+                "match_count": 3
+            }
+        ).execute()
+        
+        # 3. Extraer texto
+        matches = response.data
+        if not matches:
+            return ""
+            
+        texto_contexto = "\n\n---\n\n".join([item['content'] for item in matches])
+        return texto_contexto
 
-# LLM (Cerebro)
-llm = ChatOpenAI(
-    model_name="gpt-4o-mini",
-    temperature=0.3,
-    openai_api_key=OPENAI_API_KEY
-)
-
-# Cadena de RAG (Retrieval Augmented Generation)
-# Actualizado a 'invoke' en lugar de 'run' para evitar warnings
-qa_chain = RetrievalQA.from_chain_type(
-    llm=llm,
-    chain_type="stuff",
-    retriever=vector_store.as_retriever(search_kwargs={"k": 3}),
-    return_source_documents=False
-)
+    except Exception as e:
+        print(f"⚠️ Error buscando en Supabase: {e}")
+        return ""
 
 def procesar_mensaje_ia(pregunta: str) -> str:
-    """Busca en la base de datos y genera una respuesta."""
+    """Genera respuesta usando LLM + Contexto."""
     try:
+        contexto = buscar_contexto(pregunta)
+        
         system_prompt = (
-            "Eres un asistente virtual útil y amable de 'PB Imprenta SPA'. "
-            "Usa la siguiente información de contexto para responder a la pregunta del usuario. "
-            "Si no sabes la respuesta basándote en el contexto, di honestamente que no tienes esa información "
-            "y sugiere contactar a un humano. Responde de forma breve y cordial."
+            "Eres el asistente virtual de 'PB Imprenta SPA'. "
+            "Responde basado SOLO en el siguiente contexto. Si no sabes, di que no tienes la info.\n"
+            f"CONTEXTO:\n{contexto}"
         )
         
-        # Usamos invoke() que es el método moderno
-        respuesta = qa_chain.invoke(f"{system_prompt}\n\Pregunta: {pregunta}")
+        messages = [
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=pregunta)
+        ]
         
-        # RetrievalQA a veces devuelve un dict {'query': '...', 'result': '...'}
-        if isinstance(respuesta, dict) and 'result' in respuesta:
-            return respuesta['result']
-        return str(respuesta)
+        respuesta = llm.invoke(messages)
+        return respuesta.content
         
     except Exception as e:
         print(f"Error en IA: {e}")
-        # Fallback simple si falla la vector store: responder algo genérico
-        return "¡Hola! Estoy teniendo un pequeño problema técnico para consultar mi base de datos, pero soy el asistente de PB Imprenta. ¿En qué puedo ayudarte?"
+        return "Lo siento, tengo un problema técnico momentáneo. Por favor intenta más tarde."
 
 def enviar_whatsapp(numero: str, texto: str):
-    """Envía un mensaje usando Evolution API."""
-    # Aseguramos que el endpoint esté limpio
+    """Envía mensaje a WhatsApp (Compatible Evolution v1/v2)."""
     base_url = EVOLUTION_API_URL.rstrip('/')
-    
-    # IMPORTANTE: Encodeamos el nombre de la instancia correctamente para URL
     from urllib.parse import quote
     instance_encoded = quote(INSTANCE_NAME)
     
@@ -93,97 +92,62 @@ def enviar_whatsapp(numero: str, texto: str):
         "Content-Type": "application/json"
     }
     
-    # Payload estándar de Evolution v2
+    # Payload Híbrido: Algunos endpoints de Evolution piden "text" directo, otros "textMessage"
+    # Al poner ambos solemos cubrir todas las bases.
     payload = {
-        "number": numero, # Evolution suele aceptar formato internacional sin + (569...)
-        "options": {
-            "delay": 1200,
-            "presence": "composing",
-        },
-        "textMessage": {
-            "text": texto
-        }
+        "number": numero,
+        "options": {"delay": 1200, "presence": "composing"},
+        "textMessage": {"text": texto}, # Formato v2 estándar
+        "text": texto # Formato v1 o simplificado
     }
     
     try:
         print(f"📡 Enviando a: {url}")
         response = requests.post(url, json=payload, headers=headers)
         
-        # Si falla con 400, intentamos imprimir detalle
-        if response.status_code != 200 and response.status_code != 201:
-            print(f"⚠️ Error Evolution ({response.status_code}): {response.text}")
-            
+        if response.status_code >= 400:
+             print(f"⚠️ Error Evolution ({response.status_code}): {response.text}")
+             
         response.raise_for_status()
         print(f"✅ Respuesta enviada a {numero}")
     except Exception as e:
-        print(f"❌ Error enviando WhatsApp: {e}")
+        print(f"❌ Error final enviando WhatsApp: {e}")
 
 @app.post("/webhook")
 async def webhook_whatsapp(request: Request):
-    """Endpoint que recibe los eventos de Evolution API."""
+    """Manejo de webhook."""
     try:
-        # Evolution API a veces envía el JSON directamente o dentro de un array
-        # El JSON compartido muestra que es un array o un objeto con "body"
         payload = await request.json()
-        
-        # Si llega como una lista (caso n8n o batch), tomamos el primer elemento
-        if isinstance(payload, list):
-            payload = payload[0]
-
-        # El contenido real suele estar dentro de 'body' según tu ejemplo
+        if isinstance(payload, list): payload = payload[0]
         body = payload.get("body", {}) if "body" in payload else payload
-        
-        # Validar tipo de evento (solo nos interesa 'messages.upsert')
+
         event_type = body.get("event")
-        if event_type != "messages.upsert":
-            return {"status": "ignored", "reason": "not_upsert"}
+        if event_type != "messages.upsert": return {"status": "ignored"}
 
         data = body.get("data", {})
         key = data.get("key", {})
+        
+        if key.get("fromMe", False) or "g.us" in key.get("remoteJid", ""):
+            return {"status": "ignored"}
+
         message = data.get("message", {})
+        texto_usuario = message.get("conversation") or message.get("extendedTextMessage", {}).get("text", "")
         
-        # 1. Ignorar mensajes enviados por mí mismo (fromMe: true)
-        if key.get("fromMe", False):
-            return {"status": "ignored", "reason": "fromMe"}
+        if not texto_usuario: return {"status": "ignored"}
 
-        # 2. Ignorar mensajes de grupos (si termina en g.us)
-        remote_jid = key.get("remoteJid", "") 
-        if "g.us" in remote_jid:
-            return {"status": "ignored", "reason": "group_message"}
-
-        # 3. Extraer el texto del mensaje
-        # Evolution API pone el texto en distintos lugares según el tipo
-        texto_usuario = ""
-        if "conversation" in message:
-            texto_usuario = message["conversation"]
-        elif "extendedTextMessage" in message:
-            texto_usuario = message["extendedTextMessage"].get("text", "")
+        print(f"📩 Mensaje: {texto_usuario}")
         
-        # Si no hay texto (ej: es una imagen o audio), lo ignoramos por ahora
-        if not texto_usuario:
-            return {"status": "ignored", "reason": "no_text_found"}
-
-        print(f"📩 Mensaje recibido de {remote_jid}: {texto_usuario}")
-
-        # --- FLUJO PRINCIPAL ---
+        # Procesar
+        respuesta = procesar_mensaje_ia(texto_usuario)
+        numero = key.get("remoteJid", "").split("@")[0]
         
-        # Paso A: Consultar a la IA
-        respuesta_ia = procesar_mensaje_ia(texto_usuario)
+        enviar_whatsapp(numero, respuesta)
         
-        # Paso B: Enviar respuesta
-        # Limpiamos el número para enviarlo (aunque Evolution suele aceptar JID)
-        # De "56974263408@s.whatsapp.net" a "56974263408"
-        numero_limpio = remote_jid.split("@")[0]
-        
-        enviar_whatsapp(numero_limpio, respuesta_ia)
-        
-        return {"status": "processed", "user": numero_limpio}
+        return {"status": "processed"}
 
     except Exception as e:
-        print(f"❌ Error crítico en webhook: {e}")
-        # Retornamos 200 para que Evolution no reintente infinitamente
-        return {"status": "error_handled", "detail": str(e)}
+        print(f"❌ Error webhook: {e}")
+        return {"status": "error", "detail": str(e)}
 
 @app.get("/")
-def health_check():
-    return {"status": "ok", "service": "WhatsApp RAG Bot"}
+def health(): return {"status": "online"}
