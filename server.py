@@ -30,6 +30,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
 
 # Vector Store (Conexión a la memoria)
+# Nota: Pasamos el cliente directamente. LangChain manejará la consulta.
 vector_store = SupabaseVectorStore(
     client=supabase,
     embedding=embeddings,
@@ -39,51 +40,65 @@ vector_store = SupabaseVectorStore(
 
 # LLM (Cerebro)
 llm = ChatOpenAI(
-    model_name="gpt-4o-mini", # O gpt-3.5-turbo, rápido y económico
-    temperature=0.3, # Baja temperatura para respuestas más fieles a los datos
+    model_name="gpt-4o-mini",
+    temperature=0.3,
     openai_api_key=OPENAI_API_KEY
 )
 
 # Cadena de RAG (Retrieval Augmented Generation)
+# Actualizado a 'invoke' en lugar de 'run' para evitar warnings
 qa_chain = RetrievalQA.from_chain_type(
     llm=llm,
     chain_type="stuff",
-    retriever=vector_store.as_retriever(search_kwargs={"k": 3}), # Buscar los 3 fragmentos más relevantes
+    retriever=vector_store.as_retriever(search_kwargs={"k": 3}),
     return_source_documents=False
 )
 
 def procesar_mensaje_ia(pregunta: str) -> str:
     """Busca en la base de datos y genera una respuesta."""
     try:
-        # Prompt del sistema para definir la personalidad
         system_prompt = (
             "Eres un asistente virtual útil y amable de 'PB Imprenta SPA'. "
             "Usa la siguiente información de contexto para responder a la pregunta del usuario. "
             "Si no sabes la respuesta basándote en el contexto, di honestamente que no tienes esa información "
-            "y sugiere contactar a un humano, no inventes datos. "
-            "Responde de forma concisa pero cordial."
+            "y sugiere contactar a un humano. Responde de forma breve y cordial."
         )
         
-        # Ejecutar la cadena RAG
-        respuesta = qa_chain.run(f"{system_prompt}\n\Pregunta: {pregunta}")
-        return respuesta
+        # Usamos invoke() que es el método moderno
+        respuesta = qa_chain.invoke(f"{system_prompt}\n\Pregunta: {pregunta}")
+        
+        # RetrievalQA a veces devuelve un dict {'query': '...', 'result': '...'}
+        if isinstance(respuesta, dict) and 'result' in respuesta:
+            return respuesta['result']
+        return str(respuesta)
+        
     except Exception as e:
         print(f"Error en IA: {e}")
-        return "Lo siento, tuve un problema procesando tu consulta."
+        # Fallback simple si falla la vector store: responder algo genérico
+        return "¡Hola! Estoy teniendo un pequeño problema técnico para consultar mi base de datos, pero soy el asistente de PB Imprenta. ¿En qué puedo ayudarte?"
 
 def enviar_whatsapp(numero: str, texto: str):
-    """Envía un mensaje de respuesta usando Evolution API."""
-    url = f"{EVOLUTION_API_URL}/message/sendText/{INSTANCE_NAME}"
+    """Envía un mensaje usando Evolution API."""
+    # Aseguramos que el endpoint esté limpio
+    base_url = EVOLUTION_API_URL.rstrip('/')
+    
+    # IMPORTANTE: Encodeamos el nombre de la instancia correctamente para URL
+    from urllib.parse import quote
+    instance_encoded = quote(INSTANCE_NAME)
+    
+    url = f"{base_url}/message/sendText/{instance_encoded}"
+    
     headers = {
         "apikey": EVOLUTION_API_KEY,
         "Content-Type": "application/json"
     }
+    
+    # Payload estándar de Evolution v2
     payload = {
-        "number": numero,
+        "number": numero, # Evolution suele aceptar formato internacional sin + (569...)
         "options": {
             "delay": 1200,
             "presence": "composing",
-            "linkPreview": False
         },
         "textMessage": {
             "text": texto
@@ -91,7 +106,13 @@ def enviar_whatsapp(numero: str, texto: str):
     }
     
     try:
+        print(f"📡 Enviando a: {url}")
         response = requests.post(url, json=payload, headers=headers)
+        
+        # Si falla con 400, intentamos imprimir detalle
+        if response.status_code != 200 and response.status_code != 201:
+            print(f"⚠️ Error Evolution ({response.status_code}): {response.text}")
+            
         response.raise_for_status()
         print(f"✅ Respuesta enviada a {numero}")
     except Exception as e:
