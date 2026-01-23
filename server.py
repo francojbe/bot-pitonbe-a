@@ -247,6 +247,7 @@ async def webhook_whatsapp(request: Request):
         evolution_media_url = data.get("mediaUrl")
 
         if evolution_base64 or evolution_media_url:
+            # FIX: Asegurar que extraemos desde 'data' y no 'message'
             # Buscar si el mensaje real es de un tipo compatible (imagen/documento) y enriquecerlo
             for media_type in ["imageMessage", "documentMessage", "audioMessage", "videoMessage", "stickerMessage"]:
                 if media_type in real_message:
