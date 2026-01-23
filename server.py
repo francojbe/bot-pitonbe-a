@@ -305,14 +305,17 @@ async def webhook_whatsapp(request: Request):
                     logger.warning(f"⚠️ Los bytes recibidos no parecen una imagen válida (JPG/PNG). Primeros bytes: {file_bytes[:10].hex(' ')}")
                 
                 try:
+                    # Extraer número de teléfono para la carpeta
+                    jid = key.get('remoteJid', 'unknown').split('@')[0]
                     timestamp = int(time.time())
-                    filename = f"{key.get('remoteJid')}_{timestamp}.{ext}"
-                    path = f"inbox/{filename}"
+                    filename = f"{timestamp}.{ext}"
+                    path = f"inbox/{jid}/{filename}"
                     
-                    logger.info(f"📤 Subiendo {len(file_bytes)} bytes a Supabase como {path}...")
+                    logger.info(f"📤 Subiendo a carpeta de usuario: {path}...")
                     # upsert=True por si acaso
                     supabase.storage.from_("chat-media").upload(path, file_bytes, {"content-type": mime, "upsert": "true"})
                     public_url = supabase.storage.from_("chat-media").get_public_url(path)
+
                     logger.info(f"✅ Media guardada en Supabase: {public_url}")
                     return public_url
                 except Exception as e:
