@@ -275,11 +275,17 @@ async def webhook_whatsapp(request: Request):
             import time
 
             # 1. Intentar decode B64
-            if b64_data and isinstance(b64_data, str) and len(b64_data) > 20 and not b64_data.startswith("http"):
-                try:
-                    file_bytes = base64.b64decode(b64_data)
-                except Exception as e:
-                    logger.error(f"Error base64 decode: {e}")
+            if b64_data and isinstance(b64_data, str) and len(b64_data) > 20:
+                # [NUEVO] Limpiar prefijos de data URI si existen (ej: data:image/jpeg;base64,...)
+                if "," in b64_data:
+                    b64_data = b64_data.split(",")[-1]
+                
+                if not b64_data.startswith("http"):
+                    try:
+                        logger.info(f"🧬 Decodificando B64 (inicio: {b64_data[:50]}...)")
+                        file_bytes = base64.b64decode(b64_data)
+                    except Exception as e:
+                        logger.error(f"Error base64 decode: {e}")
             
             # 2. Si no hay B64 válido, intentar descargar URL
             if not file_bytes and file_url and isinstance(file_url, str) and file_url.startswith("http"):
@@ -297,6 +303,7 @@ async def webhook_whatsapp(request: Request):
             # 3. Subir a Supabase si tenemos bytes
             if file_bytes:
                 try:
+                    logger.info(f"📤 Subiendo {len(file_bytes)} bytes a Supabase...")
                     filename = f"{key.get('remoteJid')}_{int(time.time())}.{ext}"
                     path = f"inbox/{filename}"
                     # upsert=True por si acaso
