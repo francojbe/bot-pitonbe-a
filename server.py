@@ -274,12 +274,19 @@ async def webhook_whatsapp(request: Request):
             img_msg = real_message["imageMessage"]
             caption = img_msg.get("caption", "")
             
-            # Buscar base64: Prioridad a 'base64' directo en data, luego jpegThumbnail
+            # Estrategia: 
+            # 1. Intentar subir B64 si existe.
+            # 2. Si no, usar la URL que ya viene (S3 de Evolution).
+            
             b64 = data.get("base64") or img_msg.get("jpegThumbnail")
+            media_url = upload_to_supabase(b64, "image/jpeg", "jpg")
             
-            if b64: 
-                media_url = upload_to_supabase(b64, "image/jpeg", "jpg")
-            
+            # Fallback: Si no subimos nada, ver si trae URL directa
+            if not media_url:
+                possible_url = img_msg.get("url")
+                if possible_url and possible_url.startswith("http"):
+                    media_url = possible_url
+
             if media_url:
                 texto = f"[IMAGEN RECIBIDA: {media_url}] {caption}"
             else:
@@ -292,8 +299,13 @@ async def webhook_whatsapp(request: Request):
             caption = doc_msg.get("caption", "")
             
             b64 = data.get("base64") or doc_msg.get("jpegThumbnail")
-            if b64:
-                 media_url = upload_to_supabase(b64, doc_msg.get("mimetype", "application/pdf"), "pdf")
+            media_url = upload_to_supabase(b64, doc_msg.get("mimetype", "application/pdf"), "pdf")
+
+            # Fallback URL
+            if not media_url:
+                possible_url = doc_msg.get("url")
+                if possible_url and possible_url.startswith("http"):
+                    media_url = possible_url
 
             if media_url:
                 texto = f"[DOCUMENTO RECIBIDO: {filename} - URL: {media_url}] {caption}"
