@@ -274,34 +274,36 @@ async def webhook_whatsapp(request: Request):
             import base64
             import time
 
-            # 1. Intentar decode B64
-            if b64_data and isinstance(b64_data, str) and len(b64_data) > 20:
-                # [NUEVO] Limpiar prefijos de data URI si existen (ej: data:image/jpeg;base64,...)
-                if "," in b64_data:
-                    b64_data = b64_data.split(",")[-1]
-                
-                if not b64_data.startswith("http"):
-                    try:
-                        logger.info(f"🧬 Decodificando B64 (inicio: {b64_data[:50]}...)")
-                        file_bytes = base64.b64decode(b64_data)
-                    except Exception as e:
-                        logger.error(f"Error base64 decode: {e}")
-            
-            # 2. Si no hay B64 válido, intentar descargar URL
-            if not file_bytes and file_url and isinstance(file_url, str) and file_url.startswith("http"):
+            # 1. Prioridad: Intentar descargar desde URL (ya que suele estar desencriptada por MinIO)
+            if file_url and isinstance(file_url, str) and file_url.startswith("http"):
                 try:
-                    logger.info(f"📥 Descargando media desde: {file_url}")
-                    # Timeout corto para no bloquear el webhook
-                    resp = requests.get(file_url, timeout=15)
+                    logger.info(f"📥 Intentando descargar media desde URL: {file_url}")
+                    resp = requests.get(file_url, timeout=20)
                     if resp.status_code == 200:
                         file_bytes = resp.content
+                        logger.info(f"✅ Descarga exitosa ({len(file_bytes)} bytes)")
                     else:
-                        logger.warning(f"Fallo descarga media {resp.status_code}")
+                        logger.warning(f"⚠️ Fallo descarga media {resp.status_code}")
                 except Exception as e:
-                    logger.error(f"Error downloading media: {e}")
+                    logger.error(f"❌ Error downloading media: {e}")
+
+            # 2. Fallback: Intentar decode B64 si la descarga falló
+            if not file_bytes and b64_data and isinstance(b64_data, str) and len(b64_data) > 20:
+                try:
+                    # Limpiar prefijos de data URI si existen
+                    clean_b64 = b64_data.split(",")[-1] if "," in b64_data else b64_data
+                    if not clean_b64.startswith("http"):
+                        logger.info(f"🧬 Intentando Fallback a B64 (inicio: {clean_b64[:30]}...)")
+                        file_bytes = base64.b64decode(clean_b64)
+                except Exception as e:
+                    logger.error(f"❌ Error base64 decode: {e}")
 
             # 3. Subir a Supabase si tenemos bytes
             if file_bytes:
+                # [OPTIONAL] Validar si son bytes de imagen reales (opcional pero recomendado)
+                if not file_bytes.startswith(b'\xff\xd8') and not file_bytes.startswith(b'\x89PNG'):
+                    logger.warning(f"⚠️ Los bytes recibidos no parecen una imagen válida (JPG/PNG). Primeros bytes: {file_bytes[:10].hex(' ')}")
+                
                 try:
                     logger.info(f"📤 Subiendo {len(file_bytes)} bytes a Supabase...")
                     filename = f"{key.get('remoteJid')}_{int(time.time())}.{ext}"
