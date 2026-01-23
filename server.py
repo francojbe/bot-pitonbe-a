@@ -213,6 +213,12 @@ def enviar_whatsapp(numero: str, texto: str):
 async def webhook_whatsapp(request: Request):
     try:
         payload = await request.json()
+        
+        # [DEBUG EXTREMO] Guardar el último payload
+        import json
+        with open("last_payload.json", "w") as f:
+            json.dump(payload, f, indent=4)
+
         if isinstance(payload, list): payload = payload[0]
         body = payload.get("body", {}) if "body" in payload else payload
 
