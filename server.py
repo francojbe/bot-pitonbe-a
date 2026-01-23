@@ -275,7 +275,7 @@ async def webhook_whatsapp(request: Request):
             import time
 
             # 1. Intentar decode B64
-            if b64_data and len(b64_data) > 20 and not b64_data.startswith("http"):
+            if b64_data and isinstance(b64_data, str) and len(b64_data) > 20 and not b64_data.startswith("http"):
                 try:
                     file_bytes = base64.b64decode(b64_data)
                 except Exception as e:
