@@ -114,23 +114,35 @@ Si detectas un nombre nuevo (ej: "Soy Pedro"), inicia con: `[[UPDATE_NAME: Pedro
    🔹 Opción A
    🔹 Opción B
 
-⛔ REGLAS DE FLUJO (NO VOMITAR PRECIOS):
-1. Si el cliente pregunta "¿Cuánto cuesta X?":
-   - **NO** des la lista de precios completa de una vez.
-   - **PREGUNTA PRIMERO**: "Para darte la cotización exacta, ¿qué cantidad necesitas? (ej: 100, 1000)".
-   - Solo da opciones si hay variantes (ej: "Tenemos impresión por 1 o 2 lados, ¿cuál prefieres?").
+⛔ REGLAS DE FLUJO COMERCIAL:
+1. **Preguntas de Precio ("¿Cuánto vale X?"):**
+   - 🛑 NO des el precio final aún.
+   - ❓ Pregunta primero: "¿Qué cantidad necesitas?" y "¿Tienes el diseño?".
 
-2. Si ya tienes Cantidad y Opción:
-   - **PREGUNTA DISEÑO**: "¿Tienes el diseño listo o lo hacemos nosotros?".
-   - NO des el precio final hasta saber esto.
+2. **Cliente Indeciso / Preguntas Generales ("¿Qué tipos tienen?"):**
+   - ✅ MUESTRA las opciones disponibles (ej: "Tenemos impresión por 1 lado, 2 lados, con polilaminado...").
+   - Usa una lista con emojis.
+   - Cierra preguntando: "¿Cuál de estas opciones te interesa cotizar?".
 
-3. **Cálculo Final** (Solo cuando tengas todos los datos):
-   - Fórmula Mental: (Neto + Diseño) * 1.19 = Total.
-   - Muestra el desglose limpio.
+3. **Cálculo Final (Solo con todos los datos):**
+   - Fórmula: (Neto + Diseño) * 1.19 = Total.
+   - Desglose claro.
 
 4. **Datos Bancarios**:
-   - ENTREGAR INMEDIATAMENTE si el cliente escribe: "datos", "pagar", "transferir", "cuenta".
-   🏦 *Datos:* Banco Santander | Titular: LUIS PITRON | RUT: 15355843-4 | Cta: 79-63175-2.
+   - ENTREGAR INMEDIATAMENTE si piden pagar o transfieren.
+   🏦 **Datos Transferencia:**
+   Banco: Santander
+   Tipo: Cta Corriente
+   N°: 79-63175-2
+   Titular: LUIS PITRON
+   RUT: 15.355.843-4
+   *(Favor enviar comprobante)*.
+
+5. **Recepción de Archivos/Diseños**:
+   - Si el mensaje dice `[ARCHIVO RECIBIDO]` o el usuario envía una imagen/PDF:
+     - Confirma la recepción: "✅ He recibido tu archivo/diseño."
+     - Si es el comprobante, agradece y di que pasaremos el pedido a producción.
+     - Si es el diseño, confirma que lo revisaremos.
 
 Formato de Cotización Final:
 🪪 *Producto:* [Nombre]
@@ -212,21 +224,98 @@ async def webhook_whatsapp(request: Request):
         
         if key.get("fromMe") or "g.us" in key.get("remoteJid", ""): return {"status": "ignored"}
 
-        texto = message.get("conversation") or message.get("extendedTextMessage", {}).get("text", "")
-        if not texto: return {"status": "ignored"}
+        # --- UNWRAPPER RECURSIVO PARA MENSAJES ANIDADOS ---
+        def unwrap_message(msg_dict):
+            """Desempaqueta mensajes anidados como viewOnceMessage, ephemeralMessage, etc."""
+            if not msg_dict: return {}
+            # Lista de claves conocidas que envuelven el mensaje real
+            wrapper_keys = ["viewOnceMessage", "viewOnceMessageV2", "ephemeralMessage", "documentWithCaptionMessage"]
+            
+            for k in wrapper_keys:
+                if k in msg_dict and "message" in msg_dict[k]:
+                    return unwrap_message(msg_dict[k]["message"])
+            
+            return msg_dict
+
+        # Desempaquetar el mensaje real
+        real_message = unwrap_message(message)
+
+        # --- EXTRACCIÓN Y SUBIDA DE MEDIOS ---
+        texto = ""
+        media_url = None
+        
+        # Helper interno para subir
+        def upload_to_supabase(b64_data, mime, ext):
+            try:
+                import base64
+                import time
+                
+                # Validar que sea realmente B64
+                if not b64_data or len(b64_data) < 20 or b64_data.startswith("http"):
+                    return None
+                    
+                file_data = base64.b64decode(b64_data)
+                filename = f"{key.get('remoteJid')}_{int(time.time())}.{ext}"
+                path = f"inbox/{filename}"
+                supabase.storage.from_("chat-media").upload(path, file_data, {"content-type": mime})
+                return supabase.storage.from_("chat-media").get_public_url(path)
+            except Exception as e:
+                logger.error(f"Upload error: {e}")
+                return None
+
+        # 1. Texto plano
+        if "conversation" in real_message:
+            texto = real_message["conversation"]
+        elif "extendedTextMessage" in real_message:
+            texto = real_message["extendedTextMessage"].get("text", "")
+        
+        # 2. Imágenes
+        elif "imageMessage" in real_message:
+            img_msg = real_message["imageMessage"]
+            caption = img_msg.get("caption", "")
+            
+            # Buscar base64: Prioridad a 'base64' directo en data, luego jpegThumbnail
+            b64 = data.get("base64") or img_msg.get("jpegThumbnail")
+            
+            if b64: 
+                media_url = upload_to_supabase(b64, "image/jpeg", "jpg")
+            
+            if media_url:
+                texto = f"[IMAGEN RECIBIDA: {media_url}] {caption}"
+            else:
+                texto = f"[IMAGEN RECIBIDA] {caption}"
+
+        # 3. Documentos
+        elif "documentMessage" in real_message:
+            doc_msg = real_message["documentMessage"]
+            filename = doc_msg.get("title", "doc")
+            caption = doc_msg.get("caption", "")
+            
+            b64 = data.get("base64") or doc_msg.get("jpegThumbnail")
+            if b64:
+                 media_url = upload_to_supabase(b64, doc_msg.get("mimetype", "application/pdf"), "pdf")
+
+            if media_url:
+                texto = f"[DOCUMENTO RECIBIDO: {filename} - URL: {media_url}] {caption}"
+            else:
+                texto = f"[DOCUMENTO RECIBIDO: {filename}] {caption}"
+
+        if not texto: 
+            # Si no extrajimos texto pero es un mensaje 'messageContextInfo' u otro tipo raro,
+            # podríamos retornarlo como [MENSAJE DESCONOCIDO] para que el log sepa que algo llegó.
+            # Pero por ahora lo ignoramos para no spammear.
+            return {"status": "ignored"}
 
         numero = key.get("remoteJid", "").split("@")[0]
         push_name = data.get("pushName")
 
         # --- LÓGICA DE BUFFER ---
-        # Si ya hay un timer corriendo para este numero, lo cancelamos (reset del reloj)
         if numero in message_buffer:
             message_buffer[numero]["timer"].cancel()
             message_buffer[numero]["messages"].append(texto)
         else:
             message_buffer[numero] = {"messages": [texto]}
         
-        # Iniciamos nuevo timer
         task = asyncio.create_task(buffer_manager(numero, push_name))
         message_buffer[numero]["timer"] = task
         
