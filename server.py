@@ -305,9 +305,11 @@ async def webhook_whatsapp(request: Request):
                     logger.warning(f"⚠️ Los bytes recibidos no parecen una imagen válida (JPG/PNG). Primeros bytes: {file_bytes[:10].hex(' ')}")
                 
                 try:
-                    logger.info(f"📤 Subiendo {len(file_bytes)} bytes a Supabase...")
-                    filename = f"{key.get('remoteJid')}_{int(time.time())}.{ext}"
+                    timestamp = int(time.time())
+                    filename = f"{key.get('remoteJid')}_{timestamp}.{ext}"
                     path = f"inbox/{filename}"
+                    
+                    logger.info(f"📤 Subiendo {len(file_bytes)} bytes a Supabase como {path}...")
                     # upsert=True por si acaso
                     supabase.storage.from_("chat-media").upload(path, file_bytes, {"content-type": mime, "upsert": "true"})
                     public_url = supabase.storage.from_("chat-media").get_public_url(path)
@@ -315,6 +317,7 @@ async def webhook_whatsapp(request: Request):
                     return public_url
                 except Exception as e:
                     logger.error(f"Error uploading to Supabase: {e}")
+
             
             # 4. Fallback: Devolver URL original si no pudimos procesarla internamente
             return file_url
