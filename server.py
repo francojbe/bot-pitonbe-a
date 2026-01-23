@@ -282,7 +282,7 @@ async def webhook_whatsapp(request: Request):
                     logger.error(f"Error base64 decode: {e}")
             
             # 2. Si no hay B64 válido, intentar descargar URL
-            if not file_bytes and file_url and file_url.startswith("http"):
+            if not file_bytes and file_url and isinstance(file_url, str) and file_url.startswith("http"):
                 try:
                     logger.info(f"📥 Descargando media desde: {file_url}")
                     # Timeout corto para no bloquear el webhook
