@@ -336,8 +336,16 @@ async def webhook_whatsapp(request: Request):
                 b64 = img_msg.get("evolution_base64") or img_msg.get("base64")
                 url_msg = img_msg.get("evolution_media_url") or img_msg.get("mediaUrl") or img_msg.get("url")
                 
-                logger.info(f"🖼️ Procesando imagen. URL origen: {url_msg[:50]}...")
-                final_url = save_media_to_supabase(b64, url_msg, "image/jpeg", "jpg")
+                # Detectar mime y extensión real
+                mime = img_msg.get("mimetype", "image/jpeg")
+                ext = "jpg"
+                if "png" in mime: ext = "png"
+                elif "webp" in mime: ext = "webp"
+                elif "gif" in mime: ext = "gif"
+
+                logger.info(f"🖼️ Procesando imagen ({mime}). URL origen: {url_msg[:50]}...")
+                final_url = save_media_to_supabase(b64, url_msg, mime, ext)
+
                 
                 if final_url:
                     texto = f"[IMAGEN RECIBIDA: {final_url}] {caption}"
