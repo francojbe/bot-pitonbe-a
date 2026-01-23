@@ -244,24 +244,47 @@ async def webhook_whatsapp(request: Request):
         texto = ""
         media_url = None
         
-        # Helper interno para subir
-        def upload_to_supabase(b64_data, mime, ext):
-            try:
-                import base64
-                import time
-                
-                # Validar que sea realmente B64
-                if not b64_data or len(b64_data) < 20 or b64_data.startswith("http"):
-                    return None
-                    
-                file_data = base64.b64decode(b64_data)
-                filename = f"{key.get('remoteJid')}_{int(time.time())}.{ext}"
-                path = f"inbox/{filename}"
-                supabase.storage.from_("chat-media").upload(path, file_data, {"content-type": mime})
-                return supabase.storage.from_("chat-media").get_public_url(path)
-            except Exception as e:
-                logger.error(f"Upload error: {e}")
-                return None
+        # Helper robusto para guardar medios (B64 o URL -> Supabase)
+        def save_media_to_supabase(b64_data, file_url, mime, ext):
+            file_bytes = None
+            import base64
+            import time
+
+            # 1. Intentar decode B64
+            if b64_data and len(b64_data) > 20 and not b64_data.startswith("http"):
+                try:
+                    file_bytes = base64.b64decode(b64_data)
+                except Exception as e:
+                    logger.error(f"Error base64 decode: {e}")
+            
+            # 2. Si no hay B64 válido, intentar descargar URL
+            if not file_bytes and file_url and file_url.startswith("http"):
+                try:
+                    logger.info(f"📥 Descargando media desde: {file_url}")
+                    # Timeout corto para no bloquear el webhook
+                    resp = requests.get(file_url, timeout=15)
+                    if resp.status_code == 200:
+                        file_bytes = resp.content
+                    else:
+                        logger.warning(f"Fallo descarga media {resp.status_code}")
+                except Exception as e:
+                    logger.error(f"Error downloading media: {e}")
+
+            # 3. Subir a Supabase si tenemos bytes
+            if file_bytes:
+                try:
+                    filename = f"{key.get('remoteJid')}_{int(time.time())}.{ext}"
+                    path = f"inbox/{filename}"
+                    # upsert=True por si acaso
+                    supabase.storage.from_("chat-media").upload(path, file_bytes, {"content-type": mime, "upsert": "true"})
+                    public_url = supabase.storage.from_("chat-media").get_public_url(path)
+                    logger.info(f"✅ Media guardada en Supabase: {public_url}")
+                    return public_url
+                except Exception as e:
+                    logger.error(f"Error uploading to Supabase: {e}")
+            
+            # 4. Fallback: Devolver URL original si no pudimos procesarla internamente
+            return file_url
 
         # 1. Texto plano
         if "conversation" in real_message:
@@ -274,21 +297,14 @@ async def webhook_whatsapp(request: Request):
             img_msg = real_message["imageMessage"]
             caption = img_msg.get("caption", "")
             
-            # Estrategia: 
-            # 1. Intentar subir B64 si existe.
-            # 2. Si no, usar la URL que ya viene (S3 de Evolution).
-            
             b64 = data.get("base64") or img_msg.get("jpegThumbnail")
-            media_url = upload_to_supabase(b64, "image/jpeg", "jpg")
+            url_msg = img_msg.get("url")
             
-            # Fallback: Si no subimos nada, ver si trae URL directa
-            if not media_url:
-                possible_url = img_msg.get("url")
-                if possible_url and possible_url.startswith("http"):
-                    media_url = possible_url
-
-            if media_url:
-                texto = f"[IMAGEN RECIBIDA: {media_url}] {caption}"
+            # Intentar guardar (B64 o Download URL)
+            final_url = save_media_to_supabase(b64, url_msg, "image/jpeg", "jpg")
+            
+            if final_url:
+                texto = f"[IMAGEN RECIBIDA: {final_url}] {caption}"
             else:
                 texto = f"[IMAGEN RECIBIDA] {caption}"
 
@@ -299,16 +315,19 @@ async def webhook_whatsapp(request: Request):
             caption = doc_msg.get("caption", "")
             
             b64 = data.get("base64") or doc_msg.get("jpegThumbnail")
-            media_url = upload_to_supabase(b64, doc_msg.get("mimetype", "application/pdf"), "pdf")
+            url_msg = doc_msg.get("url")
+            mime_type = doc_msg.get("mimetype", "application/pdf")
+            
+            # Simple mapeo de extensión
+            ext = "pdf"
+            if "image" in mime_type: ext = "jpg"
+            elif "word" in mime_type: ext = "docx"
+            elif "excel" in mime_type: ext = "xlsx"
+            
+            final_url = save_media_to_supabase(b64, url_msg, mime_type, ext)
 
-            # Fallback URL
-            if not media_url:
-                possible_url = doc_msg.get("url")
-                if possible_url and possible_url.startswith("http"):
-                    media_url = possible_url
-
-            if media_url:
-                texto = f"[DOCUMENTO RECIBIDO: {filename} - URL: {media_url}] {caption}"
+            if final_url:
+                texto = f"[DOCUMENTO RECIBIDO: {filename} - URL: {final_url}] {caption}"
             else:
                 texto = f"[DOCUMENTO RECIBIDO: {filename}] {caption}"
 
