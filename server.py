@@ -246,23 +246,23 @@ async def webhook_whatsapp(request: Request):
         # Desempaquetar el mensaje real
         real_message = unwrap_message(message)
 
-        # [CRÍTICO] Inyectar campos 'base64' y 'mediaUrl' de Evolution API (que están en el padre dat, NO en message)
-        # en el mensaje real 'imageMessage' o 'documentMessage' si existen.
-        # Esto soluciona el bug donde 'real_message' solo tenía la URL interna de WhatsApp.
-        evolution_base64 = data.get("base64")
-        evolution_media_url = data.get("mediaUrl")
+        # [CRÍTICO] Extraer 'base64' y 'mediaUrl' buscando en 'data' y en 'message' 
+        # (Evolution API varía la ubicación según la versión/configuración)
+        evolution_base64 = data.get("base64") or message.get("base64")
+        evolution_media_url = data.get("mediaUrl") or message.get("mediaUrl")
 
         if evolution_base64 or evolution_media_url:
-            # FIX: Asegurar que extraemos desde 'data' y no 'message'
-            # Buscar si el mensaje real es de un tipo compatible (imagen/documento) y enriquecerlo
-            for media_type in ["imageMessage", "documentMessage", "audioMessage", "videoMessage", "stickerMessage"]:
-                if media_type in real_message:
-                    logger.info(f"💉 Inyectando datos de Evolution en {media_type}")
+            # Buscar si el mensaje real es de un tipo compatible y enriquecerlo
+            media_types = ["imageMessage", "documentMessage", "audioMessage", "videoMessage", "stickerMessage"]
+            for m_type in media_types:
+                if m_type in real_message:
+                    logger.info(f"💉 Inyectando datos de Evolution en {m_type} (URL: {bool(evolution_media_url)}, B64: {bool(evolution_base64)})")
                     if evolution_base64:
-                        real_message[media_type]["base64"] = evolution_base64
+                        real_message[m_type]["evolution_base64"] = evolution_base64
                     if evolution_media_url:
-                        real_message[media_type]["mediaUrl"] = evolution_media_url
+                        real_message[m_type]["evolution_media_url"] = evolution_media_url
                     break
+
 
         # --- EXTRACCIÓN Y SUBIDA DE MEDIOS ---
         texto = ""
@@ -332,19 +332,17 @@ async def webhook_whatsapp(request: Request):
                 img_msg = real_message["imageMessage"]
                 caption = img_msg.get("caption", "")
                 
-                # 'base64' y 'mediaUrl' ya fueron inyectados en real_message[type] si existían en 'data'
-                b64 = img_msg.get("base64") 
-                url_msg = img_msg.get("mediaUrl") or img_msg.get("url")
+                # Usar los campos inyectados que sabemos que funcionan
+                b64 = img_msg.get("evolution_base64") or img_msg.get("base64")
+                url_msg = img_msg.get("evolution_media_url") or img_msg.get("mediaUrl") or img_msg.get("url")
                 
-                # Intentar guardar (B64 o Download URL)
+                logger.info(f"🖼️ Procesando imagen. URL origen: {url_msg[:50]}...")
                 final_url = save_media_to_supabase(b64, url_msg, "image/jpeg", "jpg")
                 
                 if final_url:
                     texto = f"[IMAGEN RECIBIDA: {final_url}] {caption}"
                 else:
-                    # Fallback a URL original (interna o minio) si falla supabase
-                    fallback_url = url_msg or "[URL NO DISPONIBLE]"
-                    texto = f"[IMAGEN RECIBIDA: {fallback_url}] {caption}"
+                    texto = f"[IMAGEN RECIBIDA (Fallo local): {url_msg}] {caption}"
 
             # 3. Documentos
             elif "documentMessage" in real_message:
@@ -352,23 +350,23 @@ async def webhook_whatsapp(request: Request):
                 filename = doc_msg.get("title", "doc")
                 caption = doc_msg.get("caption", "")
                 
-                b64 = doc_msg.get("base64")
-                url_msg = doc_msg.get("mediaUrl") or doc_msg.get("url")
+                b64 = doc_msg.get("evolution_base64") or doc_msg.get("base64")
+                url_msg = doc_msg.get("evolution_media_url") or doc_msg.get("mediaUrl") or doc_msg.get("url")
                 mime_type = doc_msg.get("mimetype", "application/pdf")
                 
-                # Simple mapeo de extensión
                 ext = "pdf"
                 if "image" in mime_type: ext = "jpg"
                 elif "word" in mime_type: ext = "docx"
                 elif "excel" in mime_type: ext = "xlsx"
                 
+                logger.info(f"📄 Procesando documento. URL origen: {url_msg[:50]}...")
                 final_url = save_media_to_supabase(b64, url_msg, mime_type, ext)
 
                 if final_url:
                     texto = f"[DOCUMENTO RECIBIDO: {filename} - URL: {final_url}] {caption}"
                 else:
-                    fallback_url = url_msg or "[URL NO DISPONIBLE]"
-                    texto = f"[DOCUMENTO RECIBIDO: {filename}] {caption}"
+                    texto = f"[DOCUMENTO RECIBIDO: {filename} - URL origen: {url_msg}] {caption}"
+
                     
         except Exception as e:
             logger.error(f"🔥 CRASH LÓGICA CONTENIDO: {e}")
