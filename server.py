@@ -240,6 +240,23 @@ async def webhook_whatsapp(request: Request):
         # Desempaquetar el mensaje real
         real_message = unwrap_message(message)
 
+        # [CRÍTICO] Inyectar campos 'base64' y 'mediaUrl' de Evolution API (que están en el padre)
+        # en el mensaje real 'imageMessage' o 'documentMessage' si existen.
+        # Esto soluciona el bug donde 'real_message' solo tenía la URL interna de WhatsApp.
+        evolution_base64 = message.get("base64")
+        evolution_media_url = message.get("mediaUrl")
+
+        if evolution_base64 or evolution_media_url:
+            # Buscar si el mensaje real es de un tipo compatible (imagen/documento) y enriquecerlo
+            for media_type in ["imageMessage", "documentMessage", "audioMessage", "videoMessage", "stickerMessage"]:
+                if media_type in real_message:
+                    logger.info(f"💉 Inyectando datos de Evolution en {media_type}")
+                    if evolution_base64:
+                        real_message[media_type]["base64"] = evolution_base64
+                    if evolution_media_url:
+                        real_message[media_type]["mediaUrl"] = evolution_media_url
+                    break
+
         # --- EXTRACCIÓN Y SUBIDA DE MEDIOS ---
         texto = ""
         media_url = None
