@@ -7,7 +7,7 @@ from typing import List, Optional, Any, Dict
 from fastapi import FastAPI, Request, BackgroundTasks
 from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from langchain.schema import HumanMessage, SystemMessage, AIMessage
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from supabase import create_client, Client
 
 # Logging
@@ -63,11 +63,11 @@ def get_chat_history_pro(lead_id: str, limit: int = 10):
         return mensajes
     except: return []
 
-def save_message_pro(lead_id: str, phone: str, role: str, content: str):
+def save_message_pro(lead_id: str, phone: str, role: str, content: str, intent: str = None):
     if not lead_id: return
     try:
         supabase.table("message_logs").insert({
-            "lead_id": lead_id, "phone_number": phone, "role": role, "content": content
+            "lead_id": lead_id, "phone_number": phone, "role": role, "content": content, "intent": intent
         }).execute()
     except Exception as e: logger.error(f"Error save logs: {e}")
 
