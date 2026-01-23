@@ -304,50 +304,60 @@ async def webhook_whatsapp(request: Request):
             # 4. Fallback: Devolver URL original si no pudimos procesarla internamente
             return file_url
 
-        # 1. Texto plano
-        if "conversation" in real_message:
-            texto = real_message["conversation"]
-        elif "extendedTextMessage" in real_message:
-            texto = real_message["extendedTextMessage"].get("text", "")
-        
-        # 2. Imágenes
-        elif "imageMessage" in real_message:
-            img_msg = real_message["imageMessage"]
-            caption = img_msg.get("caption", "")
+        # [PROCESAMIENTO SEGURO DEL CONTENIDO]
+        try:
+            # 1. Texto plano
+            if "conversation" in real_message:
+                texto = real_message["conversation"]
+            elif "extendedTextMessage" in real_message:
+                texto = real_message["extendedTextMessage"].get("text", "")
             
-            b64 = data.get("base64") or img_msg.get("jpegThumbnail")
-            url_msg = img_msg.get("url")
-            
-            # Intentar guardar (B64 o Download URL)
-            final_url = save_media_to_supabase(b64, url_msg, "image/jpeg", "jpg")
-            
-            if final_url:
-                texto = f"[IMAGEN RECIBIDA: {final_url}] {caption}"
-            else:
-                texto = f"[IMAGEN RECIBIDA] {caption}"
+            # 2. Imágenes
+            elif "imageMessage" in real_message:
+                img_msg = real_message["imageMessage"]
+                caption = img_msg.get("caption", "")
+                
+                # 'base64' y 'mediaUrl' ya fueron inyectados en real_message[type] si existían en 'data'
+                b64 = img_msg.get("base64") 
+                url_msg = img_msg.get("mediaUrl") or img_msg.get("url")
+                
+                # Intentar guardar (B64 o Download URL)
+                final_url = save_media_to_supabase(b64, url_msg, "image/jpeg", "jpg")
+                
+                if final_url:
+                    texto = f"[IMAGEN RECIBIDA: {final_url}] {caption}"
+                else:
+                    # Fallback a URL original (interna o minio) si falla supabase
+                    fallback_url = url_msg or "[URL NO DISPONIBLE]"
+                    texto = f"[IMAGEN RECIBIDA: {fallback_url}] {caption}"
 
-        # 3. Documentos
-        elif "documentMessage" in real_message:
-            doc_msg = real_message["documentMessage"]
-            filename = doc_msg.get("title", "doc")
-            caption = doc_msg.get("caption", "")
-            
-            b64 = data.get("base64") or doc_msg.get("jpegThumbnail")
-            url_msg = doc_msg.get("url")
-            mime_type = doc_msg.get("mimetype", "application/pdf")
-            
-            # Simple mapeo de extensión
-            ext = "pdf"
-            if "image" in mime_type: ext = "jpg"
-            elif "word" in mime_type: ext = "docx"
-            elif "excel" in mime_type: ext = "xlsx"
-            
-            final_url = save_media_to_supabase(b64, url_msg, mime_type, ext)
+            # 3. Documentos
+            elif "documentMessage" in real_message:
+                doc_msg = real_message["documentMessage"]
+                filename = doc_msg.get("title", "doc")
+                caption = doc_msg.get("caption", "")
+                
+                b64 = doc_msg.get("base64")
+                url_msg = doc_msg.get("mediaUrl") or doc_msg.get("url")
+                mime_type = doc_msg.get("mimetype", "application/pdf")
+                
+                # Simple mapeo de extensión
+                ext = "pdf"
+                if "image" in mime_type: ext = "jpg"
+                elif "word" in mime_type: ext = "docx"
+                elif "excel" in mime_type: ext = "xlsx"
+                
+                final_url = save_media_to_supabase(b64, url_msg, mime_type, ext)
 
-            if final_url:
-                texto = f"[DOCUMENTO RECIBIDO: {filename} - URL: {final_url}] {caption}"
-            else:
-                texto = f"[DOCUMENTO RECIBIDO: {filename}] {caption}"
+                if final_url:
+                    texto = f"[DOCUMENTO RECIBIDO: {filename} - URL: {final_url}] {caption}"
+                else:
+                    fallback_url = url_msg or "[URL NO DISPONIBLE]"
+                    texto = f"[DOCUMENTO RECIBIDO: {filename}] {caption}"
+                    
+        except Exception as e:
+            logger.error(f"🔥 CRASH LÓGICA CONTENIDO: {e}")
+            texto = "[ERROR INTERNO PROCESANDO MENSAJE - EL USUARIO ENVIÓ ALGO PERO FALLÓ EL PROCESO]"
 
         if not texto: 
             # Si no extrajimos texto pero es un mensaje 'messageContextInfo' u otro tipo raro,
