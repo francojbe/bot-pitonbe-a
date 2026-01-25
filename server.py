@@ -100,7 +100,7 @@ def calculate_quote(product_type: str, quantity: int, sides: int = 1, finish: st
     # Lógica Hardcoded (Fuente de Verdad de Precios)
     p_lower = product_type.lower()
     
-    elif "tarjeta" in p_lower:
+    if "tarjeta" in p_lower:
         base_1000_1lado = 23800
         base_1000_2lados = 47600
         
