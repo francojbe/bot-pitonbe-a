@@ -100,26 +100,34 @@ def calculate_quote(product_type: str, quantity: int, sides: int = 1, finish: st
     # Lógica Hardcoded (Fuente de Verdad de Precios)
     p_lower = product_type.lower()
     
-    if "tarjeta" in p_lower:
+    elif "tarjeta" in p_lower:
+        base_1000_1lado = 23800
+        base_1000_2lados = 47600
+        
         if quantity == 100:
             if finish == "polilaminado":
                 neto = 12000 if sides == 1 else 16000
             else:
                 neto = 7000 if sides == 1 else 11000
-        elif quantity == 1000:
-            # 1000 Tarjetas
-            if sides == 1: 
-                neto = 23800 # Base aprox para llegar a ~28k con IVA
-            else: 
-                neto = 47600
-                
+        elif quantity >= 1000 and quantity % 1000 == 0:
+            # Multiples of 1000 (Linear scaling for simplicity or bulk discount logic)
+            factor = quantity // 1000
+            base = base_1000_2lados if sides == 2 else base_1000_1lado
+            neto = base * factor
+            
             if finish == "polilaminado":
-                 neto += 4000 # Ajuste fino para coincidir con precios de mercado si es necesario
+                 neto += (4000 * factor)
+        else:
+             return f"⚠️ La cantidad {quantity} no es estándar. Por favor cotiza manualmente con un humano."
     
     elif "flyer" in p_lower:
-        if quantity == 1000:
+        if quantity >= 1000 and quantity % 1000 == 0:
             iva_incluido = True
-            neto = 23800 if sides == 1 else 47600
+            factor = quantity // 1000
+            base = 47600 if sides == 2 else 23800
+            neto = base * factor
+        else:
+             return f"⚠️ La cantidad {quantity} no es estándar. Por favor cotiza manualmente con un humano."
     
     if neto == 0:
         return f"⚠️ No tengo precio automático para {quantity} {product_type}. Revisa la base de conocimiento manual."
@@ -140,7 +148,7 @@ def calculate_quote(product_type: str, quantity: int, sides: int = 1, finish: st
         detalle = f"Neto: ${neto:,} + IVA: ${iva:,} + Diseño: ${costo_diseno:,}"
 
     return f"""
-    💰 COTIZACIÓN CALCULADA:
+    💰 COTIZACIÓN OFICIAL:
     - Producto: {product_type} x {quantity} u.
     - {detalle}
     --------------------------------
