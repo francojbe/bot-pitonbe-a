@@ -1,0 +1,25 @@
+# REGISTRO DE AVANCES - AGENTE PITRÓN BEÑA
+# Fecha: 23 de Enero, 2026
+
+## 1. ALMACENAMIENTO DE MEDIOS (Supabase Storage)
+- ✅ RESOLUCIÓN DE CORRUPCIÓN: Se implementó un flujo de limpieza de Base64 y validación de "magic bytes" (JPG/PNG), asegurando que los archivos guardados sean imágenes reales.
+- ✅ PRIORIDAD MINIO: El bot ahora detecta y prioriza automáticamente la URL de descarga directa de MinIO (Evolution API), evitando archivos encriptados de WhatsApp.
+- ✅ CORRECCIÓN ERROR 404: Se eliminó la discrepancia de milisegundos en los nombres de archivo. Ahora el nombre del archivo en Storage y el link en la base de datos coinciden exactamente.
+- ✅ ORGANIZACIÓN POR USUARIO: Los archivos ahora se guardan ordenadamente en `inbox/{numero_telefono}/{timestamp}.ext`.
+- ✅ SOPORTE MULTIFORMATO: Detección dinámica de extensiones (JPG, PNG, WebP) basada en el mimetype real enviado por WhatsApp.
+
+## 2. INTELIGENCIA Y FLUJO CONVERSACIONAL
+- ✅ COMPORTAMIENTO HUMANO: Se ajustó el prompt para que el bot no responda de forma robótica ante imágenes no solicitadas. Ahora saluda y pregunta el nombre antes de procesar el archivo.
+- ✅ PRIORIDAD DE NOMBRE: El agente ahora tiene la instrucción de preguntar por el nombre del cliente si este aparece como "Cliente" en el sistema.
+
+## 3. HERRAMIENTAS DE DIAGNÓSTICO (Scripts)
+- `debug_storage_404.py`: Busca archivos específicos y verifica su existencia real en el bucket.
+- `debug_pil_check.py`: Prueba la integridad de la última imagen descargándola y procesándola con la librería Pillow (PIL).
+- `get_media_urls.py`: Analiza las fuentes de las últimas imágenes (Supabase vs WhatsApp) en los logs.
+
+## PENDIENTES / PRÓXIMOS PASOS
+- Monitorear los primeros chats reales con clientes nuevos para validar la gestión de nombres.
+- Verificar si se requieren filtros adicionales para archivos tipo PDF o documentos de Office (ya están los cimientos puestos).
+
+---
+¡Excelente jornada! El sistema de media ya es 100% robusto y profesional.

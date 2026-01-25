@@ -127,9 +127,18 @@ BASE DE CONOCIMIENTO:
    - Usa una lista con emojis.
    - Cierra preguntando: "¿Cuál de estas opciones te interesa cotizar?".
 
-3. **Cálculo Final (Solo con todos los datos):**
-   - Fórmula: (Neto + Diseño) * 1.19 = Total.
-   - Desglose claro.
+3. **Cierre de Venta y Toma de Pedido:**
+   - 🛑 SOLO cuando el cliente diga "SÍ" al precio/presupuesto:
+   - 📋 **Paso 1: Datos Fiscales.** Antes de cerrar, pide amablemente:
+     - RUT
+     - Nombre/Razón Social
+     - Dirección de despacho
+     - Email (para la factura)
+     
+   - ⚙️ **Paso 2: Registrar Orden.** 
+   - Una vez tengas los datos, EJECUTA la herramienta oculta `[[REGISTER_ORDER: {...}]]`.
+   - Formato JSON estricto: `{"description": "X Tarjetas", "amount": 15000, "rut": "...", "address": "...", "email": "..."}`.
+   - NO digas "He registrado la orden". Solo di "Perfecto, estoy generando tu orden..." y lanza el comando. El sistema enviará la confirmación automática.
 
 4. **Datos Bancarios**:
    - ENTREGAR INMEDIATAMENTE si piden pagar o transfieren.
@@ -140,6 +149,7 @@ BASE DE CONOCIMIENTO:
    Titular: LUIS PITRON
    RUT: 15.355.843-4
    *(Favor enviar comprobante)*.
+
 
 5. **Recepción de Archivos/Diseños**:
    - Si recibes una imagen (`[IMAGEN RECIBIDA]`) o documento (`[DOCUMENTO RECIBIDO]`):
@@ -162,27 +172,65 @@ Formato de Cotización Final:
         respuesta = llm.invoke(messages_to_ai)
         resp_content = respuesta.content
         
-        # --- LÓGICA DE INTERCEPTACIÓN "UPDATE_NAME" ---
+        # [NUEVO] LÓGICA DE ACTUALIZACIÓN DE DATOS Y ORDENES
+        # 1. Detectar nombres nuevos: [[UPDATE_NAME: Pedro]]
         import re
-        match = re.search(r"\[\[UPDATE_NAME:\s*(.*?)\]\]", resp_content)
-        if match:
-            nuevo_nombre = match.group(1).strip()
-            # 1. Actualizar DB
+        match_name = re.search(r"\[\[UPDATE_NAME:\s*(.*?)\]\]", resp_content)
+        if match_name:
+            nuevo_nombre = match_name.group(1).strip()
             print(f"🔄 Actualizando nombre lead {lead_id} a: {nuevo_nombre}")
             try:
                 supabase.table("leads").update({"name": nuevo_nombre}).eq("id", lead_id).execute()
+            except Exception as e: logger.error(f"Error update name: {e}")
+            resp_content = resp_content.replace(match_name.group(0), "").strip()
+
+        # 2. Detectar creación de orden: [[REGISTER_ORDER: {JSON}]]
+        match_order = re.search(r"\[\[REGISTER_ORDER:\s*(\{.*?\})\]\]", resp_content, re.DOTALL)
+        order_confirmation = ""
+        
+        if match_order:
+            try:
+                json_str = match_order.group(1)
+                order_data = json.loads(json_str)
+                logger.info(f"🆕 Intentando registrar orden: {order_data}")
+                
+                # a) Actualizar Lead con datos fiscales
+                lead_update = {}
+                if "rut" in order_data: lead_update["rut"] = order_data["rut"]
+                if "address" in order_data: lead_update["address"] = order_data["address"]
+                if "email" in order_data: lead_update["email"] = order_data["email"]
+                
+                if lead_update:
+                    supabase.table("leads").update(lead_update).eq("id", lead_id).execute()
+                
+                # b) Crear la Orden
+                new_order = {
+                    "lead_id": lead_id,
+                    "description": order_data.get("description", "Pedido General"),
+                    "total_amount": order_data.get("amount", 0),
+                    "status": "NUEVO"
+                }
+                res_order = supabase.table("orders").insert(new_order).execute()
+                order_id = res_order.data[0]['id']
+                
+                # Mensaje extra de confirmación
+                order_confirmation = f"\n\n✅ *Orden #{str(order_id)[:8]} Creada Exitosamente.*\nPasando a producción. 🚀"
+                
             except Exception as e:
-                logger.error(f"Error actualizando nombre: {e}")
+                logger.error(f"❌ Error creando orden: {e}")
+                order_confirmation = "\n\n(⚠️ Hubo un error registrando la orden en el sistema, pero he tomado nota)."
             
-            # 2. Limpiar etiqueta del mensaje visible
-            resp_content = resp_content.replace(match.group(0), "").strip()
+            # Limpiar el comando técnico del mensaje al usuario
+            resp_content = resp_content.replace(match_order.group(0), "").strip()
 
         # Guardar logs
         save_message_pro(lead_id, phone, "user", texto_completo)
-        save_message_pro(lead_id, phone, "assistant", resp_content)
+        save_message_pro(lead_id, phone, "assistant", resp_content + order_confirmation) # Logueamos lo que realmente se envió
         
-        # Enviar
-        enviar_whatsapp(phone, resp_content)
+        # Enviar (Mensaje limpio + Confirmación de orden si hubo)
+        final_msg = resp_content + order_confirmation
+        if final_msg: enviar_whatsapp(phone, final_msg)
+
 
     except Exception as e:
         logger.error(f"Error procesando bloque: {e}")
