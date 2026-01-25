@@ -7,7 +7,8 @@ from typing import List, Optional, Any, Dict
 from fastapi import FastAPI, Request, BackgroundTasks
 from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, ToolMessage
+from langchain_core.tools import tool
 from supabase import create_client, Client
 
 # Logging
@@ -80,171 +81,193 @@ def buscar_contexto(pregunta: str) -> str:
         return "\n\n---\n\n".join([item['content'] for item in response.data])
     except: return ""
 
+# --- TOOLS PARA EL AGENTE ---
+@tool
+def calculate_quote(product_type: str, quantity: int, sides: int = 1, finish: str = "normal", design_service: str = "none") -> str:
+    """
+    Calcula el precio EXACTO. USO OBLIGATORIO para dar precios.
+    Args:
+        product_type: 'tarjetas', 'flyers', 'pendon', 'foam'.
+        quantity: Cantidad (ej: 100, 1000).
+        sides: 1 o 2 (lados de impresión).
+        finish: 'normal' o 'polilaminado'.
+        design_service: 'none', 'basico' ($30k), 'medio' ($60k), 'complejo' ($180k).
+    Returns: Texto con el desglose y Total con IVA.
+    """
+    neto = 0
+    iva_incluido = False 
+    
+    # Lógica Hardcoded (Fuente de Verdad de Precios)
+    p_lower = product_type.lower()
+    
+    if "tarjeta" in p_lower:
+        if quantity == 100:
+            if finish == "polilaminado":
+                neto = 12000 if sides == 1 else 16000
+            else:
+                neto = 7000 if sides == 1 else 11000
+        elif quantity == 1000:
+            # 1000 Tarjetas
+            if sides == 1: 
+                neto = 23800 # Base aprox para llegar a ~28k con IVA
+            else: 
+                neto = 47600
+                
+            if finish == "polilaminado":
+                 neto += 4000 # Ajuste fino para coincidir con precios de mercado si es necesario
+    
+    elif "flyer" in p_lower:
+        if quantity == 1000:
+            iva_incluido = True
+            neto = 23800 if sides == 1 else 47600
+    
+    if neto == 0:
+        return f"⚠️ No tengo precio automático para {quantity} {product_type}. Revisa la base de conocimiento manual."
+
+    # Costo Diseño
+    costo_diseno = 0
+    if design_service == "basico": costo_diseno = 30000
+    elif design_service == "medio": costo_diseno = 60000
+    elif design_service == "complejo": costo_diseno = 180000
+    
+    # Cálculo Final
+    if iva_incluido:
+        total = neto + costo_diseno
+        detalle = f"Base (IVA Inc): ${neto:,} + Diseño: ${costo_diseno:,}"
+    else:
+        iva = int(neto * 0.19)
+        total = neto + iva + costo_diseno
+        detalle = f"Neto: ${neto:,} + IVA: ${iva:,} + Diseño: ${costo_diseno:,}"
+
+    return f"""
+    💰 COTIZACIÓN CALCULADA:
+    - Producto: {product_type} x {quantity} u.
+    - {detalle}
+    --------------------------------
+    💵 TOTAL FINAL: ${total:,} (IVA Incluido)
+    """
+
+@tool
+def register_order(description: str, amount: int, rut: str, address: str, email: str, has_file: bool, lead_id: str = "inject_me") -> str:
+    """
+    Registra la orden. 
+    Si no hay archivo y no contratan diseño, falla.
+    Args:
+        lead_id: SE INYECTA AUTOMATICAMENTE.
+        has_file: SE INYECTA AUTOMATICAMENTE.
+    """
+    # Validar si es un Servicio de Diseño real o solo mención
+    desc_lower = description.lower()
+    is_design_service = any(phrase in desc_lower for phrase in ["servicio de diseño", "diseño básico", "diseño medio", "diseño complejo", "creación de diseño", "costo diseño"])
+    
+    if not is_design_service and not has_file:
+        return "❌ ERROR: No se puede crear orden sin archivo adjunto. El cliente debe enviar el archivo O contratar un 'Servicio de Diseño'."
+
+    try:
+        # 1. Update Lead
+        supabase.table("leads").update({"rut": rut, "address": address, "email": email}).eq("id", lead_id).execute()
+        # 2. Create Order
+        new_order = {"lead_id": lead_id, "description": description, "total_amount": amount, "status": "NUEVO"}
+        res = supabase.table("orders").insert(new_order).execute()
+        return f"✅ Orden #{str(res.data[0]['id'])[:8]} Creada Exitosamente."
+    except Exception as e:
+        return f"Error DB: {str(e)}"
+
 async def procesar_y_responder(phone: str, mensajes_acumulados: List[str], push_name: str):
-    """Procesa el bloque completo de mensajes."""
+    """Procesa el bloque completo de mensajes usando Agentic Workflow."""
     try:
         texto_completo = " ".join(mensajes_acumulados)
         logger.info(f"🤖 Procesando bloque para {phone}: {texto_completo}")
         
         lead_id = get_or_create_lead(phone, push_name)
-        
-        # Recuperar nombre real del cliente desde la DB (por si ya lo teníamos guardado o es el push_name)
         lead_data = supabase.table("leads").select("name").eq("id", lead_id).execute()
         cliente_nombre = lead_data.data[0]['name'] if lead_data.data else "Cliente"
+        
+        # Verificar archivo reciente
+        last_logs = supabase.table("message_logs").select("content").eq("lead_id", lead_id).order("created_at", desc=True).limit(10).execute()
+        recent_txt = " ".join([m['content'] for m in last_logs.data])
+        # Check logs AND current text for files
+        has_file_context = "[IMAGEN RECIBIDA]" in recent_txt or "[DOCUMENTO RECIBIDO]" in recent_txt or "[IMAGEN RECIBIDA]" in texto_completo
         
         historial = get_chat_history_pro(lead_id)
         contexto = buscar_contexto(texto_completo)
         
-        # PROMPT REFINADO V6 (Flujo Conversacional Estricto + Anti-Markdown)
-        prompt = f"""
+        system_prompt = f"""
 Eres el Asistente Virtual Oficial de **Pitrón Beña Impresión**.
-Tu cliente actual es: **{cliente_nombre}**.
-Estilo: Breve, útil y profesional 🖨️.
+Cliente: **{cliente_nombre}**.
+Tiene Archivo: {"✅ SÍ" if has_file_context else "❌ NO"}.
 
-BASE DE CONOCIMIENTO:
+🧠 HERRAMIENTAS (USO OBLIGATORIO):
+1. `calculate_quote`: **ÚNICA FUENTE DE VERDAD PARA PRECIOS.**
+   - 🚫 NO uses precios que leas en la "Base de Conocimiento" o historial. Pueden ser antiguos.
+   - Si te preguntan "cuánto vale?", EJECUTA LA TOOL.
+2. `register_order`: Para cerrar la venta.
+
+📚 BASE DE CONOCIMIENTO (Solo para dudas técnicas, NO para precios):
 {contexto}
 
-🚨 GESTIÓN DE NOMBRES:
-- Tu cliente actual es: **{cliente_nombre}**.
-- Si el cliente se llama 'Cliente', es una prioridad amable saber su nombre. Integra la pregunta de forma natural en tu respuesta (ej: "Hola, ¿con quién tengo el gusto?").
-- Si detectas un nombre nuevo (ej: "Soy Pedro"), inicia con: `[[UPDATE_NAME: Pedro]]`.
+⛔ REGLAS DE SEGURIDAD:
+- **Regla de Archivos:**
+  - Si el cliente NO tiene archivo y NO contrata diseño -> 🚫 NO vendas. Pide el archivo.
+  - Si dice "tengo el diseño" -> Pídelo ("Por favor envíamelo por aquí"). NO crees la orden aún.
+  - Solo usa `register_order` si `has_file` es True o si contratan diseño explícitamente.
 
+📝 FLUJO DE ATENCIÓN:
+1. **Cliente pregunta precio:**
+   - Invoca `calculate_quote(product, quantity, ...)`.
+   - Responde CON el resultado de la tool.
 
-⛔ REGLAS DE FORMATO (CRÍTICAS):
-1. **JAMÁS uses #, ## o ### para títulos.** (Se ven horribles en WhatsApp).
-2. Usa **negritas (*texto*)** solo para resaltar el producto o precio final.
-3. Para listas usa emojis:
-   🔹 Opción A
-   🔹 Opción B
+2. **Cliente quiere comprar:**
+   - Pide: RUT, Nombre, Dirección, Email.
+   - Una vez recibidos, y si tienes el archivo/diseño -> `register_order`.
 
-⛔ REGLAS DE FLUJO COMERCIAL:
-1. **Preguntas de Precio ("¿Cuánto vale X?"):**
-   - 🛑 NO des el precio final aún.
-   - ❓ Pregunta primero: "¿Qué cantidad necesitas?" y "¿Tienes el diseño?".
+3. **Datos Transferencia:**
+   - Banco Santander, Cta Corriente 79-63175-2, RUT 15.355.843-4 (Luis Pitron).
 
-2. **Cliente Indeciso / Preguntas Generales ("¿Qué tipos tienen?"):**
-   - ✅ MUESTRA las opciones disponibles (ej: "Tenemos impresión por 1 lado, 2 lados, con polilaminado...").
-   - Usa una lista con emojis.
-   - Cierra preguntando: "¿Cuál de estas opciones te interesa cotizar?".
-
-3. **Cierre de Venta y Toma de Pedido:**
-   - 🛑 **REGLA DE ORO (DISEÑO/ARCHIVOS):**
-     - **CASO A: Cliente dice "Tengo el diseño":**
-       - 🚫 **JAMÁS** registres la orden sin recibir el archivo antes.
-       - Pregunta: "¿Me podrías enviar el diseño por aquí para revisarlo?".
-     - **CASO B: Cliente pide "Servicio de Diseño":**
-       - ✅ PUEDES registrar la orden sin archivo.
-       - 💰 DEBES sumar el costo del diseño al total (Básico: +$30.000, Medio: +$60.000).
-       - En la descripción de la orden pon: "Incluye Servicio de Diseño [Tipo]".
-
-   - 📋 **Paso 1: Datos Fiscales.** (Una vez resuelto el tema del diseño).
-     - RUT
-     - Nombre/Razón Social
-     - Dirección de despacho
-     - Email (para la factura)
-     
-   - ⚙️ **Paso 2: Registrar Orden.** 
-   - Comando: `[[REGISTER_ORDER: {{...}}]]`.
-   - Formato JSON: `{{ "description": "1000 Tarjetas + Diseño Básico", "amount": 45000, "rut": "...", "address": "...", "email": "..." }}`.
-   - 🚨 **VALIDACIÓN PRECIO:**
-     - 1000 Tarjetas (2 lados/mate) = $31.844 + IVA = $37.894 (aprox). REVISA TU LISTA DE PRECIOS.
-     - Diseño = Costo extra.
-   - NO digas "He registrado la orden". Confirma el total y di "Perfecto, estoy generando tu orden...".
-
-4. **Datos Bancarios**:
-   - ENTREGAR INMEDIATAMENTE si piden pagar o transfieren.
-   🏦 **Datos Transferencia:**
-   Banco: Santander
-   Tipo: Cta Corriente
-   N°: 79-63175-2
-   Titular: LUIS PITRON
-   RUT: 15.355.843-4
-   *(Favor enviar comprobante)*.
-
-
-5. **Recepción de Archivos/Diseños**:
-   - Si recibes una imagen (`[IMAGEN RECIBIDA]`) o documento (`[DOCUMENTO RECIBIDO]`):
-     - **Caso A (Contexto de Venta):** Si ya están en una conversación fluida sobre un pedido, confirma brevemente: "✅ He recibido tu archivo/diseño, lo revisaremos para continuar."
-     - **Caso B (Inicio de Chat / Sin contexto):** Si es el primer contacto o no hay un pedido claro, NO seas robótico. Saluda cordialmente, pregunta su nombre (si aún aparece como 'Cliente') y consulta en qué puedes ayudarle hoy. Confirma la recepción del archivo de forma muy secundaria.
-     - **Caso C (Comprobante):** Si el contexto indica que es un pago, agradece y menciona que el pedido pasará a producción una vez validado.
-
-
-Formato de Cotización Final:
-🪪 *Producto:* [Nombre]
-📦 *Cantidad:* [N]
-💰 *Neto:* $[Valor]
-🎨 *Diseño:* $[Valor]
-💵 *TOTAL:* $[Total con IVA] (IVA Inc.)
 """
         
-        system_img = SystemMessage(content=prompt)
-        messages_to_ai = [system_img] + historial + [HumanMessage(content=texto_completo)]
+        messages_to_ai = [SystemMessage(content=system_prompt)] + historial + [HumanMessage(content=texto_completo)]
         
-        respuesta = llm.invoke(messages_to_ai)
-        resp_content = respuesta.content
-        
-        # [NUEVO] LÓGICA DE ACTUALIZACIÓN DE DATOS Y ORDENES
-        # 1. Detectar nombres nuevos: [[UPDATE_NAME: Pedro]]
-        import re
-        match_name = re.search(r"\[\[UPDATE_NAME:\s*(.*?)\]\]", resp_content)
-        if match_name:
-            nuevo_nombre = match_name.group(1).strip()
-            print(f"🔄 Actualizando nombre lead {lead_id} a: {nuevo_nombre}")
-            try:
-                supabase.table("leads").update({"name": nuevo_nombre}).eq("id", lead_id).execute()
-            except Exception as e: logger.error(f"Error update name: {e}")
-            resp_content = resp_content.replace(match_name.group(0), "").strip()
+        # --- BIND TOOLS ---
+        llm_with_tools = llm.bind_tools([calculate_quote, register_order])
 
-        # 2. Detectar creación de orden: [[REGISTER_ORDER: {JSON}]]
-        match_order = re.search(r"\[\[REGISTER_ORDER:\s*(\{.*?\})\]\]", resp_content, re.DOTALL)
-        order_confirmation = ""
+        # --- BUCLE DE AGENTE (REACT LOOP) ---
+        # 1. Primera llamada al LLM
+        response = llm_with_tools.invoke(messages_to_ai)
+        messages_to_ai.append(response)
         
-        if match_order:
-            try:
-                json_str = match_order.group(1)
-                order_data = json.loads(json_str)
-                logger.info(f"🆕 Intentando registrar orden: {order_data}")
+        resp_content = response.content
+
+        # 2. Ejecutar Tools si las pide
+        if response.tool_calls:
+            for tool_call in response.tool_calls:
+                fn_name = tool_call["name"]
+                args = tool_call["args"]
+                logger.info(f"🛠️ Tool Call: {fn_name} {args}")
                 
-                # a) Actualizar Lead con datos fiscales
-                lead_update = {}
-                if "rut" in order_data: lead_update["rut"] = order_data["rut"]
-                if "address" in order_data: lead_update["address"] = order_data["address"]
-                if "email" in order_data: lead_update["email"] = order_data["email"]
+                res = "Error"
+                if fn_name == "calculate_quote":
+                    res = calculate_quote.invoke(args)
+                elif fn_name == "register_order":
+                    args["lead_id"] = lead_id
+                    # Le pasamos el contexto real de archivos al tool
+                    args["has_file"] = has_file_context
+                    res = register_order.invoke(args)
                 
-                if lead_update:
-                    supabase.table("leads").update(lead_update).eq("id", lead_id).execute()
-                
-                # b) Crear la Orden
-                new_order = {
-                    "lead_id": lead_id,
-                    "description": order_data.get("description", "Pedido General"),
-                    "total_amount": order_data.get("amount", 0),
-                    "status": "NUEVO"
-                }
-                res_order = supabase.table("orders").insert(new_order).execute()
-                order_id = res_order.data[0]['id']
-                
-                # Mensaje extra de confirmación
-                order_confirmation = f"\n\n✅ *Orden #{str(order_id)[:8]} Creada Exitosamente.*\nPasando a producción. 🚀"
-                
-            except Exception as e:
-                logger.error(f"❌ Error creando orden: {e}")
-                order_confirmation = "\n\n(⚠️ Hubo un error registrando la orden en el sistema, pero he tomado nota)."
+                # Añadir resultado al historial de la conversación actual
+                messages_to_ai.append(ToolMessage(tool_call_id=tool_call["id"], content=str(res)))
             
-            # Limpiar el comando técnico del mensaje al usuario
-            resp_content = resp_content.replace(match_order.group(0), "").strip()
-
-        # Guardar logs
-        save_message_pro(lead_id, phone, "user", texto_completo)
-        save_message_pro(lead_id, phone, "assistant", resp_content + order_confirmation) # Logueamos lo que realmente se envió
+            # 3. Segunda llamada al LLM (Respuesta Final interpretando la tool)
+            final_response = llm_with_tools.invoke(messages_to_ai)
+            resp_content = final_response.content
         
-        # Enviar (Mensaje limpio + Confirmación de orden si hubo)
-        final_msg = resp_content + order_confirmation
-        if final_msg: enviar_whatsapp(phone, final_msg)
-
+        # Guardar y Enviar
+        save_message_pro(lead_id, phone, "user", texto_completo)
+        save_message_pro(lead_id, phone, "assistant", resp_content)
+        if resp_content: enviar_whatsapp(phone, resp_content)
 
     except Exception as e:
-        logger.error(f"Error procesando bloque: {e}")
+        logger.error(f"Error Agente: {e}")
 
 # --- CONTROLADOR DEL BUFFER ---
 async def buffer_manager(phone: str, push_name: str):
