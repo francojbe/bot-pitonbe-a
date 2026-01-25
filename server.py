@@ -267,6 +267,12 @@ Tiene Archivo: {"✅ SÍ" if has_file_context else "❌ NO"}.
      - Si no tienes los datos (RUT, etc), responde: "✅ Archivo recibido correctamente. Ahora por favor indícame tus datos para la factura (RUT, Nombre, Dirección, Email) y procederé."
      - NO digas "no tengo el archivo" si ves el tag `[IMAGEN RECIBIDA]`.
 
+7. **Validación de Precio:**
+   - **NUNCA** inventes el precio en `register_order`.
+   - Antes de registrar, **DEBES** haber ejecutado `calculate_quote`.
+   - El `amount` en `register_order` DEBE ser EXACTAMENTE el valor retornado por la calculadora.
+   - Si no has calculado el precio, calcula primero, confirma con el cliente, y LUEGO registra.
+
 Formato de Cotización Final:
 🪪 *Producto:* [Nombre]
 📦 *Cantidad:* [N]
