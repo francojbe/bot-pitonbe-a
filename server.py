@@ -186,8 +186,18 @@ def register_order(description: str, amount: int, rut: str, address: str, email:
         return "❌ ERROR: No se puede crear orden sin archivo adjunto. El cliente debe enviar el archivo O contratar un 'Servicio de Diseño'."
 
     try:
-        # 1. Update Lead
-        supabase.table("leads").update({"rut": rut, "address": address, "email": email}).eq("id", lead_id).execute()
+        # Logs para depuración
+        print(f"📝 Registrando Orden - RUT: {rut} | Email: {email} | Addr: {address}")
+
+        # 1. Update Lead (PROTECTED: Don't overwrite with empty)
+        update_data = {}
+        if rut and rut.strip() not in ["", "None", "N/A"]: update_data["rut"] = rut
+        if address and address.strip() not in ["", "None", "N/A"]: update_data["address"] = address
+        if email and email.strip() not in ["", "None", "N/A"]: update_data["email"] = email
+        
+        if update_data:
+            supabase.table("leads").update(update_data).eq("id", lead_id).execute()
+
         # 2. Create Order
         new_order = {
             "lead_id": lead_id, 
