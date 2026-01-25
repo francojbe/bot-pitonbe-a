@@ -101,33 +101,46 @@ def calculate_quote(product_type: str, quantity: int, sides: int = 1, finish: st
     p_lower = product_type.lower()
     
     if "tarjeta" in p_lower:
-        base_1000_1lado = 23800
-        base_1000_2lados = 47600
+        # Precios Base Referencia
+        precio_100_1lado = 7000
+        precio_100_2lados = 11000
+        precio_1000_1lado = 23800
+        precio_1000_2lados = 47600
         
-        if quantity == 100:
-            if finish == "polilaminado":
-                neto = 12000 if sides == 1 else 16000
-            else:
-                neto = 7000 if sides == 1 else 11000
-        elif quantity >= 1000 and quantity % 1000 == 0:
-            # Multiples of 1000 (Linear scaling for simplicity or bulk discount logic)
-            factor = quantity // 1000
-            base = base_1000_2lados if sides == 2 else base_1000_1lado
-            neto = base * factor
-            
-            if finish == "polilaminado":
-                 neto += (4000 * factor)
+        # Ajuste Polilaminado Base
+        if finish == "polilaminado":
+            precio_100_1lado = 12000
+            precio_100_2lados = 16000
+            # Para 1000+, el polilaminado suma un extra fijo al millar base
+            # Ajuste en base 1000: (Neto base + Extra Polilaminado)
+            precio_1000_1lado = 23800 + 4000 
+            precio_1000_2lados = 47600 + 4000
+
+        if quantity < 100:
+             return "⚠️ La cantidad mínima es de 100 unidades."
+        
+        # Lógica de Precio Unitario Dinámico
+        if quantity < 1000:
+            # Usar precio unitario de la escala de 100
+            base = precio_100_2lados if sides == 2 else precio_100_1lado
+            unit_price = base / 100
         else:
-             return f"⚠️ La cantidad {quantity} no es estándar. Por favor cotiza manualmente con un humano."
+            # Usar precio unitario de la escala de 1000 (Más barato por volumen)
+            base = precio_1000_2lados if sides == 2 else precio_1000_1lado
+            unit_price = base / 1000
+            
+        neto = int(unit_price * quantity)
     
     elif "flyer" in p_lower:
-        if quantity >= 1000 and quantity % 1000 == 0:
-            iva_incluido = True
-            factor = quantity // 1000
-            base = 47600 if sides == 2 else 23800
-            neto = base * factor
-        else:
-             return f"⚠️ La cantidad {quantity} no es estándar. Por favor cotiza manualmente con un humano."
+        if quantity < 1000:
+             return "⚠️ Para Flyers la cantidad mínima recomendada es 1000 unidades. Para menos cantidad, cotiza como impresiones láser color."
+        
+        # Base Flyers 1000 u
+        base_1000 = 47600 if sides == 2 else 23800
+        unit_price = base_1000 / 1000
+        
+        iva_incluido = True # Flyers tienen lógica especial de IVA incluido en base según código anterior
+        neto = int(unit_price * quantity)
     
     if neto == 0:
         return f"⚠️ No tengo precio automático para {quantity} {product_type}. Revisa la base de conocimiento manual."
