@@ -136,8 +136,8 @@ BASE DE CONOCIMIENTO:
      - Email (para la factura)
      
    - ⚙️ **Paso 2: Registrar Orden.** 
-   - Una vez tengas los datos, EJECUTA la herramienta oculta `[[REGISTER_ORDER: {...}]]`.
-   - Formato JSON estricto: `{"description": "X Tarjetas", "amount": 15000, "rut": "...", "address": "...", "email": "..."}`.
+   - Una vez tengas los datos, EJECUTA la herramienta oculta `[[REGISTER_ORDER: {{...}}]]`.
+   - Formato JSON estricto: `{{ "description": "X Tarjetas", "amount": 15000, "rut": "...", "address": "...", "email": "..." }}`.
    - NO digas "He registrado la orden". Solo di "Perfecto, estoy generando tu orden..." y lanza el comando. El sistema enviará la confirmación automática.
 
 4. **Datos Bancarios**:
