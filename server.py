@@ -148,13 +148,14 @@ def calculate_quote(product_type: str, quantity: int, sides: int = 1, finish: st
     """
 
 @tool
-def register_order(description: str, amount: int, rut: str, address: str, email: str, has_file: bool, lead_id: str = "inject_me") -> str:
+def register_order(description: str, amount: int, rut: str, address: str, email: str, has_file: bool, files: List[str] = None, lead_id: str = "inject_me") -> str:
     """
     Registra la orden. 
     Si no hay archivo y no contratan diseño, falla.
     Args:
         lead_id: SE INYECTA AUTOMATICAMENTE.
         has_file: SE INYECTA AUTOMATICAMENTE.
+        files: Lista de URLs de archivos (inyectado automáticamente).
     """
     # Validar si es un Servicio de Diseño real o solo mención
     desc_lower = description.lower()
@@ -167,7 +168,13 @@ def register_order(description: str, amount: int, rut: str, address: str, email:
         # 1. Update Lead
         supabase.table("leads").update({"rut": rut, "address": address, "email": email}).eq("id", lead_id).execute()
         # 2. Create Order
-        new_order = {"lead_id": lead_id, "description": description, "total_amount": amount, "status": "NUEVO"}
+        new_order = {
+            "lead_id": lead_id, 
+            "description": description, 
+            "total_amount": amount, 
+            "status": "NUEVO",
+            "files_url": files if files else []
+        }
         res = supabase.table("orders").insert(new_order).execute()
         return f"✅ Orden #{str(res.data[0]['id'])[:8]} Creada Exitosamente."
     except Exception as e:
@@ -183,11 +190,17 @@ async def procesar_y_responder(phone: str, mensajes_acumulados: List[str], push_
         lead_data = supabase.table("leads").select("name").eq("id", lead_id).execute()
         cliente_nombre = lead_data.data[0]['name'] if lead_data.data else "Cliente"
         
-        # Verificar archivo reciente
+        # Verificar archivo reciente Y EXTRAER URL
         last_logs = supabase.table("message_logs").select("content").eq("lead_id", lead_id).order("created_at", desc=True).limit(10).execute()
         recent_txt = " ".join([m['content'] for m in last_logs.data])
-        # Check logs AND current text for files
-        has_file_context = "[IMAGEN RECIBIDA]" in recent_txt or "[DOCUMENTO RECIBIDO]" in recent_txt or "[IMAGEN RECIBIDA]" in texto_completo
+        
+        # Detectar presencia y URL
+        import re
+        url_match = re.search(r"((?:https?://|www\.)[^\s]+(?:\.jpg|\.png|\.pdf))", recent_txt + " " + texto_completo)
+        extracted_url = url_match.group(1) if url_match else None
+        
+        has_file_context = "[IMAGEN RECIBIDA" in recent_txt or "[DOCUMENTO RECIBIDO" in recent_txt or "[IMAGEN RECIBIDA" in texto_completo
+
         
         historial = get_chat_history_pro(lead_id)
         contexto = buscar_contexto(texto_completo)
@@ -252,6 +265,8 @@ Tiene Archivo: {"✅ SÍ" if has_file_context else "❌ NO"}.
                     args["lead_id"] = lead_id
                     # Le pasamos el contexto real de archivos al tool
                     args["has_file"] = has_file_context
+                    if has_file_context and extracted_url:
+                         args["files"] = [extracted_url]
                     res = register_order.invoke(args)
                 
                 # Añadir resultado al historial de la conversación actual
