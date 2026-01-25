@@ -225,14 +225,24 @@ async def procesar_y_responder(phone: str, mensajes_acumulados: List[str], push_
         last_logs = supabase.table("message_logs").select("content").eq("lead_id", lead_id).order("created_at", desc=True).limit(10).execute()
         recent_txt = " ".join([m['content'] for m in last_logs.data])
         
-        # Detectar presencia y URL
+        # Detectar presencia y URL de archivo
         import re
         url_match = re.search(r"((?:https?://|www\.)[^\s]+(?:\.jpg|\.png|\.pdf))", recent_txt + " " + texto_completo)
         extracted_url = url_match.group(1) if url_match else None
         
         has_file_context = "[IMAGEN RECIBIDA" in recent_txt or "[DOCUMENTO RECIBIDO" in recent_txt or "[IMAGEN RECIBIDA" in texto_completo
 
+        # EXTRACCIÓN INTELIGENTE DE DATOS DE CLIENTE (RUT/EMAIL) DEL HISTORIAL
+        # Para que no olvide datos dados hace 3 mensajes.
+        full_context_str = recent_txt + " " + texto_completo
         
+        found_rut = re.search(r"\b(\d{7,8}-[\dkK])\b", full_context_str)
+        found_email = re.search(r"[\w\.-]+@[\w\.-]+\.\w+", full_context_str)
+        
+        datos_detectados = ""
+        if found_rut or found_email:
+             datos_detectados = f"\n📋 DATOS DETECTADOS EN CHAT RECIENTE (ÚSALOS para registrar la orden si no te los dan ahora):\n- RUT: {found_rut.group(1) if found_rut else 'No detectado'}\n- Email: {found_email.group(0) if found_email else 'No detectado'}\n"
+
         historial = get_chat_history_pro(lead_id)
         contexto = buscar_contexto(texto_completo)
         
@@ -240,7 +250,7 @@ async def procesar_y_responder(phone: str, mensajes_acumulados: List[str], push_
 Eres el Asistente Virtual Oficial de **Pitrón Beña Impresión**.
 Cliente: **{cliente_nombre}**.
 Tiene Archivo: {"✅ SÍ" if has_file_context else "❌ NO"}.
-
+{datos_detectados}
 🧠 CÓMO USAR TU CONOCIMIENTO:
 1. **DESCUBRIMIENTO (RAG):**
    - Si el cliente es vago (ej: "necesito publicidad", "quiero imprimir"), **NO ASUMAS** el producto.
