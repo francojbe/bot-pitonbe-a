@@ -328,10 +328,21 @@ Formato de Cotización Final:
                     res = calculate_quote.invoke(args)
                 elif fn_name == "register_order":
                     args["lead_id"] = lead_id
-                    # Le pasamos el contexto real de archivos al tool
+                    # 1. Inyección de Archivos
                     args["has_file"] = has_file_context
                     if has_file_context and extracted_url:
                          args["files"] = [extracted_url]
+                    
+                    # 2. Inyección de Datos Fiscales (Recuperación de Memoria)
+                    # Si el LLM mandó campos vacíos, intentamos rellenar con lo que encontró el Regex en el historial
+                    if (not args.get("rut") or args["rut"] == "") and found_rut:
+                        args["rut"] = found_rut.group(1)
+                        logger.info(f"💉 Inyectando RUT recuperado: {args['rut']}")
+                    
+                    if (not args.get("email") or args["email"] == "") and found_email:
+                        args["email"] = found_email.group(0)
+                        logger.info(f"💉 Inyectando Email recuperado: {args['email']}")
+
                     res = register_order.invoke(args)
                 
                 # Añadir resultado al historial de la conversación actual
