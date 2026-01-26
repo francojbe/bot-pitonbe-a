@@ -64,11 +64,16 @@ def get_chat_history_pro(lead_id: str, limit: int = 10):
         return mensajes
     except: return []
 
-def save_message_pro(lead_id: str, phone: str, role: str, content: str, intent: str = None):
+def save_message_pro(lead_id: str, phone: str, role: str, content: str, intent: str = None, tokens: int = None):
     if not lead_id: return
     try:
         supabase.table("message_logs").insert({
-            "lead_id": lead_id, "phone_number": phone, "role": role, "content": content, "intent": intent
+            "lead_id": lead_id, 
+            "phone_number": phone, 
+            "role": role, 
+            "content": content, 
+            "intent": intent,
+            "tokens_used": tokens
         }).execute()
     except Exception as e: logger.error(f"Error save logs: {e}")
 
@@ -309,10 +314,17 @@ Formato de Cotización Final:
         # --- BIND TOOLS ---
         llm_with_tools = llm.bind_tools([calculate_quote, register_order])
 
-        # --- BUCLE DE AGENTE (REACT LOOP) ---
+        # 313. BUCLE DE AGENTE (REACT LOOP)
+        total_tokens = 0
+        
         # 1. Primera llamada al LLM
         response = llm_with_tools.invoke(messages_to_ai)
         messages_to_ai.append(response)
+        
+        # Acumular tokens primera llamada
+        if hasattr(response, 'response_metadata'):
+             usage = response.response_metadata.get('token_usage', {})
+             total_tokens += usage.get('total_tokens', 0)
         
         resp_content = response.content
 
@@ -334,7 +346,6 @@ Formato de Cotización Final:
                          args["files"] = [extracted_url]
                     
                     # 2. Inyección de Datos Fiscales (Recuperación de Memoria)
-                    # Si el LLM mandó campos vacíos, intentamos rellenar con lo que encontró el Regex en el historial
                     if (not args.get("rut") or args["rut"] == "") and found_rut:
                         args["rut"] = found_rut.group(1)
                         logger.info(f"💉 Inyectando RUT recuperado: {args['rut']}")
@@ -351,10 +362,16 @@ Formato de Cotización Final:
             # 3. Segunda llamada al LLM (Respuesta Final interpretando la tool)
             final_response = llm_with_tools.invoke(messages_to_ai)
             resp_content = final_response.content
+            
+            # Acumular tokens segunda llamada
+            if hasattr(final_response, 'response_metadata'):
+                 usage = final_response.response_metadata.get('token_usage', {})
+                 total_tokens += usage.get('total_tokens', 0)
         
         # Guardar y Enviar
         save_message_pro(lead_id, phone, "user", texto_completo)
-        save_message_pro(lead_id, phone, "assistant", resp_content)
+        save_message_pro(lead_id, phone, "assistant", resp_content, tokens=total_tokens)
+
         if resp_content: enviar_whatsapp(phone, resp_content)
 
     except Exception as e:
