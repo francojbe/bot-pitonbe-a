@@ -10,7 +10,10 @@ import {
   MapPin,
   CreditCard,
   FileText,
-  X
+  FileText,
+  X,
+  LayoutGrid,
+  List
 } from 'lucide-react'
 
 function App() {
@@ -53,6 +56,8 @@ function App() {
     'ENTREGADO': 'bg-gray-100 text-gray-800 border-gray-200'
   }
 
+  const [viewMode, setViewMode] = useState('grid') // 'grid' | 'list'
+
   const filteredOrders = filter === 'TODOS'
     ? orders
     : orders.filter(o => o.status === filter)
@@ -71,7 +76,7 @@ function App() {
               <span className="text-xs font-medium px-2 py-1 bg-gray-100 rounded-full text-gray-500">Admin</span>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-500">v1.0</span>
+              <span className="text-sm text-gray-500">v1.1</span>
             </div>
           </div>
         </div>
@@ -87,11 +92,22 @@ function App() {
             <p className="text-gray-500">Administra tus trabajos de impresión en tiempo real.</p>
           </div>
           <div className="flex gap-2">
-            <button className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 flex items-center gap-2">
-              <Filter size={16} /> Filtrar
-            </button>
+            <div className="bg-gray-100 p-1 rounded-lg flex gap-1">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded-md ${viewMode === 'grid' ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                <LayoutGrid size={18} />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded-md ${viewMode === 'list' ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                <List size={18} />
+              </button>
+            </div>
             <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 shadow-sm flex items-center gap-2">
-              <ClipboardList size={16} /> Nuevo Pedido Manual
+              <ClipboardList size={16} /> Nuevo Pedido
             </button>
           </div>
         </div>
@@ -119,7 +135,8 @@ function App() {
           <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-300">
             <p className="text-gray-500">No hay pedidos en esta categoría.</p>
           </div>
-        ) : (
+        ) : viewMode === 'grid' ? (
+          /* VISTA GRID (TARJETAS) */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredOrders.map(order => (
               <div
@@ -155,6 +172,60 @@ function App() {
                 </div>
               </div>
             ))}
+          </div>
+        ) : (
+          /* VISTA LISTA (TABLA) */
+          <div className="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID / Estado</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                  <th className="relative px-6 py-3"><span className="sr-only">Ver</span></th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredOrders.map(order => (
+                  <tr
+                    key={order.id}
+                    onClick={() => setSelectedOrder(order)}
+                    className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-mono text-gray-500">#{order.id.slice(0, 6)}</span>
+                        <span className={`mt-1 inline-flex w-fit items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusColors[order.status]}`}>
+                          {order.status}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm font-medium text-gray-900 line-clamp-1 max-w-xs" title={order.description}>
+                        {order.description}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{order.leads?.name || 'Cliente'}</div>
+                      <div className="text-xs text-gray-500">{order.leads?.phone_number}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                      ${order.total_amount?.toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(order.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button className="text-indigo-600 hover:text-indigo-900">
+                        <MoreHorizontal size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </main>
