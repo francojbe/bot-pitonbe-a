@@ -227,9 +227,21 @@ async def procesar_y_responder(phone: str, mensajes_acumulados: List[str], push_
         
         
         # Verificar archivo reciente Y EXTRAER URL
-        # Reducimos límite a 5 para evitar que tome imágenes de pedidos anteriores como válidas para el actual
-        last_logs = supabase.table("message_logs").select("content").eq("lead_id", lead_id).order("created_at", desc=True).limit(5).execute()
-        recent_txt = " ".join([m['content'] for m in last_logs.data])
+        # ESTRATEGIA: Basada en TIEMPO, no cantidad.
+        # Solo consideramos archivos válidos si se enviaron en los últimos 150 minutos (Sesión Activa)
+        last_logs = supabase.table("message_logs").select("content, created_at").eq("lead_id", lead_id).order("created_at", desc=True).limit(20).execute()
+        
+        recent_valid_content = []
+        from datetime import datetime, timedelta, timezone
+        ahora = datetime.now(timezone.utc)
+        
+        for msg in last_logs.data:
+            fecha_msg = datetime.fromisoformat(msg['created_at'].replace('Z', '+00:00'))
+            # Si el mensaje es de hace menos de 15 minutos, lo consideramos "Contexto Vivo"
+            if (ahora - fecha_msg).total_seconds() < 900: # 15 min = 900 seg
+                recent_valid_content.append(msg['content'])
+        
+        recent_txt = " ".join(recent_valid_content)
         
         # Detectar presencia y URL de archivo
         import re
