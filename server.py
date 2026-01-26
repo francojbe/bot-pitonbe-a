@@ -316,7 +316,6 @@ Formato de Cotización Final (ANTES de `register_order`):
 💵 *TOTAL:* $[Total con IVA] (IVA Inc.)
 
 ¿Todo correcto? (Espera confirmación de datos y precio)
-"""
 📝 FLUJO DE ATENCIÓN:
 1. **Cliente pregunta precio:**
    - Invoca `calculate_quote(product, quantity, ...)`.
