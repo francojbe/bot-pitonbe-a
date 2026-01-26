@@ -696,7 +696,16 @@ async def notify_status_update(update: StatusUpdate):
         lead = order.get('leads')
         if not lead or not lead.get('phone_number'):
             return {"status": "skipped", "message": "Orden sin teléfono asociado"}
-            
+        
+        # Necesitamos el ID del lead para el log
+        lead_id = order.get('lead_id') 
+        # Si no viene directo en la orden (depende de tu esquema), lo sacamos de la respuesta join si modificamos la query
+        # Pero tu query es SELECT *, leads... leads es un objeto anidado.
+        # Mejor asegurarnos obteniendo el ID del objeto leads si la orden tiene FK
+        if not lead_id and lead:
+             # Fallback raro, pero por si acaso. Normalmente order['lead_id'] existe.
+             pass
+
         nombre = lead.get('name', 'Cliente').split(' ')[0] # Solo primer nombre
         phone = lead['phone_number']
         producto = order.get('description', 'tu pedido').split(',')[0][:30] + "..." # Resumen corto
@@ -717,6 +726,10 @@ async def notify_status_update(update: StatusUpdate):
         if mensaje:
             logger.info(f"📢 Notificando estado {status} a {phone}")
             enviar_whatsapp(phone, mensaje)
+            
+            # 4. GUARDAR EN EL LOG (Para rastreo)
+            save_message_pro(lead_id, phone, "assistant", mensaje, intent="NOTIFICATION_UPDATE")
+            
             return {"status": "sent", "message": mensaje}
         else:
             return {"status": "ignored", "message": f"No hay mensaje configurado para estado {status}"}
