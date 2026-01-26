@@ -444,6 +444,19 @@ async def buffer_manager(phone: str, push_name: str):
         # Disparar procesamiento en background real
         await procesar_y_responder(phone, mensajes, push_name)
 
+# --- CONFIGURACIÓN FASTAPI ---
+app = FastAPI()
+
+# Configurar CORS para permitir peticiones del Dashboard
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Permitir todo por ahora para facilitar desarrollo local
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # --- WEBHOOK ---
 def enviar_whatsapp(numero: str, texto: str):
     try:
@@ -655,6 +668,61 @@ async def webhook_whatsapp(request: Request):
         message_buffer[numero]["timer"] = task
         
         return {"status": "buffered"}
+
+    except Exception as e:
+        logger.error(f"🔥 Error Webhook: {e}")
+        return {"status": "error"}
+
+@app.get("/")
+def health_check():
+    return {"status": "ok", "service": "Whatsapp Bot & API"}
+
+# --- ENDPOINT NOTIFICACIÓN ESTADOS ---
+class StatusUpdate(BaseModel):
+    order_id: str
+    new_status: str
+
+@app.post("/notify_update")
+async def notify_status_update(update: StatusUpdate):
+    """Endpoint llamado por el Dashboard cuando cambia un estado."""
+    try:
+        # 1. Obtener datos de la orden y el cliente
+        res = supabase.table("orders").select("*, leads(name, phone_number)").eq("id", update.order_id).execute()
+        if not res.data:
+            return {"status": "error", "message": "Orden no encontrada"}
+        
+        order = res.data[0]
+        lead = order.get('leads')
+        if not lead or not lead.get('phone_number'):
+            return {"status": "skipped", "message": "Orden sin teléfono asociado"}
+            
+        nombre = lead.get('name', 'Cliente').split(' ')[0] # Solo primer nombre
+        phone = lead['phone_number']
+        producto = order.get('description', 'tu pedido').split(',')[0][:30] + "..." # Resumen corto
+        status = update.new_status
+
+        # 2. Elegir Plantilla de Mensaje
+        mensaje = ""
+        if status == "DISEÑO":
+            mensaje = f"🎨 Hola {nombre}, te informamos que tu pedido de *{producto}* ha ingresado a la etapa de **DISEÑO**. Estamos revisando tus archivos."
+        elif status == "PRODUCCIÓN":
+            mensaje = f"⚙️ ¡Buenas noticias {nombre}! Tu pedido pasó a **PRODUCCIÓN** y ya se está imprimiendo/fabricando."
+        elif status == "LISTO":
+            mensaje = f"📦✨ ¡Tu pedido está **LISTO**! Puedes pasar a retirarlo a nuestro local en **Arturo Prat 230, Local 117**, Santiago Centro. Te esperamos."
+        elif status == "ENTREGADO":
+            mensaje = f"✅ ¡Gracias por tu compra {nombre}! Tu pedido figura como **ENTREGADO**. Esperamos verte pronto en Pitrón Beña Impresión."
+        
+        # 3. Enviar Mensaje
+        if mensaje:
+            logger.info(f"📢 Notificando estado {status} a {phone}")
+            enviar_whatsapp(phone, mensaje)
+            return {"status": "sent", "message": mensaje}
+        else:
+            return {"status": "ignored", "message": f"No hay mensaje configurado para estado {status}"}
+
+    except Exception as e:
+        logger.error(f"Error notificando estado: {e}")
+        return {"status": "error", "detail": str(e)}
 
     except Exception as e:
         logger.error(f"Error webhook: {e}")
