@@ -10,7 +10,6 @@ import {
   MapPin,
   CreditCard,
   FileText,
-  FileText,
   X,
   LayoutGrid,
   List
