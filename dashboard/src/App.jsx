@@ -47,6 +47,24 @@ function App() {
     setLoading(false)
   }
 
+  async function updateOrderStatus(newStatus) {
+    if (!selectedOrder) return
+
+    const { error } = await supabase
+      .from('orders')
+      .update({ status: newStatus })
+      .eq('id', selectedOrder.id)
+
+    if (error) {
+      console.error('Error updating status:', error)
+      alert('Error al actualizar el estado')
+    } else {
+      // Actualizar estado local para reflejar cambio inmediato
+      setOrders(orders.map(o => o.id === selectedOrder.id ? { ...o, status: newStatus } : o))
+      setSelectedOrder({ ...selectedOrder, status: newStatus })
+    }
+  }
+
   const statusColors = {
     'NUEVO': 'bg-blue-100 text-blue-800 border-blue-200',
     'DISEÑO': 'bg-purple-100 text-purple-800 border-purple-200',
@@ -237,9 +255,26 @@ function App() {
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 mb-1">Orden #{selectedOrder.id.slice(0, 8)}</h2>
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold border ${statusColors[selectedOrder.status]}`}>
-                    {selectedOrder.status}
-                  </span>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-sm text-gray-500">Estado:</span>
+                    <select
+                      value={selectedOrder.status}
+                      onChange={(e) => updateOrderStatus(e.target.value)}
+                      className={`
+                        px-3 py-1 rounded-full text-xs font-bold border outline-none cursor-pointer
+                        appearance-none pr-8 bg-no-repeat bg-[right_0.5rem_center]
+                        ${statusColors[selectedOrder.status]}
+                        hover:opacity-80 transition-opacity
+                      `}
+                      style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")` }}
+                    >
+                      {['NUEVO', 'DISEÑO', 'PRODUCCIÓN', 'LISTO', 'ENTREGADO'].map(st => (
+                        <option key={st} value={st} className="bg-white text-gray-900">
+                          {st}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 <button onClick={() => setSelectedOrder(null)} className="p-2 hover:bg-gray-100 rounded-full text-gray-500">
                   <X size={24} />
