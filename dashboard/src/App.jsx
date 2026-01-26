@@ -59,9 +59,26 @@ function App() {
       console.error('Error updating status:', error)
       alert('Error al actualizar el estado')
     } else {
-      // Actualizar estado local para reflejar cambio inmediato
+      // 1. Actualizar estado local
       setOrders(orders.map(o => o.id === selectedOrder.id ? { ...o, status: newStatus } : o))
       setSelectedOrder({ ...selectedOrder, status: newStatus })
+
+      // 2. Notificar al Cliente por WhatsApp (Backend)
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+        await fetch(`${apiUrl}/notify_update`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            order_id: selectedOrder.id,
+            new_status: newStatus
+          })
+        })
+        // Opcional: Mostrar toast de "Notificación Enviada"
+        console.log('Notificación de cambio de estado enviada.')
+      } catch (err) {
+        console.error('Error enviando notificación:', err)
+      }
     }
   }
 
