@@ -174,16 +174,11 @@ def calculate_quote(product_type: str, quantity: int, sides: int = 1, finish: st
     """
 
 @tool
-def register_order(description: str, amount: int, rut: str, address: str, email: str, has_file: bool, files: List[str] = None, lead_id: str = "inject_me") -> str:
+def register_order(description: str, amount: int, rut: str, address: str, email: str, has_file: bool, files: List[str] = None, lead_id: str = "inject_me", phone: str = None) -> str:
     """
-    Registra la orden. 
-    Si no hay archivo y no contratan diseño, falla.
-    Args:
-        lead_id: SE INYECTA AUTOMATICAMENTE.
-        has_file: SE INYECTA AUTOMATICAMENTE.
-        files: Lista de URLs de archivos (inyectado automáticamente).
+    Registra la orden y actualiza datos del cliente.
     """
-    # Validar si es un Servicio de Diseño real o solo mención
+    # Validar diseño
     desc_lower = description.lower()
     is_design_service = any(phrase in desc_lower for phrase in ["servicio de diseño", "diseño básico", "diseño medio", "diseño complejo", "creación de diseño", "costo diseño"])
     
@@ -192,16 +187,20 @@ def register_order(description: str, amount: int, rut: str, address: str, email:
 
     try:
         # Logs para depuración
-        print(f"📝 Registrando Orden - RUT: {rut} | Email: {email} | Addr: {address}")
+        print(f"📝 Registrando Orden - RUT: {rut} | Email: {email} | Addr: {address} | Phone: {phone}")
 
-        # 1. Update Lead (PROTECTED: Don't overwrite with empty)
+        # 1. Update Lead (Using PHONE for safety if available, else ID)
         update_data = {}
         if rut and rut.strip() not in ["", "None", "N/A"]: update_data["rut"] = rut
         if address and address.strip() not in ["", "None", "N/A"]: update_data["address"] = address
         if email and email.strip() not in ["", "None", "N/A"]: update_data["email"] = email
         
         if update_data:
-            supabase.table("leads").update(update_data).eq("id", lead_id).execute()
+            if phone:
+                res_upd = supabase.table("leads").update(update_data).eq("phone_number", phone).execute()
+                print(f"✅ Lead actualizado por teléfono: {len(res_upd.data)} filas.")
+            else:
+                supabase.table("leads").update(update_data).eq("id", lead_id).execute()
 
         # 2. Create Order
         new_order = {
@@ -241,12 +240,20 @@ async def procesar_y_responder(phone: str, mensajes_acumulados: List[str], push_
         # Para que no olvide datos dados hace 3 mensajes.
         full_context_str = recent_txt + " " + texto_completo
         
-        found_rut = re.search(r"\b(\d{7,8}-[\dkK])\b", full_context_str)
-        found_email = re.search(r"[\w\.-]+@[\w\.-]+\.\w+", full_context_str)
+        # Regex mejorados para capturar RUTs en medio de texto multilinea
+        import re
+        # RUT: 1-9 millones, con guion y digito verificador (k o numero)
+        found_rut = re.search(r"(\b\d{1,2}\.?\d{3}\.?\d{3}-[\dkK])", full_context_str)
+        # Email: Standard
+        found_email = re.search(r"([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})", full_context_str)
         
         datos_detectados = ""
         if found_rut or found_email:
-             datos_detectados = f"\n📋 DATOS DETECTADOS EN CHAT RECIENTE (ÚSALOS para registrar la orden si no te los dan ahora):\n- RUT: {found_rut.group(1) if found_rut else 'No detectado'}\n- Email: {found_email.group(0) if found_email else 'No detectado'}\n"
+             rut_val = found_rut.group(1) if found_rut else 'No detectado'
+             email_val = found_email.group(1) if found_email else 'No detectado'
+             datos_detectados = f"\n📋 DATOS DETECTADOS EN CHAT RECIENTE (ÚSALOS para registrar la orden si no te los dan ahora):\n- RUT: {rut_val}\n- Email: {email_val}\n"
+             # [DEBUG]
+             logger.info(f"🕵️‍♂️ DATOS DETECTADOS POR REGEX: RUT={rut_val}, EMAIL={email_val}")
 
         historial = get_chat_history_pro(lead_id)
         contexto = buscar_contexto(texto_completo)
@@ -340,6 +347,7 @@ Formato de Cotización Final:
                     res = calculate_quote.invoke(args)
                 elif fn_name == "register_order":
                     args["lead_id"] = lead_id
+                    args["phone"] = phone # SAFETY INJECTION
                     # 1. Inyección de Archivos
                     args["has_file"] = has_file_context
                     if has_file_context and extracted_url:
