@@ -225,8 +225,10 @@ async def procesar_y_responder(phone: str, mensajes_acumulados: List[str], push_
         lead_data = supabase.table("leads").select("name").eq("id", lead_id).execute()
         cliente_nombre = lead_data.data[0]['name'] if lead_data.data else "Cliente"
         
+        
         # Verificar archivo reciente Y EXTRAER URL
-        last_logs = supabase.table("message_logs").select("content").eq("lead_id", lead_id).order("created_at", desc=True).limit(10).execute()
+        # Reducimos límite a 5 para evitar que tome imágenes de pedidos anteriores como válidas para el actual
+        last_logs = supabase.table("message_logs").select("content").eq("lead_id", lead_id).order("created_at", desc=True).limit(5).execute()
         recent_txt = " ".join([m['content'] for m in last_logs.data])
         
         # Detectar presencia y URL de archivo
