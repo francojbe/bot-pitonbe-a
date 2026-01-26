@@ -29,6 +29,17 @@ INSTANCE_NAME = os.getenv("WHATSAPP_INSTANCE_NAME")
 
 # Inicializar
 app = FastAPI(title="WhatsApp RAG Bot Enterprise V2")
+
+# Configurar CORS para permitir peticiones del Dashboard
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
 llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0.1, openai_api_key=OPENAI_API_KEY) # Temp baja para matemáticas
@@ -445,18 +456,7 @@ async def buffer_manager(phone: str, push_name: str):
         # Disparar procesamiento en background real
         await procesar_y_responder(phone, mensajes, push_name)
 
-# --- CONFIGURACIÓN FASTAPI ---
-app = FastAPI()
 
-# Configurar CORS para permitir peticiones del Dashboard
-from fastapi.middleware.cors import CORSMiddleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"], # Permitir todo por ahora para facilitar desarrollo local
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # --- WEBHOOK ---
 def enviar_whatsapp(numero: str, texto: str):
