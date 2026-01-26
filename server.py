@@ -5,6 +5,7 @@ import logging
 import asyncio
 from typing import List, Optional, Any, Dict
 from fastapi import FastAPI, Request, BackgroundTasks
+from pydantic import BaseModel
 from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, ToolMessage
