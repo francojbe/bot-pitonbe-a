@@ -177,6 +177,9 @@ def calculate_quote(product_type: str, quantity: int, sides: int = 1, finish: st
 def register_order(description: str, amount: int, rut: str, address: str, email: str, has_file: bool, files: List[str] = None, lead_id: str = "inject_me", phone: str = None) -> str:
     """
     Registra la orden y actualiza datos del cliente.
+    
+    CRITICAL:
+    - amount: DEBE SER EL PRECIO TOTAL EN DINERO (CLP). (Ej: 16560). NO LA CANTIDAD DE PRODUCTOS.
     """
     # Validar diseño
     desc_lower = description.lower()
