@@ -65,7 +65,9 @@ function App() {
 
       // 2. Notificar al Cliente por WhatsApp (Backend)
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+        // Usar variable de entorno o el dominio final de producción
+        const apiUrl = import.meta.env.VITE_API_URL || 'https://recuperadora-agente-pb.nojauc.easypanel.host'
+
         await fetch(`${apiUrl}/notify_update`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
