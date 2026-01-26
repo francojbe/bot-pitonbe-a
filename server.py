@@ -225,9 +225,28 @@ async def procesar_y_responder(phone: str, mensajes_acumulados: List[str], push_
         logger.info(f"🤖 Procesando bloque para {phone}: {texto_completo}")
         
         lead_id = get_or_create_lead(phone, push_name)
-        lead_data = supabase.table("leads").select("name").eq("id", lead_id).execute()
-        cliente_nombre = lead_data.data[0]['name'] if lead_data.data else "Cliente"
-        
+        lead_data = supabase.table("leads").select("name, rut, email, address").eq("id", lead_id).execute()
+        if lead_data.data:
+            lead_row = lead_data.data[0]
+            cliente_nombre = lead_row.get('name') or "Cliente"
+            # Recuperamos datos guardados para el prompt
+            saved_rut = lead_row.get('rut')
+            saved_email = lead_row.get('email')
+            saved_address = lead_row.get('address')
+            
+            datos_guardados_txt = ""
+            if saved_rut:
+                datos_guardados_txt = f"""
+✅ DATOS CLIENTE REGISTRADOS:
+- RUT: {saved_rut}
+- Email: {saved_email}
+- Dirección: {saved_address}
+(Si el cliente confirma la compra, MUESTRA estos datos y pregunta si se mantienen. NO pidas todo de nuevo si ya lo tienes).
+"""
+        else:
+             cliente_nombre = "Cliente"
+             datos_guardados_txt = ""
+
         
         # Verificar archivo reciente Y EXTRAER URL
         # ESTRATEGIA: Basada en TIEMPO, no cantidad.
@@ -290,6 +309,7 @@ Eres el Asistente Virtual Oficial de **Pitrón Beña Impresión**.
 Cliente: **{cliente_nombre}**.
 Tiene Archivo: {"✅ SÍ" if has_file_context else "❌ NO"}.
 {datos_detectados}
+{datos_guardados_txt}
 🧠 CÓMO USAR TU CONOCIMIENTO:
 1. **DESCUBRIMIENTO (RAG):**
    - Si el cliente es vago (ej: "necesito publicidad", "quiero imprimir"), **NO ASUMAS** el producto.
