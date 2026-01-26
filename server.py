@@ -236,7 +236,17 @@ async def procesar_y_responder(phone: str, mensajes_acumulados: List[str], push_
         ahora = datetime.now(timezone.utc)
         
         for msg in last_logs.data:
-            fecha_msg = datetime.fromisoformat(msg['created_at'].replace('Z', '+00:00'))
+            ts_str = msg['created_at']
+            # Fix robusto para ISO format en Python < 3.11
+            try:
+                if ts_str.endswith('Z'):
+                    ts_str = ts_str.replace('Z', '+00:00')
+                fecha_msg = datetime.fromisoformat(ts_str)
+            except ValueError:
+                # Fallback: Quitar microsegundos y zona si falla
+                ts_str = ts_str.split('.')[0] 
+                fecha_msg = datetime.strptime(ts_str, "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
+
             # Si el mensaje es de hace menos de 15 minutos, lo consideramos "Contexto Vivo"
             if (ahora - fecha_msg).total_seconds() < 900: # 15 min = 900 seg
                 recent_valid_content.append(msg['content'])
