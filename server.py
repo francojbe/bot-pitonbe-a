@@ -723,10 +723,3 @@ async def notify_status_update(update: StatusUpdate):
     except Exception as e:
         logger.error(f"Error notificando estado: {e}")
         return {"status": "error", "detail": str(e)}
-
-    except Exception as e:
-        logger.error(f"Error webhook: {e}")
-        return {"status": "error"}
-
-@app.get("/")
-def health(): return {"status": "online", "buffer": "active"}
