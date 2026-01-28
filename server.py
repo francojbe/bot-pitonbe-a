@@ -61,12 +61,14 @@ def get_or_create_lead(phone: str, push_name: str = None) -> str:
             response = supabase.table("leads").insert(new_lead).execute()
             return response.data[0]['id']
     except Exception as e:
-        logger.error(f"Error Lead: {e}")
+        logger.error(f"❌ Error crítico en get_or_create_lead para {phone}: {e}")
         return None
 
 # --- HISTORIAL Y LOGS ---
 def get_chat_history_pro(lead_id: str, limit: int = 10):
-    if not lead_id: return []
+    if not lead_id or lead_id == "None": 
+        logger.warning(f"⚠️ get_chat_history_pro: lead_id es nulo")
+        return []
     try:
         response = supabase.table("message_logs").select("role, content").eq("lead_id", lead_id).order("created_at", desc=True).limit(limit).execute()
         mensajes = []
@@ -74,9 +76,11 @@ def get_chat_history_pro(lead_id: str, limit: int = 10):
             if msg['role'] == 'user': mensajes.append(HumanMessage(content=msg['content']))
             else: mensajes.append(AIMessage(content=msg['content']))
         return mensajes
-    except: return []
+    except Exception as e: 
+        logger.error(f"❌ Error recuperando historial: {e}")
+        return []
 
-def save_message_pro(lead_id: str, phone: str, role: str, content: str, intent: str = None, tokens: int = None):
+def save_message_pro(lead_id: str, phone: str, role: str, content: str, intent: str = None, tokens: int = None, metadata: dict = None):
     if not lead_id: return
     try:
         supabase.table("message_logs").insert({
@@ -85,7 +89,8 @@ def save_message_pro(lead_id: str, phone: str, role: str, content: str, intent: 
             "role": role, 
             "content": content, 
             "intent": intent,
-            "tokens_used": tokens
+            "tokens_used": tokens,
+            "metadata": metadata or {}
         }).execute()
     except Exception as e: logger.error(f"Error save logs: {e}")
 
@@ -237,6 +242,10 @@ async def procesar_y_responder(phone: str, mensajes_acumulados: List[str], push_
         logger.info(f"🤖 Procesando bloque para {phone}: {texto_completo}")
         
         lead_id = get_or_create_lead(phone, push_name)
+        if not lead_id:
+            logger.error(f"🚫 No se pudo cargar/crear el lead para {phone}. Abortando respuesta.")
+            return
+
         lead_data = supabase.table("leads").select("name, rut, email, address").eq("id", lead_id).execute()
         if lead_data.data:
             lead_row = lead_data.data[0]
@@ -368,7 +377,8 @@ Formato de Cotización Final (ANTES de `register_order`):
 
 2. **Cliente quiere comprar:**
    - Pide: RUT, Nombre, Dirección, Email.
-   - Una vez recibidos, y si tienes el archivo/diseño -> `register_order`.
+   - **IMPORTANTE:** Cuando uses `register_order`, el campo `amount` debe ser el **PRECIO TOTAL EN PESOS (CLP)** que obtuviste de `calculate_quote`, NO la cantidad de productos.
+   - Una vez recibidos todos los datos y si tienes el archivo/diseño -> `register_order`.
 
 3. **Datos Transferencia:**
    - Banco Santander, Cta Corriente 79-63175-2, RUT 15.355.843-4 (Luis Pitron).
@@ -436,10 +446,13 @@ Formato de Cotización Final (ANTES de `register_order`):
                  total_tokens += usage.get('total_tokens', 0)
         
         # Guardar y Enviar
-        save_message_pro(lead_id, phone, "user", texto_completo)
-        save_message_pro(lead_id, phone, "assistant", resp_content, tokens=total_tokens)
+        meta_envio = {}
+        if resp_content: 
+            status_envio = enviar_whatsapp(phone, resp_content)
+            meta_envio = {"whatsapp_delivery": status_envio}
 
-        if resp_content: enviar_whatsapp(phone, resp_content)
+        save_message_pro(lead_id, phone, "user", texto_completo)
+        save_message_pro(lead_id, phone, "assistant", resp_content, tokens=total_tokens, metadata=meta_envio)
 
     except Exception as e:
         logger.error(f"Error Agente: {e}")
@@ -458,19 +471,47 @@ async def buffer_manager(phone: str, push_name: str):
 
 
 
-# --- WEBHOOK ---
-def enviar_whatsapp(numero: str, texto: str):
+# --- COMUNICACIÓN EXTERNA ---
+def enviar_whatsapp(numero: str, texto: str) -> dict:
+    """Envía un mensaje de texto vía Evolution API y retorna el status."""
+    result = {"status": "unknown", "code": 0}
     try:
         base_url = EVOLUTION_API_URL.rstrip('/')
         from urllib.parse import quote
         instance_encoded = quote(INSTANCE_NAME)
         url = f"{base_url}/message/sendText/{instance_encoded}"
+        
         payload = {
-            "number": numero, "options": {"delay": 1000, "presence": "composing"},
-            "textMessage": {"text": texto}, "text": texto
+            "number": numero, 
+            "options": {"delay": 1000, "presence": "composing"},
+            "textMessage": {"text": texto}, 
+            "text": texto
         }
-        requests.post(url, json=payload, headers={"apikey": EVOLUTION_API_KEY, "Content-Type": "application/json"})
-    except Exception as e: logger.error(f"Error envío WA: {e}")
+        
+        logger.info(f"📤 Intentando enviar WA a {numero}...")
+        response = requests.post(
+            url, 
+            json=payload, 
+            headers={"apikey": EVOLUTION_API_KEY, "Content-Type": "application/json"},
+            timeout=15
+        )
+        
+        result["code"] = response.status_code
+        if response.status_code in [200, 201]:
+            logger.info(f"✅ WA enviado exitosamente a {numero}")
+            result["status"] = "success"
+            result["evolution_id"] = response.json().get("key", {}).get("id")
+        else:
+            logger.error(f"❌ Error Evolution API ({response.status_code}): {response.text}")
+            result["status"] = "error"
+            result["response"] = response.text
+            
+    except Exception as e: 
+        logger.error(f"🔥 Error crítico envío WA: {e}")
+        result["status"] = "exception"
+        result["error"] = str(e)
+    
+    return result
 
 @app.post("/webhook")
 async def webhook_whatsapp(request: Request):
@@ -687,28 +728,27 @@ class StatusUpdate(BaseModel):
 async def notify_status_update(update: StatusUpdate):
     """Endpoint llamado por el Dashboard cuando cambia un estado."""
     try:
+        logger.info(f"🔔 Recibida notificación de estado: Order {update.order_id} -> {update.new_status}")
+        
         # 1. Obtener datos de la orden y el cliente
         res = supabase.table("orders").select("*, leads(name, phone_number)").eq("id", update.order_id).execute()
         if not res.data:
+            logger.warning(f"⚠️ Orden {update.order_id} no encontrada en DB")
             return {"status": "error", "message": "Orden no encontrada"}
         
         order = res.data[0]
         lead = order.get('leads')
         if not lead or not lead.get('phone_number'):
+            logger.warning(f"⚠️ Orden {update.order_id} no tiene lead o teléfono")
             return {"status": "skipped", "message": "Orden sin teléfono asociado"}
         
-        # Necesitamos el ID del lead para el log
-        lead_id = order.get('lead_id') 
-        # Si no viene directo en la orden (depende de tu esquema), lo sacamos de la respuesta join si modificamos la query
-        # Pero tu query es SELECT *, leads... leads es un objeto anidado.
-        # Mejor asegurarnos obteniendo el ID del objeto leads si la orden tiene FK
-        if not lead_id and lead:
-             # Fallback raro, pero por si acaso. Normalmente order['lead_id'] existe.
-             pass
-
-        nombre = lead.get('name', 'Cliente').split(' ')[0] # Solo primer nombre
+        lead_id = order.get('lead_id')
+        nombre = lead.get('name', 'Cliente').split(' ')[0]
         phone = lead['phone_number']
-        producto = order.get('description', 'tu pedido').split(',')[0][:30] + "..." # Resumen corto
+        
+        # Limpieza de descripción para el mensaje
+        desc = order.get('description', 'tu pedido')
+        producto = (desc[:37] + "...") if len(desc) > 40 else desc
         status = update.new_status
 
         # 2. Elegir Plantilla de Mensaje
@@ -724,16 +764,16 @@ async def notify_status_update(update: StatusUpdate):
         
         # 3. Enviar Mensaje
         if mensaje:
-            logger.info(f"📢 Notificando estado {status} a {phone}")
-            enviar_whatsapp(phone, mensaje)
+            status_envio = enviar_whatsapp(phone, mensaje)
             
             # 4. GUARDAR EN EL LOG (Para rastreo)
-            save_message_pro(lead_id, phone, "assistant", mensaje, intent="NOTIFICATION_UPDATE")
+            save_message_pro(lead_id, phone, "assistant", mensaje, intent="NOTIFICATION_UPDATE", metadata={"whatsapp_delivery": status_envio})
             
-            return {"status": "sent", "message": mensaje}
+            return {"status": "sent", "message": mensaje, "delivery": status_envio}
         else:
+            logger.info(f"ℹ️ Estado {status} no configurado para notificación automática.")
             return {"status": "ignored", "message": f"No hay mensaje configurado para estado {status}"}
 
     except Exception as e:
-        logger.error(f"Error notificando estado: {e}")
+        logger.error(f"🔥 Error en notify_status_update: {e}")
         return {"status": "error", "detail": str(e)}
