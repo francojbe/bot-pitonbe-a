@@ -555,12 +555,11 @@ def enviar_documento_wa(numero: str, archivo_bytes: bytes, filename: str, captio
         
         payload = {
             "number": numero,
-            "mediaMessage": {
-                "mediaType": "document",
-                "fileName": filename,
-                "caption": caption,
-                "media": base64_data
-            }
+            "mediatype": "document",
+            "mimetype": "application/pdf",
+            "caption": caption,
+            "media": base64_data,
+            "fileName": filename
         }
         
         logger.info(f"📄 Intentando enviar PDF a {numero}...")
