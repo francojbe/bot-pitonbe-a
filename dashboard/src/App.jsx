@@ -92,7 +92,15 @@ function App() {
     'ENTREGADO': 'bg-gray-100 text-gray-800 border-gray-200'
   }
 
-  const [viewMode, setViewMode] = useState('grid') // 'grid' | 'list'
+  // Estado de vista con persistencia
+  const [viewMode, setViewMode] = useState(() => {
+    return localStorage.getItem('dashboard_view_mode') || 'list'
+  })
+
+  // Guardar preferencia de vista cuando cambie
+  useEffect(() => {
+    localStorage.setItem('dashboard_view_mode', viewMode)
+  }, [viewMode])
 
   const filteredOrders = filter === 'TODOS'
     ? orders
