@@ -1,103 +1,79 @@
-# PB Imprenta SPA - Base de Conocimiento
+# PB Imprenta SPA - Base de Conocimiento Oficial
 
-## Información general
-PB Imprenta SPA, también conocida como Pitrón Beña, es una imprenta profesional dedicada a la impresión digital, diseño gráfico y terminaciones personalizadas. Atiende tanto a empresas como a clientes particulares. Su local está ubicado en Santiago Centro, Chile, y ofrece una atención cercana y rápida, incluyendo servicios express.
+## Información General y Ubicación
+PB Imprenta SPA (Pitrón Beña) es una imprenta profesional en Santiago Centro, Chile.
+- **Dirección**: Arturo Prat 230, Local 117.
+- **Referencia**: Entre Tarapacá y Eleuterio Ramírez, cerca de Metro Universidad de Chile.
+- **Horario de Atención**: 
+  - Lunes a Viernes: 08:00 a 18:00 hrs.
+  - Sábado: 09:00 a 17:00 hrs.
+  - Colación: 14:00 a 15:00 hrs (Cerrado).
 
-## Ubicación
-- **Dirección**: Arturo Prat 230, Local 117, Santiago Centro, Región Metropolitana.
-- **Referencia**: Entre las calles Tarapacá y Eleuterio Ramírez, cerca del Metro Universidad de Chile.
+## Regla de Oro: Aprobación para Impresión
+- **Obligatorio**: El cliente debe indicar explícitamente la palabra "**APROBADO**".
+- **Responsabilidad**: Antes de aprobar, el cliente debe revisar cuidadosamente textos, ortografía e imágenes. Una vez aprobado, el cliente asume la responsabilidad total.
+- Sin la palabra "APROBADO", no se inicia el trabajo.
 
-## Horario de atención
-- **Lunes a viernes**: 08:00 a 18:00 horas.
-- **Sábados**: 09:00 a 17:00 horas.
-- **Colación**: 14:00 a 15:00 horas (local cerrado temporalmente).
+## Servicios de Diseño Gráfico
 
-## Productos
+### Diseño Gratuito (Cortesía)
+- **Requisito**: El cliente envía bosquejo, colores o imagen de referencia clara.
+- **Formato**: Se envía foto/imagen para revisión. Incluye hasta **3 cambios**.
+- **Restricción**: El archivo queda guardado en la imprenta. Si el cliente lo requiere para uso externo, debe pagar su valor (ver Servicios Pagados).
 
-### Tarjetas de presentación
-- **Descripción**: Tarjetas personalizadas con distintas opciones de impresión y acabado.
-- **Tiempo estimado de entrega**: 3 a 4 días hábiles.
-- **Precios (valores sin IVA)**:
-  - 100 unidades, impresión a un lado: $7.000
-  - 100 unidades, impresión a dos lados: $11.000
-  - 100 unidades, un lado con polilaminado brillante u opaco: $12.000
-  - 100 unidades, dos lados con polilaminado brillante u opaco: $16.000
-- **Notas**: Se pueden cotizar cantidades mayores o acabados especiales.
+### Diseño Pagado (Tarifas)
+- **Básico ($30.000 + IVA)**: Basado en bosquejo. 3 cambios. Entrega en .JPG.
+- **Medio ($60.000 + IVA)**: Incluye búsqueda de imágenes de alta calidad. 3 cambios. Entrega en .JPG y .PDF.
+- **Complejo ($180.000 + IVA)**: Diseño desde cero o a criterio del equipo. 3 propuestas iniciales (se elige 1). Hasta 6 cambios. Entrega en .JPG, .PDF y Editable.
 
-### Flyers o volantes publicitarios
-- **Descripción**: Flyers para publicidad o eventos, disponibles en formatos express, estándar y 1 día.
-- **Opciones y Precios**:
-  - **Entrega rápida (1 hora)**:
-    - 100 flyers tamaño 10x15 cm, impresión a un lado: $12.800 (IVA incluido).
-    - *Requisito*: Requiere archivo final listo, con márgenes y medidas correctas.
-  - **Entrega estándar (3 a 4 días hábiles, IVA incluido)**:
-    - 1.000 unidades 10x14 cm, un lado: $23.800
-    - 1.000 unidades 10x14 cm, dos lados: $47.600
-    - 1.000 unidades 20x14 cm (media carta), un lado: $47.600
-    - 1.000 unidades 20x14 cm (media carta), dos lados: $95.200
-    - 1.000 unidades 20x28 cm (tipo carta), un lado: $95.200
-    - 1.000 unidades 20x28 cm (tipo carta), dos lados: $190.400
-  - **Entrega en 1 día**:
-    - 1.000 flyers tamaño 10x15 cm, un lado: $72.200 + IVA.
+## Catálogo de Productos y Precios
 
-### Pendones roller
-- **Descripción**: Material publicitario vertical con estructura incluida, ideal para exhibiciones y ferias.
-- **Precios (valores sin IVA)**:
-  - 80x200 cm: $47.000
-  - 90x200 cm: $57.000
-  - 100x200 cm: $68.000
-  - 120x200 cm: $98.000
-  - 150x200 cm: $134.160
-  - 200x200 cm: $260.000
-  - 250x200 cm: $304.541
-  - 300x200 cm: $465.114
-- **Notas**: Incluye estructura. Tamaños personalizados bajo cotización.
+### Tarjetas de Presentación (100 unidades)
+*Precios Nettos (+ IVA)*
+- 1 Lado: $7.000
+- 2 Lados: $11.000
+- 1 Lado + Polilaminado (Mate/Brillo): $12.000
+- 2 Lados + Polilaminado (Mate/Brillo): $16.000
 
-### Impresiones en foam light o foam comprimido (trovicel)
-- **Descripción**: Impresiones sobre foam light o foam comprimido, ideales para carteles, paneles rígidos y señalética.
-- **Precios (valores sin IVA)**:
-  - **Tamaño carta o menor**:
-    - 1 a 9 unidades: $3.000 c/u
-    - 10 a 19 unidades: $2.500 c/u
-    - 20 a 29 unidades: $2.300 c/u
-    - 30 a 50 unidades: $2.000 c/u
-  - **Tamaño 33x48 cm**: $6.000 + IVA
-  - **Impresión tamaño carta en papel couché 170–300 g con plastificado**: $1.785 c/u
+### Flyers o Volantes
 
-## Servicios
+#### Express (Entrega en 1 Hora)
+- 100 unidades (10x15 cm): $12.800 (Requiere diseño listo con márgenes).
 
-### Diseño gráfico
-PB Imprenta ofrece servicio de diseño gráfico gratuito y pagado.
-- **Diseño gratuito**:
-  - El cliente debe enviar un bosquejo, imagen de referencia y colores deseados.
-  - Se envía una imagen para aprobación por WhatsApp.
-  - Incluye hasta tres cambios.
-  - El archivo queda archivado en PB Imprenta.
-  - El archivo editable tiene un costo adicional si el cliente lo solicita.
-- **Diseño pagado**:
-  - **Básico ($30.000)**: Cliente entrega imagen o bosquejo más colores. Tres cambios. Entrega en formato JPG.
-  - **Medio ($60.000)**: PB Imprenta busca imágenes si las entregadas no sirven. Tres cambios. Entrega en JPG y PDF.
-  - **Complejo ($180.000)**: Diseño desde cero, incluye búsqueda de imágenes, tres propuestas y seis cambios. Entrega en JPG, PDF y editable. Cambios extra pueden duplicar el valor.
+#### Estándar (Entrega 3-4 días hábiles)
+*Valores con IVA Incluido*
+- 1.000 unidades (10x14 cm) - 1 Lado: $23.800
+- 1.000 unidades (10x14 cm) - 2 Lados: $47.600
+- 1.000 unidades (20x14 cm media carta) - 1 Lado: $47.600
+- 1.000 unidades (20x14 cm media carta) - 2 Lados: $95.200
+- 1.000 unidades (20x28 cm carta) - 1 Lado: $95.200
+- 1.000 unidades (20x28 cm carta) - 2 Lados: $190.400
 
-### Bodegaje
-- **Descripción**: Los trabajos no retirados se trasladan a bodega para evitar daños o pérdidas.
-- **Costo**: $1.000 diarios.
-- **Condiciones**: Si el trabajo no se retira en un tiempo prolongado, PB Imprenta puede desechar o reciclar el material.
+#### Otros Flyers
+- 1.000 unidades (10x15 cm) - 1 Lado (Entrega 1 día): $72.200 + IVA.
 
-## Políticas y Procedimientos
+### Pendón Roller (Incluye Estructura)
+*Valores Nettos (+ IVA)*
+- 80 x 200 cm: $47.000
+- 90 x 200 cm: $57.000
+- 100 x 200 cm: $68.000
+- 120 x 200 cm: $98.000
+- 150 x 200 cm: $134.160
+- 200 x 200 cm: $260.000
+- 250 x 200 cm: $304.541
+- 300 x 200 cm: $465.114
 
-### Aprobación de diseño
-- Antes de imprimir, el cliente debe revisar cuidadosamente el diseño, textos e imágenes.
-- Para confirmar la impresión, debe enviar la palabra “APROBADO” por WhatsApp o mensaje.
-- Una vez aprobado, PB Imprenta no se responsabiliza por errores en el contenido.
+### Foam Light / Trovicel (PANELES RÍGIDOS)
+*Valores Nettos (+ IVA)*
+- **Tamaño Carta o Menor**:
+  - 1-9 un: $3.000 c/u
+  - 10-19 un: $2.500 c/u
+  - 20-29 un: $2.300 c/u
+  - 30-50 un: $2.000 c/u
+- **Tamaño 33x48 cm**: $6.000 c/u.
 
-### Políticas generales
-- Todos los valores están sujetos a IVA (salvo donde se indique lo contrario o precios netos).
-- Los tiempos de entrega pueden variar según el tipo de trabajo.
-- PB Imprenta trabaja con archivos finales listos para impresión.
-- Se recomienda enviar archivos con márgenes y medidas correctas.
-- Se pueden solicitar cotizaciones personalizadas para trabajos especiales.
+### Impresiones en Papel Couché
+- Tamaño Carta (Couché 170g o 300g) + Plastificado: $1.785 c/u (Neto).
 
-## Contacto
-- **Servicios**: Impresión integral, diseño y publicidad.
-- **Canales**: Cotizaciones, envío de archivos o asesoría por WhatsApp.
+## Retiro y Logística
+- **Bodegaje**: Trabajos no retirados oportunamente tienen un costo de **$1.000 diarios**. Esto protege el material de daños.

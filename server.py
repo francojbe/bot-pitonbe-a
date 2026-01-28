@@ -105,67 +105,89 @@ def buscar_contexto(pregunta: str) -> str:
 
 # --- TOOLS PARA EL AGENTE ---
 @tool
-def calculate_quote(product_type: str, quantity: int, sides: int = 1, finish: str = "normal", design_service: str = "none") -> str:
+def calculate_quote(product_type: str, quantity: int, sides: int = 1, finish: str = "normal", design_service: str = "none", size: str = "estandar") -> str:
     """
     Calcula el precio EXACTO. USO OBLIGATORIO para dar precios.
     Args:
         product_type: 'tarjetas', 'flyers', 'pendon', 'foam'.
-        quantity: Cantidad (ej: 100, 1000).
+        quantity: Cantidad (unidades).
         sides: 1 o 2 (lados de impresión).
         finish: 'normal' o 'polilaminado'.
         design_service: 'none', 'basico' ($30k), 'medio' ($60k), 'complejo' ($180k).
-    Returns: Texto con el desglose y Total con IVA.
+        size: '10x14', '20x14' (media carta), '20x28' (carta), '80x200', '90x200', etc.
+    Returns: Texto con el desglose, Total con IVA y Tiempo de Entrega.
     """
     neto = 0
     iva_incluido = False 
+    plazo = "Consultar"
     
-    # Lógica Hardcoded (Fuente de Verdad de Precios)
     p_lower = product_type.lower()
+    s_lower = size.lower()
     
+    # 1. TARJETAS
     if "tarjeta" in p_lower:
-        # Precios Base Referencia
+        plazo = "3 a 4 días hábiles"
         precio_100_1lado = 7000
         precio_100_2lados = 11000
-        precio_1000_1lado = 23800
-        precio_1000_2lados = 47600
-        
-        # Ajuste Polilaminado Base
         if finish == "polilaminado":
             precio_100_1lado = 12000
             precio_100_2lados = 16000
-            # Para 1000+, el polilaminado suma un extra fijo al millar base
-            # Ajuste en base 1000: (Neto base + Extra Polilaminado)
-            precio_1000_1lado = 23800 + 4000 
-            precio_1000_2lados = 47600 + 4000
+        
+        # Escala unitaria basada en 100u
+        base = precio_100_2lados if sides == 2 else precio_100_1lado
+        unit_price = base / 100
+        neto = int(unit_price * quantity)
 
-        if quantity < 100:
-             return "⚠️ La cantidad mínima es de 100 unidades."
-        
-        # Lógica de Precio Unitario Dinámico
-        if quantity < 1000:
-            # Usar precio unitario de la escala de 100
-            base = precio_100_2lados if sides == 2 else precio_100_1lado
-            unit_price = base / 100
-        else:
-            # Usar precio unitario de la escala de 1000 (Más barato por volumen)
-            base = precio_1000_2lados if sides == 2 else precio_1000_1lado
-            unit_price = base / 1000
-            
-        neto = int(unit_price * quantity)
-    
+    # 2. FLYERS
     elif "flyer" in p_lower:
-        if quantity < 1000:
-             return "⚠️ Para Flyers la cantidad mínima recomendada es 1000 unidades. Para menos cantidad, cotiza como impresiones láser color."
-        
-        # Base Flyers 1000 u
-        base_1000 = 47600 if sides == 2 else 23800
-        unit_price = base_1000 / 1000
-        
-        iva_incluido = True # Flyers tienen lógica especial de IVA incluido en base según código anterior
-        neto = int(unit_price * quantity)
-    
+        if quantity == 100 and ("10x15" in s_lower or "10x14" in s_lower):
+            neto = 10756 # $12.800 / 1.19
+            iva_incluido = False
+            plazo = "1 hora (Express)"
+        elif quantity >= 1000:
+            iva_incluido = True # Los flyers de 1000u vienen con IVA incluido en tu lista
+            plazo = "3 a 4 días hábiles"
+            if "10x14" in s_lower or "estandar" in s_lower:
+                neto = 47600 if sides == 2 else 23800
+            elif "20x14" in s_lower or "media carta" in s_lower:
+                neto = 95200 if sides == 2 else 47600
+            elif "20x28" in s_lower or "carta" in s_lower:
+                neto = 190400 if sides == 2 else 95200
+            else:
+                neto = 23800 # Fallback 10x14
+            
+            # Ajuste por cantidad si es múltiplo de 1000
+            neto = int((neto / 1000) * quantity)
+
+    # 3. PENDONES ROLLER
+    elif "pendon" in p_lower:
+        plazo = "24-48 horas"
+        precios_pendon = {
+            "80x200": 47000, "90x200": 57000, "100x200": 68000,
+            "120x200": 98000, "150x200": 134160, "200x200": 260000,
+            "250x200": 304541, "300x200": 465114
+        }
+        neto = 0
+        for k, v in precios_pendon.items():
+            if k in s_lower.replace(" ", ""):
+                neto = v * quantity
+                break
+        if neto == 0: neto = 47000 * quantity
+
+    # 4. FOAM / TROVICEL
+    elif "foam" in p_lower or "trovicel" in p_lower:
+        plazo = "2 a 3 días"
+        if "33x48" in s_lower:
+            neto = 6000 * quantity
+        else: # Tamaño carta o menor
+            if quantity < 10: unit = 3000
+            elif quantity < 20: unit = 2500
+            elif quantity < 30: unit = 2300
+            else: unit = 2000
+            neto = unit * quantity
+
     if neto == 0:
-        return f"⚠️ No tengo precio automático para {quantity} {product_type}. Revisa la base de conocimiento manual."
+        return f"⚠️ No tengo precio automático para {product_type} {size}. Por favor, consulta manualmente."
 
     # Costo Diseño
     costo_diseno = 0
@@ -184,8 +206,9 @@ def calculate_quote(product_type: str, quantity: int, sides: int = 1, finish: st
 
     return f"""
     💰 COTIZACIÓN OFICIAL:
-    - Producto: {product_type} x {quantity} u.
+    - Producto: {product_type} ({size}) x {quantity} u.
     - {detalle}
+    - Plazo de entrega: {plazo}
     --------------------------------
     💵 TOTAL FINAL: ${total:,} (IVA Incluido)
     """
