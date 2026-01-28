@@ -12,7 +12,10 @@ import {
   FileText,
   X,
   LayoutGrid,
-  List
+  List,
+  Download,
+  ExternalLink,
+  Image as ImageIcon
 } from 'lucide-react'
 
 function App() {
@@ -320,14 +323,71 @@ function App() {
                   <div>
                     <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Archivos Adjuntos</h3>
                     {selectedOrder.files_url && selectedOrder.files_url.length > 0 ? (
-                      <div className="flex gap-2">
-                        {/* Placeholder de archivos */}
-                        <div className="bg-gray-100 p-3 rounded-lg flex items-center gap-2 text-sm text-gray-600">
-                          <FileText size={16} /> {selectedOrder.files_url.length} archivos
-                        </div>
+                      <div className="grid grid-cols-1 gap-2">
+                        {selectedOrder.files_url.map((url, idx) => {
+                          const isImage = url.match(/\.(jpeg|jpg|gif|png|webp)/i);
+                          const fileName = url.split('/').pop();
+
+                          return (
+                            <div key={idx} className="group relative bg-gray-50 border border-gray-200 rounded-xl p-3 flex items-center justify-between hover:border-indigo-300 transition-colors">
+                              <div className="flex items-center gap-3 overflow-hidden">
+                                {isImage ? (
+                                  <div className="w-10 h-10 rounded-lg bg-gray-200 flex-shrink-0 overflow-hidden border border-gray-100">
+                                    <img src={url} alt="thumbnail" className="w-full h-full object-cover" />
+                                  </div>
+                                ) : (
+                                  <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 flex-shrink-0">
+                                    <FileText size={20} />
+                                  </div>
+                                )}
+                                <div className="overflow-hidden">
+                                  <p className="text-xs font-medium text-gray-700 truncate max-w-[150px]">{fileName}</p>
+                                  <p className="text-[10px] text-gray-400 uppercase">{isImage ? 'Imagen' : 'Documento'}</p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1">
+                                <a
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-white rounded-lg transition-all"
+                                  title="Ver original"
+                                >
+                                  <ExternalLink size={16} />
+                                </a>
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      const response = await fetch(url);
+                                      const blob = await response.blob();
+                                      const blobUrl = window.URL.createObjectURL(blob);
+                                      const link = document.createElement('a');
+                                      link.href = blobUrl;
+                                      link.download = fileName;
+                                      document.body.appendChild(link);
+                                      link.click();
+                                      document.body.removeChild(link);
+                                      window.URL.revokeObjectURL(blobUrl);
+                                    } catch (err) {
+                                      console.error("Error descaga:", err);
+                                      window.open(url, '_blank');
+                                    }
+                                  }}
+                                  className="p-2 text-gray-400 hover:text-green-600 hover:bg-white rounded-lg transition-all"
+                                  title="Descargar"
+                                >
+                                  <Download size={16} />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-400 italic">No hay archivos adjuntos.</p>
+                      <p className="text-sm text-gray-400 italic bg-gray-50 p-4 rounded-xl border border-dashed border-gray-200">
+                        No hay archivos adjuntos para este pedido.
+                      </p>
                     )}
                   </div>
                 </div>
