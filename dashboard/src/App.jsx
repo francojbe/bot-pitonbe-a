@@ -24,6 +24,7 @@ import {
 function App() {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
+  const [selectedOrder, setSelectedOrder] = useState(null)
   const [filter, setFilter] = useState('TODOS')
   const [isEditing, setIsEditing] = useState(false)
   const [editForm, setEditForm] = useState({ description: '', total_amount: 0 })
