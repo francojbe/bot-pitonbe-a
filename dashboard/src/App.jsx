@@ -15,14 +15,18 @@ import {
   List,
   Download,
   ExternalLink,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Trash2,
+  Save,
+  Edit2
 } from 'lucide-react'
 
 function App() {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
-  const [selectedOrder, setSelectedOrder] = useState(null)
   const [filter, setFilter] = useState('TODOS')
+  const [isEditing, setIsEditing] = useState(false)
+  const [editForm, setEditForm] = useState({ description: '', total_amount: 0 })
 
   useEffect(() => {
     fetchOrders()
@@ -84,6 +88,46 @@ function App() {
       } catch (err) {
         console.error('Error enviando notificación:', err)
       }
+    }
+  }
+
+  async function handleEditSubmit(e) {
+    e.preventDefault()
+    if (!selectedOrder) return
+
+    const { error } = await supabase
+      .from('orders')
+      .update({
+        description: editForm.description,
+        total_amount: parseInt(editForm.total_amount)
+      })
+      .eq('id', selectedOrder.id)
+
+    if (error) {
+      console.error('Error updating order:', error)
+      alert('Error al actualizar el pedido')
+    } else {
+      setOrders(orders.map(o => o.id === selectedOrder.id ? { ...o, ...editForm } : o))
+      setSelectedOrder({ ...selectedOrder, ...editForm })
+      setIsEditing(false)
+    }
+  }
+
+  async function handleDeleteOrder() {
+    if (!selectedOrder) return
+    if (!confirm('¿Estás seguro de que deseas eliminar este pedido? Esta acción no se puede deshacer.')) return
+
+    const { error } = await supabase
+      .from('orders')
+      .delete()
+      .eq('id', selectedOrder.id)
+
+    if (error) {
+      console.error('Error deleting order:', error)
+      alert('Error al eliminar el pedido')
+    } else {
+      setOrders(orders.filter(o => o.id !== selectedOrder.id))
+      setSelectedOrder(null)
     }
   }
 
@@ -188,7 +232,11 @@ function App() {
             {filteredOrders.map(order => (
               <div
                 key={order.id}
-                onClick={() => setSelectedOrder(order)}
+                onClick={() => {
+                  setSelectedOrder(order)
+                  setEditForm({ description: order.description, total_amount: order.total_amount })
+                  setIsEditing(false)
+                }}
                 className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer overflow-hidden group"
               >
                 <div className="p-5">
@@ -238,7 +286,11 @@ function App() {
                 {filteredOrders.map(order => (
                   <tr
                     key={order.id}
-                    onClick={() => setSelectedOrder(order)}
+                    onClick={() => {
+                      setSelectedOrder(order)
+                      setEditForm({ description: order.description, total_amount: order.total_amount })
+                      setIsEditing(false)
+                    }}
                     className="hover:bg-gray-50 cursor-pointer transition-colors"
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -306,19 +358,59 @@ function App() {
                     </select>
                   </div>
                 </div>
-                <button onClick={() => setSelectedOrder(null)} className="p-2 hover:bg-gray-100 rounded-full text-gray-500">
-                  <X size={24} />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleDeleteOrder}
+                    className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors mr-2"
+                    title="Eliminar Pedido"
+                  >
+                    <Trash2 size={20} />
+                  </button>
+                  <button onClick={() => { setSelectedOrder(null); setIsEditing(false); }} className="p-2 hover:bg-gray-100 rounded-full text-gray-500">
+                    <X size={24} />
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Columna Izquierda: Datos del Trabajo */}
                 <div className="space-y-6">
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Detalle del Trabajo</h3>
-                    <p className="text-lg text-gray-800 font-medium">{selectedOrder.description}</p>
-                    <p className="text-2xl font-bold text-indigo-600 mt-2">${selectedOrder.total_amount?.toLocaleString()}</p>
-                  </div>
+                  {isEditing ? (
+                    <form onSubmit={handleEditSubmit} className="space-y-4">
+                      <div>
+                        <label className="text-xs font-semibold text-gray-400 uppercase">Descripción</label>
+                        <textarea
+                          value={editForm.description}
+                          onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                          className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                          rows="3"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-gray-400 uppercase">Monto Total ($)</label>
+                        <input
+                          type="number"
+                          value={editForm.total_amount}
+                          onChange={(e) => setEditForm({ ...editForm, total_amount: e.target.value })}
+                          className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <button type="submit" className="flex-1 bg-indigo-600 text-white py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 shadow-sm">
+                          <Save size={16} /> Guardar Cambios
+                        </button>
+                        <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2 text-gray-500 hover:text-gray-700 font-medium text-sm">
+                          Cancelar
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Detalle del Trabajo</h3>
+                      <p className="text-lg text-gray-800 font-medium">{selectedOrder.description}</p>
+                      <p className="text-2xl font-bold text-indigo-600 mt-2">${selectedOrder.total_amount?.toLocaleString()}</p>
+                    </div>
+                  )}
 
                   <div>
                     <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Archivos Adjuntos</h3>
@@ -426,14 +518,19 @@ function App() {
               </div>
 
               {/* Footer Actions */}
-              <div className="mt-8 pt-6 border-t border-gray-100 flex justify-end gap-3">
-                <button className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium text-sm">
-                  Editar
-                </button>
-                <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium text-sm shadow-sm">
-                  Generar Factura PDF
-                </button>
-              </div>
+              {!isEditing && (
+                <div className="mt-8 pt-6 border-t border-gray-100 flex justify-end gap-3">
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 font-medium text-sm flex items-center gap-2"
+                  >
+                    <Edit2 size={16} /> Editar
+                  </button>
+                  <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium text-sm shadow-sm">
+                    Generar Factura PDF
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
