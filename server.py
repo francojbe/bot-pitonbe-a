@@ -556,7 +556,7 @@ def enviar_documento_wa(numero: str, archivo_bytes: bytes, filename: str, captio
         payload = {
             "number": numero,
             "mediaMessage": {
-                "mediatype": "document",
+                "mediaType": "document",
                 "fileName": filename,
                 "caption": caption,
                 "media": base64_data
