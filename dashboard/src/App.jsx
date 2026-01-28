@@ -132,6 +132,33 @@ function App() {
     }
   }
 
+  const [isInvoicing, setIsInvoicing] = useState(false)
+
+  async function generateInvoice() {
+    if (!selectedOrder) return
+    setIsInvoicing(true)
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://recuperadora-agente-pb.nojauc.easypanel.host'
+      const response = await fetch(`${apiUrl}/generate_invoice`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: selectedOrder.id, new_status: selectedOrder.status })
+      })
+
+      const result = await response.json()
+      if (result.status === 'success') {
+        alert('✅ Factura generada y enviada por WhatsApp con éxito.')
+      } else {
+        alert('❌ Error: ' + result.message)
+      }
+    } catch (err) {
+      console.error('Error generating invoice:', err)
+      alert('Error al conectar con la API de facturación.')
+    } finally {
+      setIsInvoicing(false)
+    }
+  }
+
   const statusColors = {
     'NUEVO': 'bg-blue-100 text-blue-800 border-blue-200',
     'DISEÑO': 'bg-purple-100 text-purple-800 border-purple-200',
@@ -527,8 +554,21 @@ function App() {
                   >
                     <Edit2 size={16} /> Editar
                   </button>
-                  <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium text-sm shadow-sm">
-                    Generar Factura PDF
+                  <button
+                    onClick={generateInvoice}
+                    disabled={isInvoicing}
+                    className={`px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium text-sm shadow-sm flex items-center gap-2 transition-all ${isInvoicing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-700'}`}
+                  >
+                    {isInvoicing ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        Generando...
+                      </>
+                    ) : (
+                      <>
+                        <FileText size={16} /> Generar Factura PDF
+                      </>
+                    )}
                   </button>
                 </div>
               )}

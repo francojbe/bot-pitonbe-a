@@ -11,6 +11,11 @@ from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, ToolMessage
 from langchain_core.tools import tool
 from supabase import create_client, Client
+from io import BytesIO
+from reportlab.lib.pagesizes import LETTER
+from reportlab.pdfgen import canvas
+from reportlab.lib import colors
+from reportlab.lib.units import cm
 
 # Logging
 logging.basicConfig(level=logging.INFO)
@@ -536,6 +541,49 @@ def enviar_whatsapp(numero: str, texto: str) -> dict:
     
     return result
 
+def enviar_documento_wa(numero: str, archivo_bytes: bytes, filename: str, caption: str = "") -> dict:
+    """Envía un archivo PDF vía Evolution API como media."""
+    result = {"status": "unknown", "code": 0}
+    try:
+        import base64
+        base_url = EVOLUTION_API_URL.rstrip('/')
+        from urllib.parse import quote
+        instance_encoded = quote(INSTANCE_NAME)
+        url = f"{base_url}/message/sendMedia/{instance_encoded}"
+        
+        base64_data = base64.b64encode(archivo_bytes).decode('utf-8')
+        
+        payload = {
+            "number": numero,
+            "mediaMessage": {
+                "mediatype": "document",
+                "fileName": filename,
+                "caption": caption,
+                "media": base64_data
+            }
+        }
+        
+        logger.info(f"📄 Intentando enviar PDF a {numero}...")
+        response = requests.post(
+            url, 
+            json=payload, 
+            headers={"apikey": EVOLUTION_API_KEY, "Content-Type": "application/json"},
+            timeout=30
+        )
+        
+        result["code"] = response.status_code
+        if response.status_code in [200, 201]:
+            logger.info(f"✅ Documento enviado exitosamente a {numero}")
+            result["status"] = "success"
+        else:
+            logger.error(f"❌ Error Evolution Media ({response.status_code}): {response.text}")
+            result["status"] = "error"
+    except Exception as e:
+        logger.error(f"🔥 Error enviando media: {e}")
+        result["status"] = "exception"
+    
+    return result
+
 @app.post("/webhook")
 async def webhook_whatsapp(request: Request):
     try:
@@ -800,3 +848,84 @@ async def notify_status_update(update: StatusUpdate):
     except Exception as e:
         logger.error(f"🔥 Error en notify_status_update: {e}")
         return {"status": "error", "detail": str(e)}
+@app.post("/generate_invoice")
+async def generate_invoice(update: StatusUpdate):
+    """Genera un PDF de factura proforma y lo envía por WhatsApp."""
+    try:
+        # 1. Obtener datos
+        res = supabase.table("orders").select("*, leads(*)").eq("id", update.order_id).execute()
+        if not res.data:
+            return {"status": "error", "message": "Orden no encontrada"}
+        
+        order = res.data[0]
+        lead = order.get('leads')
+        if not lead or not lead.get('phone_number'):
+            return {"status": "error", "message": "Cliente sin teléfono"}
+
+        phone = lead['phone_number']
+        nombre_cliente = lead.get('name', 'Cliente')
+        
+        # 2. Generar PDF en Memoria
+        buffer = BytesIO()
+        p = canvas.Canvas(buffer, pagesize=LETTER)
+        width, height = LETTER
+
+        # Logo / Encabezado
+        p.setFont("Helvetica-Bold", 16)
+        p.drawString(2*cm, height-2*cm, "PITRÓN BEÑA IMPRESIÓN")
+        p.setFont("Helvetica", 10)
+        p.drawString(2*cm, height-2.5*cm, "Arturo Prat 230, Local 117, Santiago")
+        p.drawString(2*cm, height-3*cm, "RUT: 15.355.843-4")
+        
+        p.setFont("Helvetica-Bold", 14)
+        p.drawRightString(width-2*cm, height-2*cm, "FACTURA PROFORMA")
+        p.setFont("Helvetica", 10)
+        p.drawRightString(width-2*cm, height-2.5*cm, f"Orden: #{order['id'][:8]}")
+        p.drawRightString(width-2*cm, height-3*cm, f"Fecha: {order['created_at'][:10]}")
+
+        # Datos Cliente
+        p.line(2*cm, height-4*cm, width-2*cm, height-4*cm)
+        p.setFont("Helvetica-Bold", 11)
+        p.drawString(2*cm, height-4.8*cm, "DATOS DEL CLIENTE:")
+        p.setFont("Helvetica", 10)
+        p.drawString(2*cm, height-5.4*cm, f"Nombre: {nombre_cliente}")
+        p.drawString(2*cm, height-6*cm, f"RUT: {lead.get('rut', 'No informado')}")
+        p.drawString(2*cm, height-6.6*cm, f"Email: {lead.get('email', '--')}")
+
+        # Detalle
+        p.line(2*cm, height-7.5*cm, width-2*cm, height-7.5*cm)
+        p.setFont("Helvetica-Bold", 11)
+        p.drawString(2*cm, height-8.2*cm, "DESCRIPCIÓN")
+        p.drawRightString(width-2*cm, height-8.2*cm, "TOTAL (IVA INC.)")
+        
+        p.setFont("Helvetica", 10)
+        p.drawString(2*cm, height-9.2*cm, order.get('description', 'Servicio de Impresión'))
+        p.drawRightString(width-2*cm, height-9.2*cm, f"${order.get('total_amount', 0):,}")
+
+        # Pie de página / Transferencia
+        p.line(2*cm, 4*cm, width-2*cm, 4*cm)
+        p.setFont("Helvetica-Bold", 10)
+        p.drawString(2*cm, 3.4*cm, "DATOS DE TRANSFERENCIA:")
+        p.setFont("Helvetica", 9)
+        p.drawString(2*cm, 2.9*cm, "Banco Santander - Cta Corriente 79-63175-2")
+        p.drawString(2*cm, 2.4*cm, "Luis Pitron - RUT 15.355.843-4 - contacto@pitron.cl")
+
+        p.showPage()
+        p.save()
+        
+        pdf_bytes = buffer.getvalue()
+        buffer.close()
+
+        # 3. Enviar por WhatsApp
+        filename = f"Factura_PB_{order['id'][:6]}.pdf"
+        caption = f"📄 Hola {nombre_cliente.split(' ')[0]}, adjuntamos la factura proforma de tu pedido."
+        status_wa = enviar_documento_wa(phone, pdf_bytes, filename, caption)
+
+        # 4. Log
+        save_message_pro(lead['id'], phone, "assistant", f"[ARCHIVO ENVIADO: {filename}]", intent="INVOICE_GENERATION", metadata={"whatsapp_delivery": status_wa})
+
+        return {"status": "success", "wa_status": status_wa}
+
+    except Exception as e:
+        logger.error(f"🔥 Error Generando Factura: {e}")
+        return {"status": "error", "message": str(e)}
