@@ -360,43 +360,43 @@ function App() {
       {/* iOS STYLE MODAL */}
       {selectedOrder && (
         <div className="fixed inset-0 bg-[#1C1C1E]/40 z-50 flex items-center justify-center p-4 backdrop-blur-md transition-all">
-          <div className="bg-white rounded-[3rem] w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-[0_30px_90px_-20px_rgba(0,0,0,0.3)] flex flex-col scale-100 animate-in fade-in zoom-in duration-300">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-xl max-h-[90vh] overflow-hidden shadow-[0_30px_90px_-20px_rgba(0,0,0,0.3)] flex flex-col scale-100 animate-in fade-in zoom-in duration-300">
             {/* Header Modal */}
-            <div className="px-10 py-8 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-[#F2F2F7]">
-              <div className="flex items-center gap-4">
-                <div className="bg-[#E96A51]/10 p-3 rounded-2xl text-[#E96A51]">
-                  <FileText size={24} weight="bold" />
+            <div className="px-8 py-5 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-[#F2F2F7]">
+              <div className="flex items-center gap-3">
+                <div className="bg-[#E96A51]/10 p-2.5 rounded-xl text-[#E96A51]">
+                  <FileText size={20} weight="bold" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-black text-[#1C1C1E] tracking-tight">Detalle de Orden</h2>
-                  <p className="text-[10px] text-[#C7C7CC] font-black uppercase tracking-widest mt-0.5">ID · {selectedOrder.id}</p>
+                  <h2 className="text-lg font-black text-[#1C1C1E] tracking-tight">Detalle de Orden</h2>
+                  <p className="text-[9px] text-[#C7C7CC] font-black uppercase tracking-widest mt-0.5">ID · {selectedOrder.id.slice(0, 12)}...</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={handleDeleteOrder}
-                  className="p-3 bg-[#FF3B30]/10 text-[#FF3B30] hover:bg-[#FF3B30] hover:text-white rounded-2xl transition-all"
+                  className="p-2.5 bg-[#FF3B30]/10 text-[#FF3B30] hover:bg-[#FF3B30] hover:text-white rounded-xl transition-all"
                   title="Eliminar"
                 >
-                  <Trash2 size={20} />
+                  <Trash2 size={18} />
                 </button>
-                <button onClick={() => { setSelectedOrder(null); setIsEditing(false); }} className="p-3 bg-[#F2F2F7] text-[#8E8E93] hover:text-[#1C1C1E] rounded-2xl transition-all">
-                  <X size={24} />
+                <button onClick={() => { setSelectedOrder(null); setIsEditing(false); }} className="p-2.5 bg-[#F2F2F7] text-[#8E8E93] hover:text-[#1C1C1E] rounded-xl transition-all">
+                  <X size={20} />
                 </button>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-10 py-10 custom-scrollbar">
-              <div className="space-y-10">
+            <div className="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar">
+              <div className="space-y-8">
                 {/* Status Chips */}
-                <div className="flex flex-wrap gap-2 py-4">
+                <div className="flex flex-wrap gap-1.5">
                   {Object.keys(statusColors).map(s => (
                     <button
                       key={s}
                       onClick={() => updateOrderStatus(s)}
-                      className={`px-4 py-2 rounded-2xl text-[11px] font-black tracking-widest uppercase border-2 transition-all active:scale-95
+                      className={`px-3 py-1.5 rounded-xl text-[10px] font-black tracking-widest uppercase border-2 transition-all active:scale-95
                         ${selectedOrder.status === s
-                          ? 'bg-[#1C1C1E] text-white border-[#1C1C1E] shadow-xl'
+                          ? 'bg-[#1C1C1E] text-white border-[#1C1C1E] shadow-lg'
                           : 'bg-white border-[#F2F2F7] text-[#C7C7CC] hover:border-[#8E8E93]/20 hover:text-[#1C1C1E]'}`}
                     >
                       {s}
@@ -405,117 +405,122 @@ function App() {
                 </div>
 
                 {/* Info Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div className="grid grid-cols-1 gap-6">
                   <div className="col-span-full">
                     {isEditing ? (
-                      <form onSubmit={handleEditSubmit} className="space-y-6 bg-[#F2F2F7]/40 p-8 rounded-[2rem] border border-[#F2F2F7]">
-                        <div className="space-y-2">
-                          <label className="text-[11px] font-black uppercase tracking-widest text-[#C7C7CC]">Descripción</label>
+                      <form onSubmit={handleEditSubmit} className="space-y-4 bg-[#F2F2F7]/40 p-6 rounded-[1.5rem] border border-[#F2F2F7]">
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-[#C7C7CC]">Descripción</label>
                           <textarea
                             value={editForm.description}
                             onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                            className="w-full bg-white border-2 border-[#E5E5EA] rounded-2xl p-4 text-sm font-bold focus:border-[#E96A51] outline-none transition-all h-32"
+                            className="w-full bg-white border-2 border-[#E5E5EA] rounded-xl p-3 text-sm font-bold focus:border-[#E96A51] outline-none transition-all h-24 resize-none"
                           />
                         </div>
-                        <div className="space-y-2">
-                          <label className="text-[11px] font-black uppercase tracking-widest text-[#C7C7CC]">Monto Total (CLP)</label>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-[#C7C7CC]">Monto Total (CLP)</label>
                           <input
                             type="number"
                             value={editForm.total_amount}
                             onChange={(e) => setEditForm({ ...editForm, total_amount: e.target.value })}
-                            className="w-full bg-white border-2 border-[#E5E5EA] rounded-2xl p-4 text-sm font-bold focus:border-[#E96A51] outline-none transition-all"
+                            className="w-full bg-white border-2 border-[#E5E5EA] rounded-xl p-3 text-sm font-bold focus:border-[#E96A51] outline-none transition-all"
                           />
                         </div>
-                        <div className="flex gap-4 pt-4">
-                          <button type="submit" className="flex-1 bg-[#1C1C1E] text-white h-14 rounded-2xl font-bold text-sm shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2">
-                            <Save size={18} /> Guardar Cambios
+                        <div className="flex gap-3 pt-2">
+                          <button type="submit" className="flex-1 bg-[#1C1C1E] text-white h-11 rounded-xl font-bold text-xs shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">
+                            <Save size={16} /> Guardar
                           </button>
-                          <button type="button" onClick={() => setIsEditing(false)} className="px-8 bg-white border-2 border-[#E5E5EA] text-[#8E8E93] rounded-2xl font-bold text-sm hover:text-[#1C1C1E] transition-all">
+                          <button type="button" onClick={() => setIsEditing(false)} className="px-6 bg-white border-2 border-[#E5E5EA] text-[#8E8E93] rounded-xl font-bold text-xs hover:text-[#1C1C1E] transition-all">
                             Cancelar
                           </button>
                         </div>
                       </form>
                     ) : (
-                      <div className="space-y-8">
+                      <div className="space-y-6">
                         <div>
-                          <span className="text-[11px] font-black uppercase tracking-widest text-[#C7C7CC] block mb-3">Trabajo Solicitado</span>
-                          <p className="text-2xl font-black text-[#1C1C1E] leading-tight">{selectedOrder.description}</p>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-[#C7C7CC] block mb-2">Trabajo Solicitado</span>
+                          <p className="text-lg font-bold text-[#1C1C1E] leading-snug">{selectedOrder.description}</p>
                         </div>
-                        <div className="bg-[#E96A51]/5 border border-[#E96A51]/10 p-8 rounded-[2.5rem] flex justify-between items-center">
+                        <div className="bg-[#E96A51]/5 border border-[#E96A51]/10 p-6 rounded-[2rem] flex justify-between items-center">
                           <div>
-                            <span className="text-[11px] font-black uppercase tracking-widest text-[#E96A51] block mb-1 opacity-60">Presupuesto Aprobado</span>
-                            <p className="text-4xl font-black text-[#E96A51] tracking-tighter">${selectedOrder.total_amount?.toLocaleString()}</p>
+                            <span className="text-[9px] font-black uppercase tracking-widest text-[#E96A51] block mb-0.5 opacity-60">Presupuesto Aprobado</span>
+                            <p className="text-2xl font-black text-[#E96A51] tracking-tight">${selectedOrder.total_amount?.toLocaleString()}</p>
                           </div>
-                          <div className="bg-white/50 backdrop-blur-sm px-4 py-2 rounded-2xl border border-[#E96A51]/10">
-                            <span className="text-[10px] font-black text-[#E96A51]/40 uppercase tracking-widest italic">IVA Incluido</span>
+                          <div className="bg-white/50 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-[#E96A51]/10">
+                            <span className="text-[9px] font-black text-[#E96A51]/40 uppercase tracking-widest italic">Neto</span>
                           </div>
                         </div>
                       </div>
                     )}
                   </div>
 
-                  {/* Files & Client Section */}
-                  <div className="space-y-8">
+                  {/* Section Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Files Section */}
                     <div>
-                      <h3 className="text-[11px] font-black uppercase tracking-widest text-[#C7C7CC] mb-4">Archivos del Proyecto</h3>
+                      <h3 className="text-[9px] font-black uppercase tracking-widest text-[#C7C7CC] mb-3">Archivos vinculados</h3>
                       {selectedOrder.files_url && selectedOrder.files_url.length > 0 ? (
-                        <div className="grid grid-cols-1 gap-3">
+                        <div className="space-y-2">
                           {selectedOrder.files_url.map((url, idx) => {
                             const isImage = url.match(/\.(jpeg|jpg|gif|png|webp)/i);
                             const fileName = url.split('/').pop();
                             return (
-                              <div key={idx} className="group bg-[#F2F2F7]/40 border border-[#F2F2F7] rounded-3xl p-4 flex items-center justify-between hover:bg-[#E96A51]/5 hover:border-[#E96A51]/20 transition-all">
-                                <div className="flex items-center gap-4 overflow-hidden">
+                              <div key={idx} className="group bg-[#F2F2F7]/50 border border-[#F2F2F7] rounded-2xl p-3 flex items-center justify-between hover:bg-white hover:shadow-sm transition-all">
+                                <div className="flex items-center gap-3 overflow-hidden">
                                   {isImage ? (
-                                    <div className="w-12 h-12 rounded-2xl bg-white flex-shrink-0 overflow-hidden border border-[#F2F2F7] shadow-sm">
+                                    <div className="w-10 h-10 rounded-xl bg-white flex-shrink-0 overflow-hidden border border-[#F2F2F7]">
                                       <img src={url} alt="thumbnail" className="w-full h-full object-cover" />
                                     </div>
                                   ) : (
-                                    <div className="w-12 h-12 rounded-2xl bg-white flex-shrink-0 flex items-center justify-center text-[#E96A51] border border-[#F2F2F7] shadow-sm">
-                                      <FileText size={20} />
+                                    <div className="w-10 h-10 rounded-xl bg-white flex-shrink-0 flex items-center justify-center text-[#E96A51] border border-[#F2F2F7]">
+                                      <FileText size={18} />
                                     </div>
                                   )}
                                   <div className="overflow-hidden">
-                                    <p className="text-[13px] font-bold text-[#1C1C1E] truncate max-w-[150px]">{fileName}</p>
-                                    <p className="text-[10px] text-[#8E8E93] font-bold uppercase tracking-tight">{isImage ? 'Imagen' : 'Documento'}</p>
+                                    <p className="text-[11px] font-bold text-[#1C1C1E] truncate max-w-[100px]">{fileName}</p>
+                                    <p className="text-[8px] text-[#8E8E93] font-bold uppercase">{isImage ? 'IMG' : 'DOC'}</p>
                                   </div>
                                 </div>
-                                <div className="flex gap-2">
-                                  <button
-                                    onClick={() => window.open(url, '_blank')}
-                                    className="p-2 bg-white text-[#1C1C1E] rounded-xl shadow-sm hover:scale-110 transition-transform"
-                                  >
-                                    <ExternalLink size={16} />
-                                  </button>
-                                </div>
+                                <button
+                                  onClick={() => window.open(url, '_blank')}
+                                  className="p-2 bg-white text-[#1C1C1E] rounded-lg shadow-sm border border-[#F2F2F7] hover:scale-105 transition-transform"
+                                >
+                                  <ExternalLink size={14} />
+                                </button>
                               </div>
                             );
                           })}
                         </div>
                       ) : (
-                        <div className="bg-[#F2F2F7]/30 border-2 border-dashed border-[#F2F2F7] rounded-[2rem] p-8 text-center text-[#C7C7CC] text-xs font-bold italic">
+                        <div className="bg-[#F2F2F7]/30 border-2 border-dashed border-[#F2F2F7] rounded-2xl p-6 text-center text-[#C7C7CC] text-[10px] font-bold italic">
                           Sin archivos
                         </div>
                       )}
                     </div>
-                  </div>
 
-                  <div className="bg-[#F2F2F7]/40 p-8 rounded-[2.5rem] border border-[#F2F2F7] space-y-6 self-start">
-                    <h3 className="text-[11px] font-black uppercase tracking-widest text-[#1C1C1E] flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-[#E96A51]"></div> Ficha Cliente
-                    </h3>
-                    <div className="space-y-4">
-                      <div className="space-y-1">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Nombre</span>
-                        <p className="font-bold text-[#1C1C1E] text-sm">{selectedOrder.leads?.name || '---'}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Teléfono</span>
-                        <p className="font-bold text-[#1C1C1E] text-sm">{selectedOrder.leads?.phone_number}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Dirección</span>
-                        <p className="font-bold text-[#1C1C1E] text-xs">{selectedOrder.leads?.address || 'Sin Dirección'}</p>
+                    {/* Client Section */}
+                    <div className="bg-[#F2F2F7]/40 p-6 rounded-[2rem] border border-[#F2F2F7] space-y-4 self-start">
+                      <h3 className="text-[9px] font-black uppercase tracking-widest text-[#1C1C1E] flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#E96A51]"></div> Ficha Cliente
+                      </h3>
+                      <div className="space-y-3">
+                        <div className="space-y-0.5">
+                          <span className="text-[8px] font-black uppercase tracking-widest text-[#8E8E93]">Nombre</span>
+                          <p className="font-bold text-[#1C1C1E] text-xs">{selectedOrder.leads?.name || '---'}</p>
+                        </div>
+                        <div className="space-y-0.5">
+                          <span className="text-[8px] font-black uppercase tracking-widest text-[#8E8E93]">Teléfono</span>
+                          <p className="font-bold text-[#1C1C1E] text-xs flex items-center gap-2">
+                            {selectedOrder.leads?.phone_number}
+                            <a href={`https://wa.me/${selectedOrder.leads?.phone_number}`} target="_blank" className="p-1 bg-green-500/10 text-green-600 rounded-lg">
+                              <Phone size={10} />
+                            </a>
+                          </p>
+                        </div>
+                        <div className="space-y-0.5">
+                          <span className="text-[8px] font-black uppercase tracking-widest text-[#8E8E93]">Dirección</span>
+                          <p className="font-bold text-[#1C1C1E] text-[10px] leading-tight line-clamp-2">{selectedOrder.leads?.address || 'Retiro en tienda'}</p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -523,28 +528,28 @@ function App() {
 
                 {/* Footer Modal Actions */}
                 {!isEditing && (
-                  <div className="pt-8 border-t border-[#F2F2F7] flex flex-col sm:flex-row gap-4">
+                  <div className="pt-6 border-t border-[#F2F2F7] flex flex-col sm:flex-row gap-3">
                     <button
                       onClick={generateInvoice}
                       disabled={isInvoicing}
-                      className={`flex-1 h-14 bg-[#E96A51] text-white rounded-2xl font-bold text-sm shadow-xl shadow-[#E96A51]/20 flex items-center justify-center gap-3 active:scale-95 transition-all ${isInvoicing ? 'opacity-50' : 'hover:bg-[#D55F49]'}`}
+                      className={`flex-1 h-12 bg-[#E96A51] text-white rounded-xl font-bold text-xs shadow-lg shadow-[#E96A51]/20 flex items-center justify-center gap-2 active:scale-95 transition-all ${isInvoicing ? 'opacity-50' : 'hover:bg-[#D55F49]'}`}
                     >
                       {isInvoicing ? (
                         <>
-                          <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                           Generando...
                         </>
                       ) : (
                         <>
-                          <FileText size={20} /> Generar Factura PDF
+                          <FileText size={18} /> Generar Factura
                         </>
                       )}
                     </button>
                     <button
                       onClick={() => setIsEditing(true)}
-                      className="px-8 h-14 bg-white border-2 border-[#F2F2F7] text-[#1C1C1E] rounded-2xl font-bold text-sm hover:bg-[#F2F2F7] transition-all flex items-center justify-center gap-2"
+                      className="px-6 h-12 bg-white border-2 border-[#F2F2F7] text-[#1C1C1E] rounded-xl font-bold text-xs hover:bg-[#F2F2F7] transition-all flex items-center justify-center gap-2"
                     >
-                      <Edit2 size={18} /> Editar Orden
+                      <Edit2 size={16} /> Editar
                     </button>
                   </div>
                 )}
