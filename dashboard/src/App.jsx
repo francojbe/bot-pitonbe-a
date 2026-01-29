@@ -258,12 +258,12 @@ function App() {
           ))}
         </div>
 
-        {/* Orders List */}
+        {/* Orders Content */}
         {loading ? (
-          <div className="text-center py-20 text-gray-400">Cargando pedidos...</div>
+          <div className="text-center py-20 text-gray-400 font-medium">Cargando pedidos...</div>
         ) : filteredOrders.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-300">
-            <p className="text-gray-500">No hay pedidos en esta categoría.</p>
+          <div className="text-center py-20 bg-white rounded-[3rem] border-2 border-dashed border-[#F2F2F7]">
+            <p className="text-[#8E8E93] font-bold">No hay pedidos en esta categoría.</p>
           </div>
         ) : viewMode === 'grid' ? (
           /* iOS CARDS (Bento Style) */
@@ -287,7 +287,6 @@ function App() {
                   </div>
 
                   <h3 className="text-xl font-bold text-[#1C1C1E] mb-2 leading-snug line-clamp-2 h-14">{order.description}</h3>
-
                   <div className="flex items-center gap-3 mb-8">
                     <div className="w-8 h-8 rounded-full bg-[#1C1C1E] flex items-center justify-center text-white text-[10px] font-bold uppercase">
                       {order.leads?.name?.slice(0, 2) || 'CL'}
@@ -311,19 +310,6 @@ function App() {
             ))}
           </div>
         ) : (
-          /* VISTA LISTA (TABLA) */
-          <div className="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID / Estado</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                  <th className="relative px-6 py-3"><span className="sr-only">Ver</span></th>
-                </tr>
-              </thead>
           /* iOS LIST VIEW */
           <div className="bg-white rounded-[2.5rem] shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] border border-[#F2F2F7] overflow-hidden">
             <div className="overflow-x-auto">
@@ -331,7 +317,7 @@ function App() {
                 <thead>
                   <tr className="border-b border-[#F2F2F7]">
                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Estado</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Descripción del Trabajo</th>
+                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Descripción</th>
                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Cliente</th>
                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#8E8E93] text-right">Total</th>
                   </tr>
@@ -354,13 +340,13 @@ function App() {
                       </td>
                       <td className="px-8 py-6">
                         <p className="font-bold text-[#1C1C1E] text-[15px] line-clamp-1">{order.description}</p>
-                        <p className="text-[10px] text-[#C7C7CC] font-bold uppercase mt-1 tracking-tighter">Orden {order.id.slice(0, 8)}</p>
+                        <p className="text-[10px] text-[#C7C7CC] font-bold uppercase mt-1 tracking-tighter">ID: {order.id.slice(0, 8)}</p>
                       </td>
                       <td className="px-8 py-6">
                         <p className="font-semibold text-[#8E8E93] text-sm">{order.leads?.name || order.leads?.phone_number}</p>
                       </td>
-                      <td className="px-8 py-6 text-right">
-                        <p className="font-black text-[#1C1C1E] text-lg">${order.total_amount?.toLocaleString() || '0'}</p>
+                      <td className="px-8 py-6 text-right font-black text-[#1C1C1E] text-lg">
+                        ${order.total_amount?.toLocaleString() || '0'}
                       </td>
                     </tr>
                   ))}
@@ -373,212 +359,201 @@ function App() {
 
       {/* iOS STYLE MODAL */}
       {selectedOrder && (
-                                    <img src={url} alt="thumbnail" className="w-full h-full object-cover" />
-                                  </div>
-                                ) : (
-                                  <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 flex-shrink-0">
-                                    <FileText size={20} />
-                                  </div>
-                                )}
-                                <div className="overflow-hidden">
-                                  <p className="text-xs font-medium text-gray-700 truncate max-w-[150px]">{fileName}</p>
-                                  <p className="text-[10px] text-gray-400 uppercase">{isImage ? 'Imagen' : 'Documento'}</p>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-1">
-                                <a
-                                  href={url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-white rounded-lg transition-all"
-                                  title="Ver original"
-                                >
-                                  <ExternalLink size={16} />
-                                </a>
-                                <button
-                                  onClick={async () => {
-                                    try {
-                                      const response = await fetch(url);
-                                      const blob = await response.blob();
-                                      const blobUrl = window.URL.createObjectURL(blob);
-                                      const link = document.createElement('a');
-                                      link.href = blobUrl;
-                                      link.download = fileName;
-                                      document.body.appendChild(link);
-                                      link.click();
-                                      document.body.removeChild(link);
-                                      window.URL.revokeObjectURL(blobUrl);
-                                    } catch (err) {
-                                      console.error("Error descaga:", err);
-                                      window.open(url, '_blank');
-                                    }
-                                  }}
-                                  className="p-2 text-gray-400 hover:text-green-600 hover:bg-white rounded-lg transition-all"
-                                  title="Descargar"
-                                >
-                                  <Download size={16} />
-                                </button>
-                              </div>
-                            </div >
-                          );
-})}
-                      </div >
-                    ) : (
-  <p className="text-sm text-gray-400 italic bg-gray-50 p-4 rounded-xl border border-dashed border-gray-200">
-    No hay archivos adjuntos para este pedido.
-  </p>
-)}
-                  </div >
-                </div >
-
-  {/* Clients & Files Grid */ }
-  < div className = "space-y-8" >
-    {/* Archivos Adjuntos */ }
-    < div >
-    <h3 className="text-[11px] font-black uppercase tracking-widest text-[#C7C7CC] mb-4">Archivos del Proyecto</h3>
-{
-  selectedOrder.files_url && selectedOrder.files_url.length > 0 ? (
-    <div className="grid grid-cols-1 gap-3">
-      {selectedOrder.files_url.map((url, idx) => {
-        const isImage = url.match(/\.(jpeg|jpg|gif|png|webp)/i);
-        const fileName = url.split('/').pop();
-
-        return (
-          <div key={idx} className="group bg-[#F2F2F7]/40 border border-[#F2F2F7] rounded-3xl p-4 flex items-center justify-between hover:bg-[#E96A51]/5 hover:border-[#E96A51]/20 transition-all">
-            <div className="flex items-center gap-4 overflow-hidden">
-              {isImage ? (
-                <div className="w-12 h-12 rounded-2xl bg-white flex-shrink-0 overflow-hidden border border-[#F2F2F7] shadow-sm">
-                  <img src={url} alt="thumbnail" className="w-full h-full object-cover" />
+        <div className="fixed inset-0 bg-[#1C1C1E]/40 z-50 flex items-center justify-center p-4 backdrop-blur-md transition-all">
+          <div className="bg-white rounded-[3rem] w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-[0_30px_90px_-20px_rgba(0,0,0,0.3)] flex flex-col scale-100 animate-in fade-in zoom-in duration-300">
+            {/* Header Modal */}
+            <div className="px-10 py-8 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-[#F2F2F7]">
+              <div className="flex items-center gap-4">
+                <div className="bg-[#E96A51]/10 p-3 rounded-2xl text-[#E96A51]">
+                  <FileText size={24} weight="bold" />
                 </div>
-              ) : (
-                <div className="w-12 h-12 rounded-2xl bg-white flex-shrink-0 flex items-center justify-center text-[#E96A51] border border-[#F2F2F7] shadow-sm">
-                  <FileText size={20} />
+                <div>
+                  <h2 className="text-2xl font-black text-[#1C1C1E] tracking-tight">Detalle de Orden</h2>
+                  <p className="text-[10px] text-[#C7C7CC] font-black uppercase tracking-widest mt-0.5">ID · {selectedOrder.id}</p>
                 </div>
-              )}
-              <div className="overflow-hidden">
-                <p className="text-[13px] font-bold text-[#1C1C1E] truncate max-w-[180px]">{fileName}</p>
-                <p className="text-[10px] text-[#8E8E93] font-bold uppercase tracking-tight">{isImage ? 'Imagen' : 'Documento'}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleDeleteOrder}
+                  className="p-3 bg-[#FF3B30]/10 text-[#FF3B30] hover:bg-[#FF3B30] hover:text-white rounded-2xl transition-all"
+                  title="Eliminar"
+                >
+                  <Trash2 size={20} />
+                </button>
+                <button onClick={() => { setSelectedOrder(null); setIsEditing(false); }} className="p-3 bg-[#F2F2F7] text-[#8E8E93] hover:text-[#1C1C1E] rounded-2xl transition-all">
+                  <X size={24} />
+                </button>
               </div>
             </div>
-            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button
-                onClick={() => window.open(url, '_blank')}
-                className="p-2.5 bg-white text-[#1C1C1E] rounded-xl shadow-sm hover:scale-110 transition-transform"
-                title="Ver"
-              >
-                <ExternalLink size={16} />
-              </button>
-              <button
-                onClick={async () => {
-                  try {
-                    const response = await fetch(url);
-                    const blob = await response.blob();
-                    const blobUrl = window.URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = blobUrl;
-                    link.download = fileName;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    window.URL.revokeObjectURL(blobUrl);
-                  } catch (err) {
-                    console.error("Error descarga:", err);
-                    window.open(url, '_blank');
-                  }
-                }}
-                className="p-2.5 bg-white text-[#E96A51] rounded-xl shadow-sm hover:scale-110 transition-transform"
-                title="Descargar"
-              >
-                <Download size={16} />
-              </button>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  ) : (
-  <div className="bg-[#F2F2F7]/30 border-2 border-dashed border-[#F2F2F7] rounded-[2rem] p-8 text-center">
-    <p className="text-[13px] text-[#C7C7CC] font-bold italic">Sin archivos adjuntos</p>
-  </div>
-)
-}
-                    </div >
-                  </div >
 
-  {/* Datos Cliente */ }
-  < div className = "bg-[#F2F2F7]/40 p-8 rounded-[2.5rem] border border-[#F2F2F7] space-y-6 self-start" >
+            <div className="flex-1 overflow-y-auto px-10 py-10 custom-scrollbar">
+              <div className="space-y-10">
+                {/* Status Chips */}
+                <div className="flex flex-wrap gap-2 py-4">
+                  {Object.keys(statusColors).map(s => (
+                    <button
+                      key={s}
+                      onClick={() => updateOrderStatus(s)}
+                      className={`px-4 py-2 rounded-2xl text-[11px] font-black tracking-widest uppercase border-2 transition-all active:scale-95
+                        ${selectedOrder.status === s
+                          ? 'bg-[#1C1C1E] text-white border-[#1C1C1E] shadow-xl'
+                          : 'bg-white border-[#F2F2F7] text-[#C7C7CC] hover:border-[#8E8E93]/20 hover:text-[#1C1C1E]'}`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Info Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                  <div className="col-span-full">
+                    {isEditing ? (
+                      <form onSubmit={handleEditSubmit} className="space-y-6 bg-[#F2F2F7]/40 p-8 rounded-[2rem] border border-[#F2F2F7]">
+                        <div className="space-y-2">
+                          <label className="text-[11px] font-black uppercase tracking-widest text-[#C7C7CC]">Descripción</label>
+                          <textarea
+                            value={editForm.description}
+                            onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                            className="w-full bg-white border-2 border-[#E5E5EA] rounded-2xl p-4 text-sm font-bold focus:border-[#E96A51] outline-none transition-all h-32"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[11px] font-black uppercase tracking-widest text-[#C7C7CC]">Monto Total (CLP)</label>
+                          <input
+                            type="number"
+                            value={editForm.total_amount}
+                            onChange={(e) => setEditForm({ ...editForm, total_amount: e.target.value })}
+                            className="w-full bg-white border-2 border-[#E5E5EA] rounded-2xl p-4 text-sm font-bold focus:border-[#E96A51] outline-none transition-all"
+                          />
+                        </div>
+                        <div className="flex gap-4 pt-4">
+                          <button type="submit" className="flex-1 bg-[#1C1C1E] text-white h-14 rounded-2xl font-bold text-sm shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2">
+                            <Save size={18} /> Guardar Cambios
+                          </button>
+                          <button type="button" onClick={() => setIsEditing(false)} className="px-8 bg-white border-2 border-[#E5E5EA] text-[#8E8E93] rounded-2xl font-bold text-sm hover:text-[#1C1C1E] transition-all">
+                            Cancelar
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <div className="space-y-8">
+                        <div>
+                          <span className="text-[11px] font-black uppercase tracking-widest text-[#C7C7CC] block mb-3">Trabajo Solicitado</span>
+                          <p className="text-2xl font-black text-[#1C1C1E] leading-tight">{selectedOrder.description}</p>
+                        </div>
+                        <div className="bg-[#E96A51]/5 border border-[#E96A51]/10 p-8 rounded-[2.5rem] flex justify-between items-center">
+                          <div>
+                            <span className="text-[11px] font-black uppercase tracking-widest text-[#E96A51] block mb-1 opacity-60">Presupuesto Aprobado</span>
+                            <p className="text-4xl font-black text-[#E96A51] tracking-tighter">${selectedOrder.total_amount?.toLocaleString()}</p>
+                          </div>
+                          <div className="bg-white/50 backdrop-blur-sm px-4 py-2 rounded-2xl border border-[#E96A51]/10">
+                            <span className="text-[10px] font-black text-[#E96A51]/40 uppercase tracking-widest italic">IVA Incluido</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Files & Client Section */}
+                  <div className="space-y-8">
+                    <div>
+                      <h3 className="text-[11px] font-black uppercase tracking-widest text-[#C7C7CC] mb-4">Archivos del Proyecto</h3>
+                      {selectedOrder.files_url && selectedOrder.files_url.length > 0 ? (
+                        <div className="grid grid-cols-1 gap-3">
+                          {selectedOrder.files_url.map((url, idx) => {
+                            const isImage = url.match(/\.(jpeg|jpg|gif|png|webp)/i);
+                            const fileName = url.split('/').pop();
+                            return (
+                              <div key={idx} className="group bg-[#F2F2F7]/40 border border-[#F2F2F7] rounded-3xl p-4 flex items-center justify-between hover:bg-[#E96A51]/5 hover:border-[#E96A51]/20 transition-all">
+                                <div className="flex items-center gap-4 overflow-hidden">
+                                  {isImage ? (
+                                    <div className="w-12 h-12 rounded-2xl bg-white flex-shrink-0 overflow-hidden border border-[#F2F2F7] shadow-sm">
+                                      <img src={url} alt="thumbnail" className="w-full h-full object-cover" />
+                                    </div>
+                                  ) : (
+                                    <div className="w-12 h-12 rounded-2xl bg-white flex-shrink-0 flex items-center justify-center text-[#E96A51] border border-[#F2F2F7] shadow-sm">
+                                      <FileText size={20} />
+                                    </div>
+                                  )}
+                                  <div className="overflow-hidden">
+                                    <p className="text-[13px] font-bold text-[#1C1C1E] truncate max-w-[150px]">{fileName}</p>
+                                    <p className="text-[10px] text-[#8E8E93] font-bold uppercase tracking-tight">{isImage ? 'Imagen' : 'Documento'}</p>
+                                  </div>
+                                </div>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => window.open(url, '_blank')}
+                                    className="p-2 bg-white text-[#1C1C1E] rounded-xl shadow-sm hover:scale-110 transition-transform"
+                                  >
+                                    <ExternalLink size={16} />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="bg-[#F2F2F7]/30 border-2 border-dashed border-[#F2F2F7] rounded-[2rem] p-8 text-center text-[#C7C7CC] text-xs font-bold italic">
+                          Sin archivos
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="bg-[#F2F2F7]/40 p-8 rounded-[2.5rem] border border-[#F2F2F7] space-y-6 self-start">
                     <h3 className="text-[11px] font-black uppercase tracking-widest text-[#1C1C1E] flex items-center gap-2">
-                       <div className="w-2 h-2 rounded-full bg-[#E96A51]"></div> Ficha del Cliente
+                      <div className="w-2 h-2 rounded-full bg-[#E96A51]"></div> Ficha Cliente
                     </h3>
-
-                    <div className="grid grid-cols-1 gap-6">
+                    <div className="space-y-4">
                       <div className="space-y-1">
                         <span className="text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Nombre</span>
                         <p className="font-bold text-[#1C1C1E] text-sm">{selectedOrder.leads?.name || '---'}</p>
                       </div>
-
                       <div className="space-y-1">
                         <span className="text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Teléfono</span>
-                        <p className="font-bold text-[#1C1C1E] text-sm flex items-center gap-2">
-                           {selectedOrder.leads?.phone_number}
-                           <a href={`https://wa.me/${selectedOrder.leads?.phone_number}`} target="_blank" className="p-1.5 bg-green-500/10 text-green-600 rounded-lg hover:bg-green-500 hover:text-white transition-all">
-                              <Phone size={12} />
-                           </a>
-                        </p>
+                        <p className="font-bold text-[#1C1C1E] text-sm">{selectedOrder.leads?.phone_number}</p>
                       </div>
-
                       <div className="space-y-1">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">RUT</span>
-                        <p className="font-bold text-[#1C1C1E] text-sm">{selectedOrder.leads?.rut || '--'}</p>
-                      </div>
-
-                      <div className="space-y-1">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Dirección / Email</span>
-                        <p className="font-bold text-[#1C1C1E] text-[13px] leading-relaxed">
-                          {selectedOrder.leads?.address || 'Sin Dirección'} <br/>
-                          <span className="text-[#8E8E93] font-medium">{selectedOrder.leads?.email || '--'}</span>
-                        </p>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Dirección</span>
+                        <p className="font-bold text-[#1C1C1E] text-xs">{selectedOrder.leads?.address || 'Sin Dirección'}</p>
                       </div>
                     </div>
-                  </div >
-                </div >
+                  </div>
+                </div>
 
-  {/* Footer Modal */ }
-{
-  !isEditing && (
-    <div className="pt-8 border-t border-[#F2F2F7] flex flex-col sm:flex-row gap-4">
-      <button
-        onClick={() => setIsInvoicing(false) || generateInvoice()}
-        disabled={isInvoicing}
-        className={`flex-1 h-14 bg-[#E96A51] text-white rounded-2xl font-bold text-sm shadow-xl shadow-[#E96A51]/20 flex items-center justify-center gap-3 active:scale-95 transition-all ${isInvoicing ? 'opacity-50' : 'hover:bg-[#D55F49]'}`}
-      >
-        {isInvoicing ? (
-          <>
-            <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
-            Generando...
-          </>
-        ) : (
-          <>
-            <FileText size={20} /> Generar Factura PDF
-          </>
-        )}
-      </button>
-      <button
-        onClick={() => setIsEditing(true)}
-        className="px-8 h-14 bg-white border-2 border-[#F2F2F7] text-[#1C1C1E] rounded-2xl font-bold text-sm hover:bg-[#F2F2F7] transition-all flex items-center justify-center gap-2"
-      >
-        <Edit2 size={18} /> Editar Orden
-      </button>
-    </div>
-  )
-}
-              </div >
-            </div >
-          </div >
-        </div >
+                {/* Footer Modal Actions */}
+                {!isEditing && (
+                  <div className="pt-8 border-t border-[#F2F2F7] flex flex-col sm:flex-row gap-4">
+                    <button
+                      onClick={generateInvoice}
+                      disabled={isInvoicing}
+                      className={`flex-1 h-14 bg-[#E96A51] text-white rounded-2xl font-bold text-sm shadow-xl shadow-[#E96A51]/20 flex items-center justify-center gap-3 active:scale-95 transition-all ${isInvoicing ? 'opacity-50' : 'hover:bg-[#D55F49]'}`}
+                    >
+                      {isInvoicing ? (
+                        <>
+                          <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
+                          Generando...
+                        </>
+                      ) : (
+                        <>
+                          <FileText size={20} /> Generar Factura PDF
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="px-8 h-14 bg-white border-2 border-[#F2F2F7] text-[#1C1C1E] rounded-2xl font-bold text-sm hover:bg-[#F2F2F7] transition-all flex items-center justify-center gap-2"
+                    >
+                      <Edit2 size={18} /> Editar Orden
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
-    </div >
+    </div>
   )
 }
 
