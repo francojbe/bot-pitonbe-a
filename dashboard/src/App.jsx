@@ -28,9 +28,12 @@ function App() {
   const [filter, setFilter] = useState('TODOS')
   const [isEditing, setIsEditing] = useState(false)
   const [editForm, setEditForm] = useState({ description: '', total_amount: 0 })
+  const [activeTab, setActiveTab] = useState('dashboard')
+  const [leads, setLeads] = useState([])
 
   useEffect(() => {
     fetchOrders()
+    fetchLeads()
 
     // Suscripción a cambios en tiempo real
     const channel = supabase
@@ -55,6 +58,16 @@ function App() {
     setLoading(false)
   }
 
+  async function fetchLeads() {
+    const { data, error } = await supabase
+      .from('leads')
+      .select('*')
+      .order('name', { ascending: true })
+
+    if (error) console.error('Error fetching leads:', error)
+    else setLeads(data || [])
+  }
+
   async function updateOrderStatus(newStatus) {
     if (!selectedOrder) return
 
@@ -67,15 +80,11 @@ function App() {
       console.error('Error updating status:', error)
       alert('Error al actualizar el estado')
     } else {
-      // 1. Actualizar estado local
       setOrders(orders.map(o => o.id === selectedOrder.id ? { ...o, status: newStatus } : o))
       setSelectedOrder({ ...selectedOrder, status: newStatus })
 
-      // 2. Notificar al Cliente por WhatsApp (Backend)
       try {
-        // Usar variable de entorno o el dominio final de producción
         const apiUrl = import.meta.env.VITE_API_URL || 'https://recuperadora-agente-pb.nojauc.easypanel.host'
-
         await fetch(`${apiUrl}/notify_update`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -84,7 +93,6 @@ function App() {
             new_status: newStatus
           })
         })
-        // Opcional: Mostrar toast de "Notificación Enviada"
         console.log('Notificación de cambio de estado enviada.')
       } catch (err) {
         console.error('Error enviando notificación:', err)
@@ -167,12 +175,10 @@ function App() {
     'ENTREGADO': 'bg-[#F2F2F7] text-[#8E8E93] border-[#E5E5EA]'
   }
 
-  // Estado de vista con persistencia
   const [viewMode, setViewMode] = useState(() => {
     return localStorage.getItem('dashboard_view_mode') || 'list'
   })
 
-  // Guardar preferencia de vista cuando cambie
   useEffect(() => {
     localStorage.setItem('dashboard_view_mode', viewMode)
   }, [viewMode])
@@ -197,9 +203,24 @@ function App() {
           </div>
 
           <div className="hidden sm:flex items-center gap-1 bg-[#F2F2F7] p-1 rounded-2xl">
-            <button className="px-4 py-1.5 rounded-xl text-xs font-bold bg-white shadow-sm text-[#1C1C1E]">Dashboard</button>
-            <button className="px-4 py-1.5 rounded-xl text-xs font-bold text-[#8E8E93] hover:text-[#1C1C1E]">Leads</button>
-            <button className="px-4 py-1.5 rounded-xl text-xs font-bold text-[#8E8E93] hover:text-[#1C1C1E]">Reportes</button>
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${activeTab === 'dashboard' ? 'bg-white shadow-sm text-[#1C1C1E]' : 'text-[#8E8E93] hover:text-[#1C1C1E]'}`}
+            >
+              Dashboard
+            </button>
+            <button
+              onClick={() => setActiveTab('clientes')}
+              className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${activeTab === 'clientes' ? 'bg-white shadow-sm text-[#1C1C1E]' : 'text-[#8E8E93] hover:text-[#1C1C1E]'}`}
+            >
+              Clientes
+            </button>
+            <button
+              onClick={() => setActiveTab('reportes')}
+              className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${activeTab === 'reportes' ? 'bg-white shadow-sm text-[#1C1C1E]' : 'text-[#8E8E93] hover:text-[#1C1C1E]'}`}
+            >
+              Reportes
+            </button>
           </div>
 
           <div className="flex items-center gap-4">
@@ -210,163 +231,208 @@ function App() {
         </div>
       </nav>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-10 scale-[0.98] sm:scale-100 origin-top transition-transform">
+        {activeTab === 'dashboard' && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+              <div>
+                <h1 className="text-4xl font-extrabold tracking-tight mb-2">Hola, Pitrón Beña 👋</h1>
+                <p className="text-[#8E8E93] font-medium text-lg">Tienes <span className="text-[#E96A51] font-bold">{orders.filter(o => o.status === 'NUEVO').length} pedidos nuevos</span> esperando revisión.</p>
+              </div>
 
-        {/* iOS Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-          <div>
-            <h1 className="text-4xl font-extrabold tracking-tight mb-2">Hola, Pitrón Beña 👋</h1>
-            <p className="text-[#8E8E93] font-medium text-lg">Tienes <span className="text-[#E96A51] font-bold">{orders.filter(o => o.status === 'NUEVO').length} pedidos nuevos</span> esperando revisión.</p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="flex bg-[#F2F2F7] p-1 rounded-2xl border border-[#E5E5EA]">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-2.5 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-white shadow-lg text-[#1C1C1E]' : 'text-[#8E8E93] hover:text-[#1C1C1E]'}`}
-              >
-                <LayoutGrid size={20} />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-2.5 rounded-xl transition-all ${viewMode === 'list' ? 'bg-white shadow-lg text-[#1C1C1E]' : 'text-[#8E8E93] hover:text-[#1C1C1E]'}`}
-              >
-                <List size={20} />
-              </button>
+              <div className="flex items-center gap-3">
+                <div className="flex bg-[#F2F2F7] p-1 rounded-2xl border border-[#E5E5EA]">
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`p-2.5 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-white shadow-lg text-[#1C1C1E]' : 'text-[#8E8E93] hover:text-[#1C1C1E]'}`}
+                  >
+                    <LayoutGrid size={20} />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`p-2.5 rounded-xl transition-all ${viewMode === 'list' ? 'bg-white shadow-lg text-[#1C1C1E]' : 'text-[#8E8E93] hover:text-[#1C1C1E]'}`}
+                  >
+                    <List size={20} />
+                  </button>
+                </div>
+                <button className="bg-[#E96A51] text-white h-[46px] px-6 rounded-2xl text-sm font-bold hover:bg-[#D55F49] transition-all shadow-xl shadow-[#E96A51]/30 flex items-center gap-2 active:scale-95">
+                  <ClipboardList size={18} /> Nuevo Trabajo
+                </button>
+              </div>
             </div>
 
-            <button className="bg-[#E96A51] text-white h-[46px] px-6 rounded-2xl text-sm font-bold hover:bg-[#D55F49] transition-all shadow-xl shadow-[#E96A51]/30 flex items-center gap-2 active:scale-95">
-              <ClipboardList size={18} /> Nuevo Trabajo
-            </button>
-          </div>
-        </div>
+            <div className="flex gap-2 mb-10 overflow-x-auto pb-4 scrollbar-hide">
+              {['TODOS', 'NUEVO', 'DISEÑO', 'PRODUCCIÓN', 'LISTO', 'ENTREGADO'].map(st => (
+                <button
+                  key={st}
+                  onClick={() => setFilter(st)}
+                  className={`px-5 py-2.5 rounded-2xl text-[13px] font-bold transition-all whitespace-nowrap border-2
+                    ${filter === st ? 'bg-[#1C1C1E] text-white border-[#1C1C1E] shadow-xl' : 'bg-white text-[#8E8E93] border-[#F2F2F7] hover:border-[#8E8E93]/20 hover:text-[#1C1C1E]'}`}
+                >
+                  {st}
+                </button>
+              ))}
+            </div>
 
-        {/* Filters - Pill Style */}
-        <div className="flex gap-2 mb-10 overflow-x-auto pb-4 scrollbar-hide">
-          {['TODOS', 'NUEVO', 'DISEÑO', 'PRODUCCIÓN', 'LISTO', 'ENTREGADO'].map(st => (
-            <button
-              key={st}
-              onClick={() => setFilter(st)}
-              className={`px-5 py-2.5 rounded-2xl text-[13px] font-bold transition-all whitespace-nowrap border-2
-                ${filter === st
-                  ? 'bg-[#1C1C1E] text-white border-[#1C1C1E] shadow-xl'
-                  : 'bg-white text-[#8E8E93] border-[#F2F2F7] hover:border-[#8E8E93]/20 hover:text-[#1C1C1E]'}`}
-            >
-              {st}
-            </button>
-          ))}
-        </div>
-
-        {/* Orders Content */}
-        {loading ? (
-          <div className="text-center py-20 text-gray-400 font-medium">Cargando pedidos...</div>
-        ) : filteredOrders.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-[3rem] border-2 border-dashed border-[#F2F2F7]">
-            <p className="text-[#8E8E93] font-bold">No hay pedidos en esta categoría.</p>
-          </div>
-        ) : viewMode === 'grid' ? (
-          /* iOS CARDS (Bento Style) */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredOrders.map(order => (
-              <div
-                key={order.id}
-                onClick={() => {
-                  setSelectedOrder(order)
-                  setEditForm({ description: order.description, total_amount: order.total_amount })
-                  setIsEditing(false)
-                }}
-                className="bg-white rounded-[2.5rem] border border-[#F2F2F7] shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_60px_-15px_rgba(233,106,81,0.1)] transition-all duration-500 cursor-pointer overflow-hidden group hover:-translate-y-2 p-1"
-              >
-                <div className="p-7">
-                  <div className="flex justify-between items-start mb-6">
-                    <span className={`px-4 py-1 rounded-2xl text-[11px] font-black tracking-widest uppercase border ${statusColors[order.status]}`}>
-                      {order.status}
-                    </span>
-                    <span className="text-[10px] text-[#C7C7CC] font-bold tracking-tighter uppercase">ID · {order.id.slice(0, 8)}</span>
-                  </div>
-
-                  <h3 className="text-xl font-bold text-[#1C1C1E] mb-2 leading-snug line-clamp-2 h-14">{order.description}</h3>
-                  <div className="flex items-center gap-3 mb-8">
-                    <div className="w-8 h-8 rounded-full bg-[#1C1C1E] flex items-center justify-center text-white text-[10px] font-bold uppercase">
-                      {order.leads?.name?.slice(0, 2) || 'CL'}
-                    </div>
-                    <p className="text-sm text-[#8E8E93] font-semibold">{order.leads?.name || order.leads?.phone_number}</p>
-                  </div>
-
-                  <div className="bg-[#F2F2F7]/50 rounded-3xl p-5 flex justify-between items-center transition-colors group-hover:bg-[#E96A51]/5">
-                    <div>
-                      <span className="text-[10px] uppercase tracking-widest text-[#8E8E93] font-bold block mb-1">Monto Total</span>
-                      <span className="text-2xl font-black text-[#1C1C1E] tracking-tight">
-                        ${order.total_amount?.toLocaleString() || '0'}
-                      </span>
-                    </div>
-                    <div className="bg-white w-10 h-10 rounded-2xl flex items-center justify-center text-[#E96A51] shadow-sm transform group-hover:rotate-12 transition-transform">
-                      <MoreHorizontal size={20} />
-                    </div>
-                  </div>
-                </div>
+            {loading ? (
+              <div className="text-center py-20 text-gray-400 font-medium">Cargando pedidos...</div>
+            ) : filteredOrders.length === 0 ? (
+              <div className="text-center py-20 bg-white rounded-[3rem] border-2 border-dashed border-[#F2F2F7]">
+                <p className="text-[#8E8E93] font-bold">No hay pedidos en esta categoría.</p>
               </div>
-            ))}
-          </div>
-        ) : (
-          /* iOS LIST VIEW */
-          <div className="bg-white rounded-[2.5rem] shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] border border-[#F2F2F7] overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="border-b border-[#F2F2F7]">
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Estado</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Descripción</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Cliente</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#8E8E93] text-right">Total</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#F2F2F7]">
-                  {filteredOrders.map(order => (
-                    <tr
-                      key={order.id}
-                      onClick={() => {
-                        setSelectedOrder(order)
-                        setEditForm({ description: order.description, total_amount: order.total_amount })
-                        setIsEditing(false)
-                      }}
-                      className="hover:bg-[#F2F2F7]/30 cursor-pointer transition-colors group"
-                    >
-                      <td className="px-8 py-6">
-                        <span className={`px-4 py-1 rounded-2xl text-[10px] font-black tracking-widest uppercase border ${statusColors[order.status]}`}>
+            ) : viewMode === 'grid' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {filteredOrders.map(order => (
+                  <div
+                    key={order.id}
+                    onClick={() => {
+                      setSelectedOrder(order)
+                      setEditForm({ description: order.description, total_amount: order.total_amount })
+                      setIsEditing(false)
+                    }}
+                    className="bg-white rounded-[2.5rem] border border-[#F2F2F7] shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_60px_-15px_rgba(233,106,81,0.1)] transition-all duration-500 cursor-pointer overflow-hidden group hover:-translate-y-2 p-1"
+                  >
+                    <div className="p-7">
+                      <div className="flex justify-between items-start mb-6">
+                        <span className={`px-4 py-1 rounded-2xl text-[11px] font-black tracking-widest uppercase border ${statusColors[order.status]}`}>
                           {order.status}
                         </span>
-                      </td>
-                      <td className="px-8 py-6">
-                        <p className="font-bold text-[#1C1C1E] text-[15px] line-clamp-1">{order.description}</p>
-                        <p className="text-[10px] text-[#C7C7CC] font-bold uppercase mt-1 tracking-tighter">ID: {order.id.slice(0, 8)}</p>
-                      </td>
-                      <td className="px-8 py-6">
-                        <p className="font-semibold text-[#8E8E93] text-sm">{order.leads?.name || order.leads?.phone_number}</p>
-                      </td>
-                      <td className="px-8 py-6 text-right font-black text-[#1C1C1E] text-lg">
-                        ${order.total_amount?.toLocaleString() || '0'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        <span className="text-[10px] text-[#C7C7CC] font-bold tracking-tighter uppercase">ID · {order.id.slice(0, 8)}</span>
+                      </div>
+                      <h3 className="text-xl font-bold text-[#1C1C1E] mb-2 leading-snug line-clamp-2 h-14">{order.description}</h3>
+                      <div className="flex items-center gap-3 mb-8">
+                        <div className="w-8 h-8 rounded-full bg-[#1C1C1E] flex items-center justify-center text-white text-[10px] font-bold uppercase">
+                          {order.leads?.name?.slice(0, 2) || 'CL'}
+                        </div>
+                        <p className="text-sm text-[#8E8E93] font-semibold">{order.leads?.name || order.leads?.phone_number}</p>
+                      </div>
+                      <div className="bg-[#F2F2F7]/50 rounded-3xl p-5 flex justify-between items-center transition-colors group-hover:bg-[#E96A51]/5">
+                        <div>
+                          <span className="text-[10px] uppercase tracking-widest text-[#8E8E93] font-bold block mb-1">Monto Total</span>
+                          <span className="text-2xl font-black text-[#1C1C1E] tracking-tight">${order.total_amount?.toLocaleString() || '0'}</span>
+                        </div>
+                        <div className="bg-white w-10 h-10 rounded-2xl flex items-center justify-center text-[#E96A51] shadow-sm transform group-hover:rotate-12 transition-transform">
+                          <MoreHorizontal size={20} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white rounded-[2.5rem] shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] border border-[#F2F2F7] overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="border-b border-[#F2F2F7]">
+                        <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Estado</th>
+                        <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Descripción</th>
+                        <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Cliente</th>
+                        <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#8E8E93] text-right">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#F2F2F7]">
+                      {filteredOrders.map(order => (
+                        <tr
+                          key={order.id}
+                          onClick={() => {
+                            setSelectedOrder(order)
+                            setEditForm({ description: order.description, total_amount: order.total_amount })
+                            setIsEditing(false)
+                          }}
+                          className="hover:bg-[#F2F2F7]/30 cursor-pointer transition-colors group"
+                        >
+                          <td className="px-8 py-6">
+                            <span className={`px-4 py-1 rounded-2xl text-[10px] font-black tracking-widest uppercase border ${statusColors[order.status]}`}>
+                              {order.status}
+                            </span>
+                          </td>
+                          <td className="px-8 py-6">
+                            <p className="font-bold text-[#1C1C1E] text-[15px] line-clamp-1">{order.description}</p>
+                            <p className="text-[10px] text-[#C7C7CC] font-bold uppercase mt-1 tracking-tighter">ID: {order.id.slice(0, 8)}</p>
+                          </td>
+                          <td className="px-8 py-6">
+                            <p className="font-semibold text-[#8E8E93] text-sm">{order.leads?.name || order.leads?.phone_number}</p>
+                          </td>
+                          <td className="px-8 py-6 text-right font-black text-[#1C1C1E] text-lg">
+                            ${order.total_amount?.toLocaleString() || '0'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'clientes' && (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex justify-between items-end mb-8">
+              <div>
+                <h1 className="text-4xl font-extrabold tracking-tight mb-2">Mis Clientes</h1>
+                <p className="text-[#8E8E93] font-medium text-lg">Administra el directorio de contactos y leads ({leads.length}).</p>
+              </div>
             </div>
+            <div className="bg-white rounded-[2.5rem] shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] border border-[#F2F2F7] overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-[#F2F2F7]">
+                      <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Cliente</th>
+                      <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">WhatsApp</th>
+                      <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Dirección / Email</th>
+                      <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#8E8E93] text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#F2F2F7]">
+                    {leads.map(client => (
+                      <tr key={client.id} className="hover:bg-[#F2F2F7]/30 transition-colors group">
+                        <td className="px-8 py-6">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-2xl bg-[#1C1C1E] flex items-center justify-center text-white text-xs font-black">
+                              {client.name?.slice(0, 2).toUpperCase() || '??'}
+                            </div>
+                            <div>
+                              <p className="font-bold text-[#1C1C1E] text-[15px]">{client.name || 'Sin nombre'}</p>
+                              <p className="text-[10px] text-[#C7C7CC] font-bold uppercase tracking-tighter">RUT: {client.rut || '---'}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-8 py-6 text-sm font-bold text-[#8E8E93]">{client.phone_number}</td>
+                        <td className="px-8 py-6">
+                          <p className="text-xs font-bold text-[#1C1C1E] mb-1">{client.email || 'Sin email'}</p>
+                          <p className="text-[10px] text-[#8E8E93] font-medium">{client.address || 'Sin dirección'}</p>
+                        </td>
+                        <td className="px-8 py-6 text-right">
+                          <a href={`https://wa.me/${client.phone_number}`} target="_blank" className="inline-flex items-center gap-2 px-4 py-2 bg-[#F2F2F7] text-[#1C1C1E] rounded-xl text-[10px] font-black tracking-widest uppercase hover:bg-[#E96A51] hover:text-white transition-all shadow-sm">
+                            <Phone size={12} /> Contactar
+                          </a>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'reportes' && (
+          <div className="text-center py-40 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h2 className="text-2xl font-black text-[#1C1C1E] mb-2">Próximamente</h2>
+            <p className="text-[#8E8E93] font-bold">Estamos trabajando en analíticas avanzadas para tu negocio.</p>
           </div>
         )}
       </main>
 
-      {/* iOS STYLE MODAL - TWO COLUMNS DISTRIBUTION */}
       {selectedOrder && (
         <div className="fixed inset-0 bg-[#1C1C1E]/40 z-50 flex items-center justify-center p-4 backdrop-blur-md transition-all">
           <div className="bg-white rounded-[2.5rem] w-full max-w-3xl max-h-[90vh] overflow-hidden shadow-[0_30px_90px_-20px_rgba(0,0,0,0.3)] flex flex-col scale-100 animate-in fade-in zoom-in duration-300">
-            {/* Header Modal */}
             <div className="px-8 py-4 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-[#F2F2F7]">
               <div className="flex items-center gap-3">
-                <div className="bg-[#E96A51]/10 p-2 rounded-xl text-[#E96A51]">
-                  <FileText size={18} weight="bold" />
-                </div>
+                <div className="bg-[#E96A51]/10 p-2 rounded-xl text-[#E96A51]"><FileText size={18} weight="bold" /></div>
                 <div>
                   <h2 className="text-base font-black text-[#1C1C1E] tracking-tight leading-none">Orden {selectedOrder.id.slice(0, 8)}</h2>
                   <p className="text-[8px] text-[#C7C7CC] font-black uppercase tracking-widest mt-1">{selectedOrder.created_at ? new Date(selectedOrder.created_at).toLocaleDateString() : 'Sin fecha'}</p>
@@ -374,36 +440,21 @@ function App() {
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={handleDeleteOrder} className="p-2 text-[#FF3B30] hover:bg-[#FF3B30]/10 rounded-xl transition-all"><Trash2 size={16} /></button>
-                <button onClick={() => { setSelectedOrder(null); setIsEditing(false); }} className="p-2 bg-[#F2F2F7] text-[#8E8E93] hover:text-[#1C1C1E] rounded-xl transition-all">
-                  <X size={18} />
-                </button>
+                <button onClick={() => { setSelectedOrder(null); setIsEditing(false); }} className="p-2 bg-[#F2F2F7] text-[#8E8E93] hover:text-[#1C1C1E] rounded-xl transition-all"><X size={18} /></button>
               </div>
             </div>
-
             <div className="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar">
-              {/* Main Content Grid: Left (Description/Files) | Right (Client/Status) */}
               <div className="grid grid-cols-1 md:grid-cols-[1fr,260px] gap-8">
-
-                {/* LEFT COLUMN: Main Order Data */}
                 <div className="space-y-6">
                   {isEditing ? (
                     <form onSubmit={handleEditSubmit} className="space-y-4 bg-[#F2F2F7]/30 p-5 rounded-2xl border border-[#F2F2F7]">
                       <div className="space-y-1">
                         <label className="text-[9px] font-black uppercase tracking-widest text-[#C7C7CC]">Descripción del Trabajo</label>
-                        <textarea
-                          value={editForm.description}
-                          onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                          className="w-full bg-white border border-[#E5E5EA] rounded-xl p-3 text-sm font-bold focus:border-[#E96A51] outline-none transition-all h-24 resize-none"
-                        />
+                        <textarea value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} className="w-full bg-white border border-[#E5E5EA] rounded-xl p-3 text-sm font-bold focus:border-[#E96A51] outline-none transition-all h-24 resize-none" />
                       </div>
                       <div className="space-y-1">
                         <label className="text-[9px] font-black uppercase tracking-widest text-[#C7C7CC]">Monto Presupuestado</label>
-                        <input
-                          type="number"
-                          value={editForm.total_amount}
-                          onChange={(e) => setEditForm({ ...editForm, total_amount: e.target.value })}
-                          className="w-full bg-white border border-[#E5E5EA] rounded-xl p-3 text-sm font-bold focus:border-[#E96A51] outline-none transition-all"
-                        />
+                        <input type="number" value={editForm.total_amount} onChange={(e) => setEditForm({ ...editForm, total_amount: e.target.value })} className="w-full bg-white border border-[#E5E5EA] rounded-xl p-3 text-sm font-bold focus:border-[#E96A51] outline-none transition-all" />
                       </div>
                       <div className="flex gap-2 pt-2">
                         <button type="submit" className="flex-1 bg-[#1C1C1E] text-white h-10 rounded-xl font-bold text-[11px] shadow-sm flex items-center justify-center gap-2"><Save size={14} /> Guardar</button>
@@ -416,7 +467,6 @@ function App() {
                         <span className="text-[9px] font-black uppercase tracking-widest text-[#C7C7CC]">Descripción del Trabajo</span>
                         <p className="text-[15px] font-bold text-[#1C1C1E] leading-relaxed bg-[#FDFDFD] p-1">{selectedOrder.description}</p>
                       </div>
-
                       <div className="bg-[#E96A51]/5 border border-[#E96A51]/10 px-5 py-4 rounded-2xl flex items-center justify-between">
                         <div>
                           <span className="text-[8px] font-black uppercase tracking-widest text-[#E96A51] opacity-60">Presupuesto</span>
@@ -427,7 +477,6 @@ function App() {
                           <span className="px-2 py-0.5 bg-white rounded-lg text-[9px] font-black text-[#E96A51] border border-[#E96A51]/10">Neto</span>
                         </div>
                       </div>
-
                       <div className="pt-2">
                         <h3 className="text-[9px] font-black uppercase tracking-widest text-[#C7C7CC] mb-3">Archivos compartidos ({selectedOrder.files_url?.length || 0})</h3>
                         {selectedOrder.files_url && selectedOrder.files_url.length > 0 ? (
@@ -440,8 +489,8 @@ function App() {
                                   <div className="w-8 h-8 rounded-lg bg-white flex-shrink-0 overflow-hidden border border-[#F2F2F7]">
                                     {isImage ? <img src={url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-[#E96A51]"><FileText size={14} /></div>}
                                   </div>
-                                  <div className="overflow-hidden">
-                                    <p className="text-[10px] font-bold text-[#1C1C1E] truncate max-w-[80px]">{fileName}</p>
+                                  <div className="overflow-hidden truncate max-w-[80px]">
+                                    <p className="text-[10px] font-bold text-[#1C1C1E] truncate">{fileName}</p>
                                     <p className="text-[7px] font-black text-[#8E8E93] uppercase tracking-tighter">{isImage ? 'IMG' : 'DOC'}</p>
                                   </div>
                                   <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity"><ExternalLink size={10} className="text-[#8E8E93]" /></div>
@@ -456,72 +505,38 @@ function App() {
                     </>
                   )}
                 </div>
-
-                {/* RIGHT COLUMN: Meta Info (Client & Status) */}
                 <div className="space-y-6">
-                  {/* Status Box */}
                   <div className="bg-[#F2F2F7]/30 p-4 rounded-2xl border border-[#F2F2F7] space-y-3">
                     <span className="text-[9px] font-black uppercase tracking-widest text-[#8E8E93] block">Estado de la Orden</span>
                     <div className="grid grid-cols-1 gap-1.5">
                       {Object.keys(statusColors).map(s => (
-                        <button
-                          key={s}
-                          onClick={() => updateOrderStatus(s)}
-                          className={`w-full px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border-2 transition-all flex items-center justify-between
-                            ${selectedOrder.status === s
-                              ? 'bg-[#1C1C1E] text-white border-[#1C1C1E] shadow-md'
-                              : 'bg-white border-[#F2F2F7] text-[#C7C7CC] hover:border-[#8E8E93]/20 hover:text-[#1C1C1E]'}`}
-                        >
-                          {s}
-                          {selectedOrder.status === s && <div className="w-1.5 h-1.5 rounded-full bg-[#E96A51]"></div>}
+                        <button key={s} onClick={() => updateOrderStatus(s)} className={`w-full px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border-2 transition-all flex items-center justify-between ${selectedOrder.status === s ? 'bg-[#1C1C1E] text-white border-[#1C1C1E] shadow-md' : 'bg-white border-[#F2F2F7] text-[#C7C7CC] hover:border-[#8E8E93]/20 hover:text-[#1C1C1E]'}`}>
+                          {s} {selectedOrder.status === s && <div className="w-1.5 h-1.5 rounded-full bg-[#E96A51]"></div>}
                         </button>
                       ))}
                     </div>
                   </div>
-
-                  {/* Client Card */}
                   <div className="bg-[#1C1C1E] text-white p-5 rounded-[2rem] space-y-4 shadow-xl shadow-[#1C1C1E]/10">
                     <div className="flex items-center gap-2 pb-2 border-b border-white/10">
                       <div className="w-6 h-6 rounded-full bg-[#E96A51] flex items-center justify-center text-[10px] font-black">{selectedOrder.leads?.name?.slice(0, 1) || 'C'}</div>
                       <h3 className="text-[10px] font-bold uppercase tracking-widest">Ficha Cliente</h3>
                     </div>
                     <div className="space-y-3">
-                      <div>
-                        <span className="text-[7px] font-bold uppercase tracking-[0.2em] text-[#8E8E93] block mb-0.5">Nombre Completo</span>
-                        <p className="text-[12px] font-bold truncate">{selectedOrder.leads?.name || '---'}</p>
-                      </div>
-                      <div>
-                        <span className="text-[7px] font-bold uppercase tracking-[0.2em] text-[#8E8E93] block mb-0.5">WhatsApp / Celular</span>
-                        <div className="flex items-center justify-between">
-                          <p className="text-[12px] font-bold">{selectedOrder.leads?.phone_number}</p>
-                          <a href={`https://wa.me/${selectedOrder.leads?.phone_number}`} target="_blank" className="p-1 px-2 bg-green-500 rounded-lg text-white text-[9px] font-bold hover:bg-green-600 transition-colors">WA</a>
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-[7px] font-bold uppercase tracking-[0.2em] text-[#8E8E93] block mb-0.5">Despacho</span>
-                        <p className="text-[10px] font-medium leading-tight opacity-80">{selectedOrder.leads?.address || 'Retiro en Tienda'}</p>
-                      </div>
+                      <div><span className="text-[7px] font-bold uppercase tracking-[0.2em] text-[#8E8E93] block mb-0.5">Nombre Completo</span><p className="text-[12px] font-bold truncate">{selectedOrder.leads?.name || '---'}</p></div>
+                      <div><span className="text-[7px] font-bold uppercase tracking-[0.2em] text-[#8E8E93] block mb-0.5">WhatsApp</span><div className="flex items-center justify-between"><p className="text-[12px] font-bold">{selectedOrder.leads?.phone_number}</p><a href={`https://wa.me/${selectedOrder.leads?.phone_number}`} target="_blank" className="p-1 px-2 bg-green-500 rounded-lg text-white text-[9px] font-bold">WA</a></div></div>
+                      <div><span className="text-[7px] font-bold uppercase tracking-[0.2em] text-[#8E8E93] block mb-0.5">Despacho</span><p className="text-[10px] font-medium leading-tight opacity-80">{selectedOrder.leads?.address || 'Retiro en Tienda'}</p></div>
                     </div>
                   </div>
                 </div>
-
               </div>
             </div>
-
-            {/* Footer Modal Actions - Fixed at Bottom */}
             <div className="px-8 py-5 bg-[#F2F2F7]/30 border-t border-[#F2F2F7] flex gap-3">
               {!isEditing && (
                 <>
-                  <button
-                    onClick={generateInvoice}
-                    disabled={isInvoicing}
-                    className={`flex-1 h-11 bg-[#E96A51] text-white rounded-xl font-bold text-[11px] shadow-lg shadow-[#E96A51]/20 flex items-center justify-center gap-2 active:scale-95 transition-all ${isInvoicing ? 'opacity-50' : 'hover:bg-[#D55F49]'}`}
-                  >
+                  <button onClick={generateInvoice} disabled={isInvoicing} className={`flex-1 h-11 bg-[#E96A51] text-white rounded-xl font-bold text-[11px] shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all ${isInvoicing ? 'opacity-50' : 'hover:bg-[#D55F49]'}`}>
                     {isInvoicing ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <><FileText size={16} /> GENERAR FACTURA</>}
                   </button>
-                  <button onClick={() => setIsEditing(true)} className="px-6 h-11 bg-white border border-[#F2F2F7] text-[#1C1C1E] rounded-xl font-bold text-[11px] hover:bg-[#F2F2F7] transition-all flex items-center justify-center gap-2 shadow-sm">
-                    <Edit2 size={14} /> EDITAR
-                  </button>
+                  <button onClick={() => setIsEditing(true)} className="px-6 h-11 bg-white border border-[#F2F2F7] text-[#1C1C1E] rounded-xl font-bold text-[11px] hover:bg-[#F2F2F7] transition-all flex items-center justify-center gap-2 shadow-sm"><Edit2 size={14} /> EDITAR</button>
                 </>
               )}
             </div>
