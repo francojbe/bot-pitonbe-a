@@ -18,7 +18,8 @@ import {
   Image as ImageIcon,
   Trash2,
   Save,
-  Edit2
+  Edit2,
+  User
 } from 'lucide-react'
 
 function App() {
@@ -29,21 +30,35 @@ function App() {
   const [isEditing, setIsEditing] = useState(false)
   const [editForm, setEditForm] = useState({ description: '', total_amount: 0 })
   const [activeTab, setActiveTab] = useState('dashboard')
+
+  // Clientes State
   const [leads, setLeads] = useState([])
+  const [selectedLead, setSelectedLead] = useState(null)
+  const [isEditingLead, setIsEditingLead] = useState(false)
+  const [leadForm, setLeadForm] = useState({ name: '', phone_number: '', rut: '', address: '', email: '' })
 
   useEffect(() => {
     fetchOrders()
     fetchLeads()
 
-    // Suscripción a cambios en tiempo real
-    const channel = supabase
+    const channelLeads = supabase
+      .channel('realtime leads')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, () => {
+        fetchLeads()
+      })
+      .subscribe()
+
+    const channelOrders = supabase
       .channel('realtime orders')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
         fetchOrders()
       })
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    return () => {
+      supabase.removeChannel(channelLeads)
+      supabase.removeChannel(channelOrders)
+    }
   }, [])
 
   async function fetchOrders() {
@@ -68,17 +83,42 @@ function App() {
     else setLeads(data || [])
   }
 
-  async function updateOrderStatus(newStatus) {
-    if (!selectedOrder) return
+  // --- LEAD ACTIONS ---
+  async function handleDeleteLead(id) {
+    if (!confirm('¿Estás seguro de eliminar este cliente? Se borrarán sus datos permanentemente.')) return
 
+    const { error } = await supabase.from('leads').delete().eq('id', id)
+    if (error) {
+      alert('Error al eliminar: ' + error.message)
+    } else {
+      setLeads(leads.filter(l => l.id !== id))
+      if (selectedLead?.id === id) setSelectedLead(null)
+    }
+  }
+
+  async function handleLeadSubmit(e) {
+    e.preventDefault()
     const { error } = await supabase
-      .from('orders')
-      .update({ status: newStatus })
-      .eq('id', selectedOrder.id)
+      .from('leads')
+      .update(leadForm)
+      .eq('id', selectedLead.id)
 
     if (error) {
-      console.error('Error updating status:', error)
-      alert('Error al actualizar el estado')
+      alert('Error al actualizar: ' + error.message)
+    } else {
+      setLeads(leads.map(l => l.id === selectedLead.id ? { ...l, ...leadForm } : l))
+      setIsEditingLead(false)
+      setSelectedLead(null)
+    }
+  }
+
+  // --- ORDER ACTIONS ---
+  async function updateOrderStatus(newStatus) {
+    if (!selectedOrder) return
+    const { error } = await supabase.from('orders').update({ status: newStatus }).eq('id', selectedOrder.id)
+
+    if (error) {
+      alert('Error al actualizar estado')
     } else {
       setOrders(orders.map(o => o.id === selectedOrder.id ? { ...o, status: newStatus } : o))
       setSelectedOrder({ ...selectedOrder, status: newStatus })
@@ -88,33 +128,21 @@ function App() {
         await fetch(`${apiUrl}/notify_update`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            order_id: selectedOrder.id,
-            new_status: newStatus
-          })
+          body: JSON.stringify({ order_id: selectedOrder.id, new_status: newStatus })
         })
-        console.log('Notificación de cambio de estado enviada.')
-      } catch (err) {
-        console.error('Error enviando notificación:', err)
-      }
+      } catch (err) { console.error(err) }
     }
   }
 
   async function handleEditSubmit(e) {
     e.preventDefault()
-    if (!selectedOrder) return
-
-    const { error } = await supabase
-      .from('orders')
-      .update({
-        description: editForm.description,
-        total_amount: parseInt(editForm.total_amount)
-      })
-      .eq('id', selectedOrder.id)
+    const { error } = await supabase.from('orders').update({
+      description: editForm.description,
+      total_amount: parseInt(editForm.total_amount)
+    }).eq('id', selectedOrder.id)
 
     if (error) {
-      console.error('Error updating order:', error)
-      alert('Error al actualizar el pedido')
+      alert('Error al actualizar')
     } else {
       setOrders(orders.map(o => o.id === selectedOrder.id ? { ...o, ...editForm } : o))
       setSelectedOrder({ ...selectedOrder, ...editForm })
@@ -123,48 +151,30 @@ function App() {
   }
 
   async function handleDeleteOrder() {
-    if (!selectedOrder) return
-    if (!confirm('¿Estás seguro de que deseas eliminar este pedido? Esta acción no se puede deshacer.')) return
-
-    const { error } = await supabase
-      .from('orders')
-      .delete()
-      .eq('id', selectedOrder.id)
-
-    if (error) {
-      console.error('Error deleting order:', error)
-      alert('Error al eliminar el pedido')
-    } else {
+    if (!selectedOrder || !confirm('¿Eliminar pedido?')) return
+    const { error } = await supabase.from('orders').delete().eq('id', selectedOrder.id)
+    if (error) alert('Error')
+    else {
       setOrders(orders.filter(o => o.id !== selectedOrder.id))
       setSelectedOrder(null)
     }
   }
 
   const [isInvoicing, setIsInvoicing] = useState(false)
-
   async function generateInvoice() {
     if (!selectedOrder) return
     setIsInvoicing(true)
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'https://recuperadora-agente-pb.nojauc.easypanel.host'
-      const response = await fetch(`${apiUrl}/generate_invoice`, {
+      const res = await fetch(`${apiUrl}/generate_invoice`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ order_id: selectedOrder.id, new_status: selectedOrder.status })
       })
-
-      const result = await response.json()
-      if (result.status === 'success') {
-        alert('✅ Factura generada y enviada por WhatsApp con éxito.')
-      } else {
-        alert('❌ Error: ' + result.message)
-      }
-    } catch (err) {
-      console.error('Error generating invoice:', err)
-      alert('Error al conectar con la API de facturación.')
-    } finally {
-      setIsInvoicing(false)
-    }
+      const result = await res.json()
+      alert(result.status === 'success' ? '✅ Enviada' : '❌ Error: ' + result.message)
+    } catch (err) { alert('Error de conexión') }
+    finally { setIsInvoicing(false) }
   }
 
   const statusColors = {
@@ -175,370 +185,181 @@ function App() {
     'ENTREGADO': 'bg-[#F2F2F7] text-[#8E8E93] border-[#E5E5EA]'
   }
 
-  const [viewMode, setViewMode] = useState(() => {
-    return localStorage.getItem('dashboard_view_mode') || 'list'
-  })
+  const [viewMode, setViewMode] = useState(() => localStorage.getItem('dashboard_view_mode') || 'list')
+  useEffect(() => { localStorage.setItem('dashboard_view_mode', viewMode) }, [viewMode])
 
-  useEffect(() => {
-    localStorage.setItem('dashboard_view_mode', viewMode)
-  }, [viewMode])
-
-  const filteredOrders = filter === 'TODOS'
-    ? orders
-    : orders.filter(o => o.status === filter)
+  const filteredOrders = filter === 'TODOS' ? orders : orders.filter(o => o.status === filter)
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD] text-[#1C1C1E] font-sans selection:bg-[#E96A51]/20">
-      {/* Navbar Minimalista */}
-      <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
+    <div className="min-h-screen bg-[#FDFDFD] text-[#1C1C1E] font-sans">
+      <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-gray-100 h-20 flex items-center px-6">
+        <div className="max-w-7xl mx-auto w-full flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="bg-[#E96A51] w-10 h-10 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-[#E96A51]/20">
-              <Printer size={20} weight="bold" />
-            </div>
-            <div>
-              <span className="font-bold text-xl tracking-tight block leading-tight">Pitron Beña</span>
-              <span className="text-[10px] uppercase tracking-widest text-[#8E8E93] font-bold">Workspace App</span>
-            </div>
+            <div className="bg-[#E96A51] w-10 h-10 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-[#E96A51]/20"><Printer size={20} /></div>
+            <div><span className="font-bold text-xl tracking-tight block">Pitron Beña</span><span className="text-[10px] uppercase tracking-widest text-[#8E8E93] font-bold">Workspace</span></div>
           </div>
-
-          <div className="hidden sm:flex items-center gap-1 bg-[#F2F2F7] p-1 rounded-2xl">
-            <button
-              onClick={() => setActiveTab('dashboard')}
-              className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${activeTab === 'dashboard' ? 'bg-white shadow-sm text-[#1C1C1E]' : 'text-[#8E8E93] hover:text-[#1C1C1E]'}`}
-            >
-              Dashboard
-            </button>
-            <button
-              onClick={() => setActiveTab('clientes')}
-              className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${activeTab === 'clientes' ? 'bg-white shadow-sm text-[#1C1C1E]' : 'text-[#8E8E93] hover:text-[#1C1C1E]'}`}
-            >
-              Clientes
-            </button>
-            <button
-              onClick={() => setActiveTab('reportes')}
-              className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${activeTab === 'reportes' ? 'bg-white shadow-sm text-[#1C1C1E]' : 'text-[#8E8E93] hover:text-[#1C1C1E]'}`}
-            >
-              Reportes
-            </button>
+          <div className="hidden sm:flex bg-[#F2F2F7] p-1 rounded-2xl">
+            {['dashboard', 'clientes', 'reportes'].map(tab => (
+              <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all capitalize ${activeTab === tab ? 'bg-white shadow-sm text-[#1C1C1E]' : 'text-[#8E8E93]'}`}>{tab}</button>
+            ))}
           </div>
-
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-[#F2F2F7] border-2 border-white overflow-hidden shadow-sm">
-              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Franco" alt="avatar" />
-            </div>
+          <div className="w-10 h-10 rounded-full bg-[#F2F2F7] border-2 border-white overflow-hidden shadow-sm">
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Franco" alt="avatar" />
           </div>
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-6 py-10 scale-[0.98] sm:scale-100 origin-top transition-transform">
+      <main className="max-w-7xl mx-auto px-6 py-10">
         {activeTab === 'dashboard' && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-              <div>
-                <h1 className="text-4xl font-extrabold tracking-tight mb-2">Hola, Pitrón Beña 👋</h1>
-                <p className="text-[#8E8E93] font-medium text-lg">Tienes <span className="text-[#E96A51] font-bold">{orders.filter(o => o.status === 'NUEVO').length} pedidos nuevos</span> esperando revisión.</p>
-              </div>
-
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-12">
+              <div><h1 className="text-4xl font-extrabold tracking-tight mb-2">Hola, Pitrón Beña 👋</h1><p className="text-[#8E8E93] font-medium text-lg">Tienes <span className="text-[#E96A51] font-bold">{orders.filter(o => o.status === 'NUEVO').length} pedidos</span> nuevos.</p></div>
+              <div className="flex gap-3">
                 <div className="flex bg-[#F2F2F7] p-1 rounded-2xl border border-[#E5E5EA]">
-                  <button
-                    onClick={() => setViewMode('grid')}
-                    className={`p-2.5 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-white shadow-lg text-[#1C1C1E]' : 'text-[#8E8E93] hover:text-[#1C1C1E]'}`}
-                  >
-                    <LayoutGrid size={20} />
-                  </button>
-                  <button
-                    onClick={() => setViewMode('list')}
-                    className={`p-2.5 rounded-xl transition-all ${viewMode === 'list' ? 'bg-white shadow-lg text-[#1C1C1E]' : 'text-[#8E8E93] hover:text-[#1C1C1E]'}`}
-                  >
-                    <List size={20} />
-                  </button>
+                  <button onClick={() => setViewMode('grid')} className={`p-2 rounded-xl ${viewMode === 'grid' ? 'bg-white shadow text-[#1C1C1E]' : 'text-[#8E8E93]'}`}><LayoutGrid size={20} /></button>
+                  <button onClick={() => setViewMode('list')} className={`p-2 rounded-xl ${viewMode === 'list' ? 'bg-white shadow text-[#1C1C1E]' : 'text-[#8E8E93]'}`}><List size={20} /></button>
                 </div>
-                <button className="bg-[#E96A51] text-white h-[46px] px-6 rounded-2xl text-sm font-bold hover:bg-[#D55F49] transition-all shadow-xl shadow-[#E96A51]/30 flex items-center gap-2 active:scale-95">
-                  <ClipboardList size={18} /> Nuevo Trabajo
-                </button>
               </div>
             </div>
-
-            <div className="flex gap-2 mb-10 overflow-x-auto pb-4 scrollbar-hide">
+            <div className="flex gap-2 mb-10 overflow-x-auto pb-2">
               {['TODOS', 'NUEVO', 'DISEÑO', 'PRODUCCIÓN', 'LISTO', 'ENTREGADO'].map(st => (
-                <button
-                  key={st}
-                  onClick={() => setFilter(st)}
-                  className={`px-5 py-2.5 rounded-2xl text-[13px] font-bold transition-all whitespace-nowrap border-2
-                    ${filter === st ? 'bg-[#1C1C1E] text-white border-[#1C1C1E] shadow-xl' : 'bg-white text-[#8E8E93] border-[#F2F2F7] hover:border-[#8E8E93]/20 hover:text-[#1C1C1E]'}`}
-                >
-                  {st}
-                </button>
+                <button key={st} onClick={() => setFilter(st)} className={`px-5 py-2 rounded-2xl text-[13px] font-bold border-2 ${filter === st ? 'bg-[#1C1C1E] text-white border-[#1C1C1E]' : 'bg-white text-[#8E8E93] border-[#F2F2F7]'}`}>{st}</button>
               ))}
             </div>
-
-            {loading ? (
-              <div className="text-center py-20 text-gray-400 font-medium">Cargando pedidos...</div>
-            ) : filteredOrders.length === 0 ? (
-              <div className="text-center py-20 bg-white rounded-[3rem] border-2 border-dashed border-[#F2F2F7]">
-                <p className="text-[#8E8E93] font-bold">No hay pedidos en esta categoría.</p>
-              </div>
-            ) : viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filteredOrders.map(order => (
-                  <div
-                    key={order.id}
-                    onClick={() => {
-                      setSelectedOrder(order)
-                      setEditForm({ description: order.description, total_amount: order.total_amount })
-                      setIsEditing(false)
-                    }}
-                    className="bg-white rounded-[2.5rem] border border-[#F2F2F7] shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_60px_-15px_rgba(233,106,81,0.1)] transition-all duration-500 cursor-pointer overflow-hidden group hover:-translate-y-2 p-1"
-                  >
-                    <div className="p-7">
-                      <div className="flex justify-between items-start mb-6">
-                        <span className={`px-4 py-1 rounded-2xl text-[11px] font-black tracking-widest uppercase border ${statusColors[order.status]}`}>
-                          {order.status}
-                        </span>
-                        <span className="text-[10px] text-[#C7C7CC] font-bold tracking-tighter uppercase">ID · {order.id.slice(0, 8)}</span>
-                      </div>
-                      <h3 className="text-xl font-bold text-[#1C1C1E] mb-2 leading-snug line-clamp-2 h-14">{order.description}</h3>
-                      <div className="flex items-center gap-3 mb-8">
-                        <div className="w-8 h-8 rounded-full bg-[#1C1C1E] flex items-center justify-center text-white text-[10px] font-bold uppercase">
-                          {order.leads?.name?.slice(0, 2) || 'CL'}
-                        </div>
-                        <p className="text-sm text-[#8E8E93] font-semibold">{order.leads?.name || order.leads?.phone_number}</p>
-                      </div>
-                      <div className="bg-[#F2F2F7]/50 rounded-3xl p-5 flex justify-between items-center transition-colors group-hover:bg-[#E96A51]/5">
-                        <div>
-                          <span className="text-[10px] uppercase tracking-widest text-[#8E8E93] font-bold block mb-1">Monto Total</span>
-                          <span className="text-2xl font-black text-[#1C1C1E] tracking-tight">${order.total_amount?.toLocaleString() || '0'}</span>
-                        </div>
-                        <div className="bg-white w-10 h-10 rounded-2xl flex items-center justify-center text-[#E96A51] shadow-sm transform group-hover:rotate-12 transition-transform">
-                          <MoreHorizontal size={20} />
-                        </div>
+            {loading ? <div className="text-center py-20">Cargando...</div> : (
+              viewMode === 'grid' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {filteredOrders.map(order => (
+                    <div key={order.id} onClick={() => { setSelectedOrder(order); setEditForm({ description: order.description, total_amount: order.total_amount }); setIsEditing(false); }} className="bg-white rounded-[2.5rem] border border-[#F2F2F7] shadow-sm hover:shadow-xl hover:shadow-[#E96A51]/5 transition-all p-7 cursor-pointer group hover:-translate-y-1">
+                      <div className="flex justify-between mb-6"><span className={`px-4 py-1 rounded-2xl text-[11px] font-black tracking-widest uppercase border ${statusColors[order.status]}`}>{order.status}</span><span className="text-[9px] text-[#C7C7CC] font-bold">#{order.id.slice(0, 6)}</span></div>
+                      <h3 className="text-xl font-bold mb-8 line-clamp-2 h-14">{order.description}</h3>
+                      <div className="bg-[#F2F2F7]/50 rounded-3xl p-5 flex justify-between items-center group-hover:bg-[#E96A51]/5 transition-colors">
+                        <div><span className="text-[10px] text-[#8E8E93] font-bold block">TOTAL</span><span className="text-2xl font-black">${order.total_amount?.toLocaleString()}</span></div>
+                        <MoreHorizontal className="text-[#E96A51]" />
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="bg-white rounded-[2.5rem] shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] border border-[#F2F2F7] overflow-hidden">
-                <div className="overflow-x-auto">
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white rounded-[2.5rem] border border-[#F2F2F7] overflow-hidden shadow-sm">
                   <table className="w-full text-left">
-                    <thead>
-                      <tr className="border-b border-[#F2F2F7]">
-                        <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Estado</th>
-                        <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Descripción</th>
-                        <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Cliente</th>
-                        <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#8E8E93] text-right">Total</th>
+                    <thead><tr className="border-b border-[#F2F2F7]"><th className="px-8 py-6 text-[10px] font-black uppercase text-[#8E8E93]">Estado</th><th className="px-8 py-6 text-[10px] font-black uppercase text-[#8E8E93]">Descripción</th><th className="px-8 py-6 text-[10px] font-black uppercase text-[#8E8E93]">Cliente</th><th className="px-8 py-6 text-[10px] font-black uppercase text-[#8E8E93] text-right">Total</th></tr></thead>
+                    <tbody className="divide-y divide-[#F2F2F7]">{filteredOrders.map(order => (
+                      <tr key={order.id} onClick={() => { setSelectedOrder(order); setEditForm({ description: order.description, total_amount: order.total_amount }); setIsEditing(false); }} className="hover:bg-[#F2F2F7]/40 cursor-pointer transition-colors">
+                        <td className="px-8 py-6"><span className={`px-4 py-1 rounded-2xl text-[10px] font-black border ${statusColors[order.status]}`}>{order.status}</span></td>
+                        <td className="px-8 py-6"><p className="font-bold text-[15px]">{order.description}</p></td>
+                        <td className="px-8 py-6 text-[#8E8E93] font-medium">{order.leads?.name || order.leads?.phone_number}</td>
+                        <td className="px-8 py-6 text-right font-black text-lg">${order.total_amount?.toLocaleString()}</td>
                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#F2F2F7]">
-                      {filteredOrders.map(order => (
-                        <tr
-                          key={order.id}
-                          onClick={() => {
-                            setSelectedOrder(order)
-                            setEditForm({ description: order.description, total_amount: order.total_amount })
-                            setIsEditing(false)
-                          }}
-                          className="hover:bg-[#F2F2F7]/30 cursor-pointer transition-colors group"
-                        >
-                          <td className="px-8 py-6">
-                            <span className={`px-4 py-1 rounded-2xl text-[10px] font-black tracking-widest uppercase border ${statusColors[order.status]}`}>
-                              {order.status}
-                            </span>
-                          </td>
-                          <td className="px-8 py-6">
-                            <p className="font-bold text-[#1C1C1E] text-[15px] line-clamp-1">{order.description}</p>
-                            <p className="text-[10px] text-[#C7C7CC] font-bold uppercase mt-1 tracking-tighter">ID: {order.id.slice(0, 8)}</p>
-                          </td>
-                          <td className="px-8 py-6">
-                            <p className="font-semibold text-[#8E8E93] text-sm">{order.leads?.name || order.leads?.phone_number}</p>
-                          </td>
-                          <td className="px-8 py-6 text-right font-black text-[#1C1C1E] text-lg">
-                            ${order.total_amount?.toLocaleString() || '0'}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
+                    ))}</tbody>
                   </table>
                 </div>
-              </div>
+              )
             )}
           </div>
         )}
 
+        {/* --- CLIENTES TAB --- */}
         {activeTab === 'clientes' && (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex justify-between items-end mb-8">
-              <div>
-                <h1 className="text-4xl font-extrabold tracking-tight mb-2">Mis Clientes</h1>
-                <p className="text-[#8E8E93] font-medium text-lg">Administra el directorio de contactos y leads ({leads.length}).</p>
-              </div>
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
+            <h1 className="text-4xl font-extrabold tracking-tight mb-2">Mis Clientes</h1>
+            <div className="bg-white rounded-[2.5rem] border border-[#F2F2F7] overflow-hidden shadow-sm">
+              <table className="w-full text-left">
+                <thead><tr className="border-b border-[#F2F2F7]"><th className="px-8 py-6 text-[10px] font-black uppercase text-[#8E8E93]">Cliente</th><th className="px-8 py-6 text-[10px] font-black uppercase text-[#8E8E93]">WhatsApp</th><th className="px-8 py-6 text-[10px] font-black uppercase text-[#8E8E93]">E-mail / RUT</th><th className="px-8 py-6 text-[10px] font-black uppercase text-[#8E8E93] text-right">Acciones</th></tr></thead>
+                <tbody className="divide-y divide-[#F2F2F7]">{leads.map(client => (
+                  <tr key={client.id} className="hover:bg-[#F2F2F7]/20 group transition-colors">
+                    <td className="px-8 py-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-[#1C1C1E] text-white flex items-center justify-center font-black">{client.name?.slice(0, 1).toUpperCase()}</div>
+                        <div><p className="font-bold text-[15px]">{client.name || 'Sin Nombre'}</p><p className="text-[10px] text-[#C7C7CC] font-bold">RUT: {client.rut || '---'}</p></div>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6 font-bold text-[#8E8E93]">{client.phone_number}</td>
+                    <td className="px-8 py-6"><p className="text-xs font-bold">{client.email || '---'}</p></td>
+                    <td className="px-8 py-6 text-right">
+                      <div className="flex justify-end gap-2">
+                        <a href={`https://wa.me/${client.phone_number}`} target="_blank" className="p-2 bg-[#EBFBF2] text-[#34C759] rounded-xl hover:bg-[#34C759] hover:text-white transition-all"><Phone size={14} /></a>
+                        <button onClick={() => { setSelectedLead(client); setLeadForm({ name: client.name || '', phone_number: client.phone_number || '', rut: client.rut || '', address: client.address || '', email: client.email || '' }); setIsEditingLead(true); }} className="p-2 bg-[#F2EDFF] text-[#6338F1] rounded-xl hover:bg-[#6338F1] hover:text-white transition-all"><Edit2 size={14} /></button>
+                        <button onClick={() => handleDeleteLead(client.id)} className="p-2 bg-[#FDF2F0] text-[#E96A51] rounded-xl hover:bg-[#E96A51] hover:text-white transition-all"><Trash2 size={14} /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}</tbody>
+              </table>
             </div>
-            <div className="bg-white rounded-[2.5rem] shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] border border-[#F2F2F7] overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="border-b border-[#F2F2F7]">
-                      <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Cliente</th>
-                      <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">WhatsApp</th>
-                      <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Dirección / Email</th>
-                      <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#8E8E93] text-right">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#F2F2F7]">
-                    {leads.map(client => (
-                      <tr key={client.id} className="hover:bg-[#F2F2F7]/30 transition-colors group">
-                        <td className="px-8 py-6">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-2xl bg-[#1C1C1E] flex items-center justify-center text-white text-xs font-black">
-                              {client.name?.slice(0, 2).toUpperCase() || '??'}
-                            </div>
-                            <div>
-                              <p className="font-bold text-[#1C1C1E] text-[15px]">{client.name || 'Sin nombre'}</p>
-                              <p className="text-[10px] text-[#C7C7CC] font-bold uppercase tracking-tighter">RUT: {client.rut || '---'}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-8 py-6 text-sm font-bold text-[#8E8E93]">{client.phone_number}</td>
-                        <td className="px-8 py-6">
-                          <p className="text-xs font-bold text-[#1C1C1E] mb-1">{client.email || 'Sin email'}</p>
-                          <p className="text-[10px] text-[#8E8E93] font-medium">{client.address || 'Sin dirección'}</p>
-                        </td>
-                        <td className="px-8 py-6 text-right">
-                          <a href={`https://wa.me/${client.phone_number}`} target="_blank" className="inline-flex items-center gap-2 px-4 py-2 bg-[#F2F2F7] text-[#1C1C1E] rounded-xl text-[10px] font-black tracking-widest uppercase hover:bg-[#E96A51] hover:text-white transition-all shadow-sm">
-                            <Phone size={12} /> Contactar
-                          </a>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'reportes' && (
-          <div className="text-center py-40 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <h2 className="text-2xl font-black text-[#1C1C1E] mb-2">Próximamente</h2>
-            <p className="text-[#8E8E93] font-bold">Estamos trabajando en analíticas avanzadas para tu negocio.</p>
           </div>
         )}
       </main>
 
+      {/* --- EDIT LEAD MODAL --- */}
+      {isEditingLead && (
+        <div className="fixed inset-0 bg-[#1C1C1E]/40 z-50 flex items-center justify-center p-4 backdrop-blur-md">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl animate-in zoom-in duration-300">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-2xl font-black">Editar Cliente</h2>
+              <button onClick={() => setIsEditingLead(false)} className="p-2 bg-[#F2F2F7] rounded-xl"><X size={20} /></button>
+            </div>
+            <form onSubmit={handleLeadSubmit} className="space-y-4">
+              <div className="space-y-1"><label className="text-[9px] font-black uppercase text-[#8E8E93]">Nombre Completo</label><input type="text" value={leadForm.name} onChange={e => setLeadForm({ ...leadForm, name: e.target.value })} className="w-full bg-[#F2F2F7] rounded-xl p-3 font-bold text-sm outline-none focus:ring-2 ring-[#E96A51]/20" /></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1"><label className="text-[9px] font-black uppercase text-[#8E8E93]">WhatsApp</label><input type="text" value={leadForm.phone_number} onChange={e => setLeadForm({ ...leadForm, phone_number: e.target.value })} className="w-full bg-[#F2F2F7] rounded-xl p-3 font-bold text-sm outline-none" /></div>
+                <div className="space-y-1"><label className="text-[9px] font-black uppercase text-[#8E8E93]">RUT</label><input type="text" value={leadForm.rut} onChange={e => setLeadForm({ ...leadForm, rut: e.target.value })} className="w-full bg-[#F2F2F7] rounded-xl p-3 font-bold text-sm outline-none" /></div>
+              </div>
+              <div className="space-y-1"><label className="text-[9px] font-black uppercase text-[#8E8E93]">Email</label><input type="email" value={leadForm.email} onChange={e => setLeadForm({ ...leadForm, email: e.target.value })} className="w-full bg-[#F2F2F7] rounded-xl p-3 font-bold text-sm outline-none" /></div>
+              <div className="space-y-1"><label className="text-[9px] font-black uppercase text-[#8E8E93]">Dirección</label><textarea value={leadForm.address} onChange={e => setLeadForm({ ...leadForm, address: e.target.value })} className="w-full bg-[#F2F2F7] rounded-xl p-3 font-bold text-sm outline-none h-20 resize-none" /></div>
+              <button type="submit" className="w-full h-12 bg-[#1C1C1E] text-white rounded-xl font-bold mt-4 shadow-lg active:scale-95 transition-all">Guardar Cambios</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* --- ORDER MODAL (Side-by-Side iOS Style) --- */}
       {selectedOrder && (
-        <div className="fixed inset-0 bg-[#1C1C1E]/40 z-50 flex items-center justify-center p-4 backdrop-blur-md transition-all">
-          <div className="bg-white rounded-[2.5rem] w-full max-w-3xl max-h-[90vh] overflow-hidden shadow-[0_30px_90px_-20px_rgba(0,0,0,0.3)] flex flex-col scale-100 animate-in fade-in zoom-in duration-300">
-            <div className="px-8 py-4 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-[#F2F2F7]">
-              <div className="flex items-center gap-3">
-                <div className="bg-[#E96A51]/10 p-2 rounded-xl text-[#E96A51]"><FileText size={18} weight="bold" /></div>
-                <div>
-                  <h2 className="text-base font-black text-[#1C1C1E] tracking-tight leading-none">Orden {selectedOrder.id.slice(0, 8)}</h2>
-                  <p className="text-[8px] text-[#C7C7CC] font-black uppercase tracking-widest mt-1">{selectedOrder.created_at ? new Date(selectedOrder.created_at).toLocaleDateString() : 'Sin fecha'}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button onClick={handleDeleteOrder} className="p-2 text-[#FF3B30] hover:bg-[#FF3B30]/10 rounded-xl transition-all"><Trash2 size={16} /></button>
-                <button onClick={() => { setSelectedOrder(null); setIsEditing(false); }} className="p-2 bg-[#F2F2F7] text-[#8E8E93] hover:text-[#1C1C1E] rounded-xl transition-all"><X size={18} /></button>
-              </div>
+        <div className="fixed inset-0 bg-[#1C1C1E]/40 z-50 flex items-center justify-center p-4 backdrop-blur-md">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col animate-in zoom-in duration-300">
+            <div className="px-8 py-5 flex justify-between items-center border-b border-[#F2F2F7]">
+              <div className="flex gap-3"><div className="bg-[#E96A51]/10 p-2 rounded-xl text-[#E96A51]"><FileText size={20} /></div><div><h2 className="text-xl font-black">Orden #{selectedOrder.id.slice(0, 6)}</h2><p className="text-[10px] font-bold text-[#C7C7CC] uppercase">{new Date(selectedOrder.created_at).toLocaleDateString()}</p></div></div>
+              <button onClick={() => setSelectedOrder(null)} className="p-2 bg-[#F2F2F7] rounded-xl"><X size={20} /></button>
             </div>
-            <div className="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar">
-              <div className="grid grid-cols-1 md:grid-cols-[1fr,260px] gap-8">
-                <div className="space-y-6">
-                  {isEditing ? (
-                    <form onSubmit={handleEditSubmit} className="space-y-4 bg-[#F2F2F7]/30 p-5 rounded-2xl border border-[#F2F2F7]">
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-black uppercase tracking-widest text-[#C7C7CC]">Descripción del Trabajo</label>
-                        <textarea value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} className="w-full bg-white border border-[#E5E5EA] rounded-xl p-3 text-sm font-bold focus:border-[#E96A51] outline-none transition-all h-24 resize-none" />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-black uppercase tracking-widest text-[#C7C7CC]">Monto Presupuestado</label>
-                        <input type="number" value={editForm.total_amount} onChange={(e) => setEditForm({ ...editForm, total_amount: e.target.value })} className="w-full bg-white border border-[#E5E5EA] rounded-xl p-3 text-sm font-bold focus:border-[#E96A51] outline-none transition-all" />
-                      </div>
-                      <div className="flex gap-2 pt-2">
-                        <button type="submit" className="flex-1 bg-[#1C1C1E] text-white h-10 rounded-xl font-bold text-[11px] shadow-sm flex items-center justify-center gap-2"><Save size={14} /> Guardar</button>
-                        <button type="button" onClick={() => setIsEditing(false)} className="px-4 bg-white border border-[#E5E5EA] text-[#8E8E93] rounded-xl font-bold text-[11px]">Cancelar</button>
-                      </div>
-                    </form>
-                  ) : (
-                    <>
-                      <div className="space-y-2">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-[#C7C7CC]">Descripción del Trabajo</span>
-                        <p className="text-[15px] font-bold text-[#1C1C1E] leading-relaxed bg-[#FDFDFD] p-1">{selectedOrder.description}</p>
-                      </div>
-                      <div className="bg-[#E96A51]/5 border border-[#E96A51]/10 px-5 py-4 rounded-2xl flex items-center justify-between">
-                        <div>
-                          <span className="text-[8px] font-black uppercase tracking-widest text-[#E96A51] opacity-60">Presupuesto</span>
-                          <p className="text-2xl font-black text-[#E96A51] tracking-tighter">${selectedOrder.total_amount?.toLocaleString()}</p>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-[8px] font-black text-[#E96A51]/40 uppercase tracking-widest block">Condición</span>
-                          <span className="px-2 py-0.5 bg-white rounded-lg text-[9px] font-black text-[#E96A51] border border-[#E96A51]/10">Neto</span>
-                        </div>
-                      </div>
-                      <div className="pt-2">
-                        <h3 className="text-[9px] font-black uppercase tracking-widest text-[#C7C7CC] mb-3">Archivos compartidos ({selectedOrder.files_url?.length || 0})</h3>
-                        {selectedOrder.files_url && selectedOrder.files_url.length > 0 ? (
-                          <div className="grid grid-cols-2 gap-3">
-                            {selectedOrder.files_url.map((url, idx) => {
-                              const isImage = url.match(/\.(jpeg|jpg|gif|png|webp)/i);
-                              const fileName = url.split('/').pop();
-                              return (
-                                <div key={idx} className="bg-[#F2F2F7]/50 border border-[#F2F2F7] rounded-xl p-2.5 flex items-center gap-3 group hover:bg-white hover:shadow-sm transition-all cursor-pointer" onClick={() => window.open(url, '_blank')}>
-                                  <div className="w-8 h-8 rounded-lg bg-white flex-shrink-0 overflow-hidden border border-[#F2F2F7]">
-                                    {isImage ? <img src={url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-[#E96A51]"><FileText size={14} /></div>}
-                                  </div>
-                                  <div className="overflow-hidden truncate max-w-[80px]">
-                                    <p className="text-[10px] font-bold text-[#1C1C1E] truncate">{fileName}</p>
-                                    <p className="text-[7px] font-black text-[#8E8E93] uppercase tracking-tighter">{isImage ? 'IMG' : 'DOC'}</p>
-                                  </div>
-                                  <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity"><ExternalLink size={10} className="text-[#8E8E93]" /></div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <div className="bg-[#F2F2F7]/20 border border-dashed border-[#F2F2F7] rounded-xl p-4 text-center text-[#C7C7CC] text-[9px] font-bold">Sin adjuntos</div>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
-                <div className="space-y-6">
-                  <div className="bg-[#F2F2F7]/30 p-4 rounded-2xl border border-[#F2F2F7] space-y-3">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-[#8E8E93] block">Estado de la Orden</span>
-                    <div className="grid grid-cols-1 gap-1.5">
-                      {Object.keys(statusColors).map(s => (
-                        <button key={s} onClick={() => updateOrderStatus(s)} className={`w-full px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border-2 transition-all flex items-center justify-between ${selectedOrder.status === s ? 'bg-[#1C1C1E] text-white border-[#1C1C1E] shadow-md' : 'bg-white border-[#F2F2F7] text-[#C7C7CC] hover:border-[#8E8E93]/20 hover:text-[#1C1C1E]'}`}>
-                          {s} {selectedOrder.status === s && <div className="w-1.5 h-1.5 rounded-full bg-[#E96A51]"></div>}
-                        </button>
-                      ))}
+            <div className="flex-1 overflow-y-auto p-8 grid grid-cols-1 md:grid-cols-[1fr,300px] gap-10">
+              <div className="space-y-8">
+                {isEditing ? (
+                  <form onSubmit={handleEditSubmit} className="space-y-4">
+                    <textarea value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} className="w-full p-4 bg-[#F2F2F7] rounded-2xl font-bold h-32 outline-none" />
+                    <input type="number" value={editForm.total_amount} onChange={e => setEditForm({ ...editForm, total_amount: e.target.value })} className="w-full p-4 bg-[#F2F2F7] rounded-2xl font-bold outline-none" />
+                    <button type="submit" className="w-full h-12 bg-[#1C1C1E] text-white rounded-xl font-bold">Actualizar</button>
+                  </form>
+                ) : (
+                  <>
+                    <div className="space-y-3"><span className="text-[10px] font-black uppercase text-[#C7C7CC]">DETALLE DEL TRABAJO</span><p className="text-lg font-bold leading-relaxed">{selectedOrder.description}</p></div>
+                    <div className="bg-[#E96A51]/5 border border-[#E96A51]/10 p-6 rounded-3xl flex justify-between items-center">
+                      <div><span className="text-[10px] font-black text-[#E96A51] opacity-60 uppercase">PRESUPUESTO</span><p className="text-4xl font-black text-[#E96A51] tracking-tighter">${selectedOrder.total_amount?.toLocaleString()}</p></div>
                     </div>
+                  </>
+                )}
+              </div>
+              <div className="space-y-6">
+                <div className="bg-[#F2F2F7]/50 p-6 rounded-[2rem] space-y-4">
+                  <span className="text-[10px] font-black uppercase text-[#8E8E93]">ESTADO</span>
+                  <div className="space-y-1.5">
+                    {Object.keys(statusColors).map(s => (
+                      <button key={s} onClick={() => updateOrderStatus(s)} className={`w-full p-2.5 rounded-xl text-[10px] font-black border-2 transition-all ${selectedOrder.status === s ? 'bg-[#1C1C1E] text-white border-[#1C1C1E]' : 'bg-white text-[#C7C7CC]'}`}>{s}</button>
+                    ))}
                   </div>
-                  <div className="bg-[#1C1C1E] text-white p-5 rounded-[2rem] space-y-4 shadow-xl shadow-[#1C1C1E]/10">
-                    <div className="flex items-center gap-2 pb-2 border-b border-white/10">
-                      <div className="w-6 h-6 rounded-full bg-[#E96A51] flex items-center justify-center text-[10px] font-black">{selectedOrder.leads?.name?.slice(0, 1) || 'C'}</div>
-                      <h3 className="text-[10px] font-bold uppercase tracking-widest">Ficha Cliente</h3>
-                    </div>
-                    <div className="space-y-3">
-                      <div><span className="text-[7px] font-bold uppercase tracking-[0.2em] text-[#8E8E93] block mb-0.5">Nombre Completo</span><p className="text-[12px] font-bold truncate">{selectedOrder.leads?.name || '---'}</p></div>
-                      <div><span className="text-[7px] font-bold uppercase tracking-[0.2em] text-[#8E8E93] block mb-0.5">WhatsApp</span><div className="flex items-center justify-between"><p className="text-[12px] font-bold">{selectedOrder.leads?.phone_number}</p><a href={`https://wa.me/${selectedOrder.leads?.phone_number}`} target="_blank" className="p-1 px-2 bg-green-500 rounded-lg text-white text-[9px] font-bold">WA</a></div></div>
-                      <div><span className="text-[7px] font-bold uppercase tracking-[0.2em] text-[#8E8E93] block mb-0.5">Despacho</span><p className="text-[10px] font-medium leading-tight opacity-80">{selectedOrder.leads?.address || 'Retiro en Tienda'}</p></div>
-                    </div>
+                </div>
+                <div className="bg-[#1C1C1E] text-white p-6 rounded-[2rem] space-y-4 shadow-xl">
+                  <div className="flex items-center gap-2 pb-3 border-b border-white/10"><User size={14} /><h3 className="text-[10px] font-bold uppercase">FICHA CLIENTE</h3></div>
+                  <div className="space-y-3">
+                    <div><span className="text-[8px] font-bold text-[#8E8E93] uppercase">Nombre</span><p className="text-xs font-bold">{selectedOrder.leads?.name || '---'}</p></div>
+                    <div><span className="text-[8px] font-bold text-[#8E8E93] uppercase">WhatsApp</span><p className="text-xs font-bold">{selectedOrder.leads?.phone_number}</p></div>
                   </div>
                 </div>
               </div>
             </div>
-            <div className="px-8 py-5 bg-[#F2F2F7]/30 border-t border-[#F2F2F7] flex gap-3">
-              {!isEditing && (
-                <>
-                  <button onClick={generateInvoice} disabled={isInvoicing} className={`flex-1 h-11 bg-[#E96A51] text-white rounded-xl font-bold text-[11px] shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all ${isInvoicing ? 'opacity-50' : 'hover:bg-[#D55F49]'}`}>
-                    {isInvoicing ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <><FileText size={16} /> GENERAR FACTURA</>}
-                  </button>
-                  <button onClick={() => setIsEditing(true)} className="px-6 h-11 bg-white border border-[#F2F2F7] text-[#1C1C1E] rounded-xl font-bold text-[11px] hover:bg-[#F2F2F7] transition-all flex items-center justify-center gap-2 shadow-sm"><Edit2 size={14} /> EDITAR</button>
-                </>
-              )}
+            <div className="p-8 border-t border-[#F2F2F7] flex gap-4">
+              <button onClick={generateInvoice} disabled={isInvoicing} className="flex-1 h-14 bg-[#E96A51] text-white rounded-2xl font-black shadow-lg shadow-[#E96A51]/20 active:scale-95 transition-all text-sm uppercase">{isInvoicing ? 'Procesando...' : 'Generar Factura'}</button>
+              <button onClick={() => setIsEditing(!isEditing)} className="px-8 h-14 bg-white border border-[#F2F2F7] rounded-2xl font-black text-sm uppercase">{isEditing ? 'Cancelar' : 'Editar'}</button>
+              <button onClick={handleDeleteOrder} className="px-6 h-14 bg-[#FDF2F0] text-[#E96A51] rounded-2xl"><Trash2 size={20} /></button>
             </div>
           </div>
         </div>
