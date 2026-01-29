@@ -357,203 +357,173 @@ function App() {
         )}
       </main>
 
-      {/* iOS STYLE MODAL */}
+      {/* iOS STYLE MODAL - TWO COLUMNS DISTRIBUTION */}
       {selectedOrder && (
         <div className="fixed inset-0 bg-[#1C1C1E]/40 z-50 flex items-center justify-center p-4 backdrop-blur-md transition-all">
-          <div className="bg-white rounded-[2.5rem] w-full max-w-xl max-h-[90vh] overflow-hidden shadow-[0_30px_90px_-20px_rgba(0,0,0,0.3)] flex flex-col scale-100 animate-in fade-in zoom-in duration-300">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-3xl max-h-[90vh] overflow-hidden shadow-[0_30px_90px_-20px_rgba(0,0,0,0.3)] flex flex-col scale-100 animate-in fade-in zoom-in duration-300">
             {/* Header Modal */}
-            <div className="px-8 py-5 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-[#F2F2F7]">
+            <div className="px-8 py-4 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-[#F2F2F7]">
               <div className="flex items-center gap-3">
-                <div className="bg-[#E96A51]/10 p-2.5 rounded-xl text-[#E96A51]">
-                  <FileText size={20} weight="bold" />
+                <div className="bg-[#E96A51]/10 p-2 rounded-xl text-[#E96A51]">
+                  <FileText size={18} weight="bold" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-black text-[#1C1C1E] tracking-tight">Detalle de Orden</h2>
-                  <p className="text-[9px] text-[#C7C7CC] font-black uppercase tracking-widest mt-0.5">ID · {selectedOrder.id.slice(0, 12)}...</p>
+                  <h2 className="text-base font-black text-[#1C1C1E] tracking-tight leading-none">Orden {selectedOrder.id.slice(0, 8)}</h2>
+                  <p className="text-[8px] text-[#C7C7CC] font-black uppercase tracking-widest mt-1">{selectedOrder.created_at ? new Date(selectedOrder.created_at).toLocaleDateString() : 'Sin fecha'}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={handleDeleteOrder}
-                  className="p-2.5 bg-[#FF3B30]/10 text-[#FF3B30] hover:bg-[#FF3B30] hover:text-white rounded-xl transition-all"
-                  title="Eliminar"
-                >
-                  <Trash2 size={18} />
-                </button>
-                <button onClick={() => { setSelectedOrder(null); setIsEditing(false); }} className="p-2.5 bg-[#F2F2F7] text-[#8E8E93] hover:text-[#1C1C1E] rounded-xl transition-all">
-                  <X size={20} />
+                <button onClick={handleDeleteOrder} className="p-2 text-[#FF3B30] hover:bg-[#FF3B30]/10 rounded-xl transition-all"><Trash2 size={16} /></button>
+                <button onClick={() => { setSelectedOrder(null); setIsEditing(false); }} className="p-2 bg-[#F2F2F7] text-[#8E8E93] hover:text-[#1C1C1E] rounded-xl transition-all">
+                  <X size={18} />
                 </button>
               </div>
             </div>
 
             <div className="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar">
-              <div className="space-y-8">
-                {/* Status Chips */}
-                <div className="flex flex-wrap gap-1.5">
-                  {Object.keys(statusColors).map(s => (
-                    <button
-                      key={s}
-                      onClick={() => updateOrderStatus(s)}
-                      className={`px-3 py-1.5 rounded-xl text-[10px] font-black tracking-widest uppercase border-2 transition-all active:scale-95
-                        ${selectedOrder.status === s
-                          ? 'bg-[#1C1C1E] text-white border-[#1C1C1E] shadow-lg'
-                          : 'bg-white border-[#F2F2F7] text-[#C7C7CC] hover:border-[#8E8E93]/20 hover:text-[#1C1C1E]'}`}
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
+              {/* Main Content Grid: Left (Description/Files) | Right (Client/Status) */}
+              <div className="grid grid-cols-1 md:grid-cols-[1fr,260px] gap-8">
 
-                {/* Info Grid */}
-                <div className="grid grid-cols-1 gap-6">
-                  <div className="col-span-full">
-                    {isEditing ? (
-                      <form onSubmit={handleEditSubmit} className="space-y-4 bg-[#F2F2F7]/40 p-6 rounded-[1.5rem] border border-[#F2F2F7]">
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-[#C7C7CC]">Descripción</label>
-                          <textarea
-                            value={editForm.description}
-                            onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                            className="w-full bg-white border-2 border-[#E5E5EA] rounded-xl p-3 text-sm font-bold focus:border-[#E96A51] outline-none transition-all h-24 resize-none"
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-[#C7C7CC]">Monto Total (CLP)</label>
-                          <input
-                            type="number"
-                            value={editForm.total_amount}
-                            onChange={(e) => setEditForm({ ...editForm, total_amount: e.target.value })}
-                            className="w-full bg-white border-2 border-[#E5E5EA] rounded-xl p-3 text-sm font-bold focus:border-[#E96A51] outline-none transition-all"
-                          />
-                        </div>
-                        <div className="flex gap-3 pt-2">
-                          <button type="submit" className="flex-1 bg-[#1C1C1E] text-white h-11 rounded-xl font-bold text-xs shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">
-                            <Save size={16} /> Guardar
-                          </button>
-                          <button type="button" onClick={() => setIsEditing(false)} className="px-6 bg-white border-2 border-[#E5E5EA] text-[#8E8E93] rounded-xl font-bold text-xs hover:text-[#1C1C1E] transition-all">
-                            Cancelar
-                          </button>
-                        </div>
-                      </form>
-                    ) : (
-                      <div className="space-y-6">
+                {/* LEFT COLUMN: Main Order Data */}
+                <div className="space-y-6">
+                  {isEditing ? (
+                    <form onSubmit={handleEditSubmit} className="space-y-4 bg-[#F2F2F7]/30 p-5 rounded-2xl border border-[#F2F2F7]">
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-black uppercase tracking-widest text-[#C7C7CC]">Descripción del Trabajo</label>
+                        <textarea
+                          value={editForm.description}
+                          onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                          className="w-full bg-white border border-[#E5E5EA] rounded-xl p-3 text-sm font-bold focus:border-[#E96A51] outline-none transition-all h-24 resize-none"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-black uppercase tracking-widest text-[#C7C7CC]">Monto Presupuestado</label>
+                        <input
+                          type="number"
+                          value={editForm.total_amount}
+                          onChange={(e) => setEditForm({ ...editForm, total_amount: e.target.value })}
+                          className="w-full bg-white border border-[#E5E5EA] rounded-xl p-3 text-sm font-bold focus:border-[#E96A51] outline-none transition-all"
+                        />
+                      </div>
+                      <div className="flex gap-2 pt-2">
+                        <button type="submit" className="flex-1 bg-[#1C1C1E] text-white h-10 rounded-xl font-bold text-[11px] shadow-sm flex items-center justify-center gap-2"><Save size={14} /> Guardar</button>
+                        <button type="button" onClick={() => setIsEditing(false)} className="px-4 bg-white border border-[#E5E5EA] text-[#8E8E93] rounded-xl font-bold text-[11px]">Cancelar</button>
+                      </div>
+                    </form>
+                  ) : (
+                    <>
+                      <div className="space-y-2">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-[#C7C7CC]">Descripción del Trabajo</span>
+                        <p className="text-[15px] font-bold text-[#1C1C1E] leading-relaxed bg-[#FDFDFD] p-1">{selectedOrder.description}</p>
+                      </div>
+
+                      <div className="bg-[#E96A51]/5 border border-[#E96A51]/10 px-5 py-4 rounded-2xl flex items-center justify-between">
                         <div>
-                          <span className="text-[10px] font-black uppercase tracking-widest text-[#C7C7CC] block mb-2">Trabajo Solicitado</span>
-                          <p className="text-lg font-bold text-[#1C1C1E] leading-snug">{selectedOrder.description}</p>
+                          <span className="text-[8px] font-black uppercase tracking-widest text-[#E96A51] opacity-60">Presupuesto</span>
+                          <p className="text-2xl font-black text-[#E96A51] tracking-tighter">${selectedOrder.total_amount?.toLocaleString()}</p>
                         </div>
-                        <div className="bg-[#E96A51]/5 border border-[#E96A51]/10 p-6 rounded-[2rem] flex justify-between items-center">
-                          <div>
-                            <span className="text-[9px] font-black uppercase tracking-widest text-[#E96A51] block mb-0.5 opacity-60">Presupuesto Aprobado</span>
-                            <p className="text-2xl font-black text-[#E96A51] tracking-tight">${selectedOrder.total_amount?.toLocaleString()}</p>
-                          </div>
-                          <div className="bg-white/50 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-[#E96A51]/10">
-                            <span className="text-[9px] font-black text-[#E96A51]/40 uppercase tracking-widest italic">Neto</span>
-                          </div>
+                        <div className="text-right">
+                          <span className="text-[8px] font-black text-[#E96A51]/40 uppercase tracking-widest block">Condición</span>
+                          <span className="px-2 py-0.5 bg-white rounded-lg text-[9px] font-black text-[#E96A51] border border-[#E96A51]/10">Neto</span>
                         </div>
                       </div>
-                    )}
+
+                      <div className="pt-2">
+                        <h3 className="text-[9px] font-black uppercase tracking-widest text-[#C7C7CC] mb-3">Archivos compartidos ({selectedOrder.files_url?.length || 0})</h3>
+                        {selectedOrder.files_url && selectedOrder.files_url.length > 0 ? (
+                          <div className="grid grid-cols-2 gap-3">
+                            {selectedOrder.files_url.map((url, idx) => {
+                              const isImage = url.match(/\.(jpeg|jpg|gif|png|webp)/i);
+                              const fileName = url.split('/').pop();
+                              return (
+                                <div key={idx} className="bg-[#F2F2F7]/50 border border-[#F2F2F7] rounded-xl p-2.5 flex items-center gap-3 group hover:bg-white hover:shadow-sm transition-all cursor-pointer" onClick={() => window.open(url, '_blank')}>
+                                  <div className="w-8 h-8 rounded-lg bg-white flex-shrink-0 overflow-hidden border border-[#F2F2F7]">
+                                    {isImage ? <img src={url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-[#E96A51]"><FileText size={14} /></div>}
+                                  </div>
+                                  <div className="overflow-hidden">
+                                    <p className="text-[10px] font-bold text-[#1C1C1E] truncate max-w-[80px]">{fileName}</p>
+                                    <p className="text-[7px] font-black text-[#8E8E93] uppercase tracking-tighter">{isImage ? 'IMG' : 'DOC'}</p>
+                                  </div>
+                                  <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity"><ExternalLink size={10} className="text-[#8E8E93]" /></div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="bg-[#F2F2F7]/20 border border-dashed border-[#F2F2F7] rounded-xl p-4 text-center text-[#C7C7CC] text-[9px] font-bold">Sin adjuntos</div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* RIGHT COLUMN: Meta Info (Client & Status) */}
+                <div className="space-y-6">
+                  {/* Status Box */}
+                  <div className="bg-[#F2F2F7]/30 p-4 rounded-2xl border border-[#F2F2F7] space-y-3">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-[#8E8E93] block">Estado de la Orden</span>
+                    <div className="grid grid-cols-1 gap-1.5">
+                      {Object.keys(statusColors).map(s => (
+                        <button
+                          key={s}
+                          onClick={() => updateOrderStatus(s)}
+                          className={`w-full px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border-2 transition-all flex items-center justify-between
+                            ${selectedOrder.status === s
+                              ? 'bg-[#1C1C1E] text-white border-[#1C1C1E] shadow-md'
+                              : 'bg-white border-[#F2F2F7] text-[#C7C7CC] hover:border-[#8E8E93]/20 hover:text-[#1C1C1E]'}`}
+                        >
+                          {s}
+                          {selectedOrder.status === s && <div className="w-1.5 h-1.5 rounded-full bg-[#E96A51]"></div>}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
-                  {/* Section Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Files Section */}
-                    <div>
-                      <h3 className="text-[9px] font-black uppercase tracking-widest text-[#C7C7CC] mb-3">Archivos vinculados</h3>
-                      {selectedOrder.files_url && selectedOrder.files_url.length > 0 ? (
-                        <div className="space-y-2">
-                          {selectedOrder.files_url.map((url, idx) => {
-                            const isImage = url.match(/\.(jpeg|jpg|gif|png|webp)/i);
-                            const fileName = url.split('/').pop();
-                            return (
-                              <div key={idx} className="group bg-[#F2F2F7]/50 border border-[#F2F2F7] rounded-2xl p-3 flex items-center justify-between hover:bg-white hover:shadow-sm transition-all">
-                                <div className="flex items-center gap-3 overflow-hidden">
-                                  {isImage ? (
-                                    <div className="w-10 h-10 rounded-xl bg-white flex-shrink-0 overflow-hidden border border-[#F2F2F7]">
-                                      <img src={url} alt="thumbnail" className="w-full h-full object-cover" />
-                                    </div>
-                                  ) : (
-                                    <div className="w-10 h-10 rounded-xl bg-white flex-shrink-0 flex items-center justify-center text-[#E96A51] border border-[#F2F2F7]">
-                                      <FileText size={18} />
-                                    </div>
-                                  )}
-                                  <div className="overflow-hidden">
-                                    <p className="text-[11px] font-bold text-[#1C1C1E] truncate max-w-[100px]">{fileName}</p>
-                                    <p className="text-[8px] text-[#8E8E93] font-bold uppercase">{isImage ? 'IMG' : 'DOC'}</p>
-                                  </div>
-                                </div>
-                                <button
-                                  onClick={() => window.open(url, '_blank')}
-                                  className="p-2 bg-white text-[#1C1C1E] rounded-lg shadow-sm border border-[#F2F2F7] hover:scale-105 transition-transform"
-                                >
-                                  <ExternalLink size={14} />
-                                </button>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <div className="bg-[#F2F2F7]/30 border-2 border-dashed border-[#F2F2F7] rounded-2xl p-6 text-center text-[#C7C7CC] text-[10px] font-bold italic">
-                          Sin archivos
-                        </div>
-                      )}
+                  {/* Client Card */}
+                  <div className="bg-[#1C1C1E] text-white p-5 rounded-[2rem] space-y-4 shadow-xl shadow-[#1C1C1E]/10">
+                    <div className="flex items-center gap-2 pb-2 border-b border-white/10">
+                      <div className="w-6 h-6 rounded-full bg-[#E96A51] flex items-center justify-center text-[10px] font-black">{selectedOrder.leads?.name?.slice(0, 1) || 'C'}</div>
+                      <h3 className="text-[10px] font-bold uppercase tracking-widest">Ficha Cliente</h3>
                     </div>
-
-                    {/* Client Section */}
-                    <div className="bg-[#F2F2F7]/40 p-6 rounded-[2rem] border border-[#F2F2F7] space-y-4 self-start">
-                      <h3 className="text-[9px] font-black uppercase tracking-widest text-[#1C1C1E] flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#E96A51]"></div> Ficha Cliente
-                      </h3>
-                      <div className="space-y-3">
-                        <div className="space-y-0.5">
-                          <span className="text-[8px] font-black uppercase tracking-widest text-[#8E8E93]">Nombre</span>
-                          <p className="font-bold text-[#1C1C1E] text-xs">{selectedOrder.leads?.name || '---'}</p>
+                    <div className="space-y-3">
+                      <div>
+                        <span className="text-[7px] font-bold uppercase tracking-[0.2em] text-[#8E8E93] block mb-0.5">Nombre Completo</span>
+                        <p className="text-[12px] font-bold truncate">{selectedOrder.leads?.name || '---'}</p>
+                      </div>
+                      <div>
+                        <span className="text-[7px] font-bold uppercase tracking-[0.2em] text-[#8E8E93] block mb-0.5">WhatsApp / Celular</span>
+                        <div className="flex items-center justify-between">
+                          <p className="text-[12px] font-bold">{selectedOrder.leads?.phone_number}</p>
+                          <a href={`https://wa.me/${selectedOrder.leads?.phone_number}`} target="_blank" className="p-1 px-2 bg-green-500 rounded-lg text-white text-[9px] font-bold hover:bg-green-600 transition-colors">WA</a>
                         </div>
-                        <div className="space-y-0.5">
-                          <span className="text-[8px] font-black uppercase tracking-widest text-[#8E8E93]">Teléfono</span>
-                          <p className="font-bold text-[#1C1C1E] text-xs flex items-center gap-2">
-                            {selectedOrder.leads?.phone_number}
-                            <a href={`https://wa.me/${selectedOrder.leads?.phone_number}`} target="_blank" className="p-1 bg-green-500/10 text-green-600 rounded-lg">
-                              <Phone size={10} />
-                            </a>
-                          </p>
-                        </div>
-                        <div className="space-y-0.5">
-                          <span className="text-[8px] font-black uppercase tracking-widest text-[#8E8E93]">Dirección</span>
-                          <p className="font-bold text-[#1C1C1E] text-[10px] leading-tight line-clamp-2">{selectedOrder.leads?.address || 'Retiro en tienda'}</p>
-                        </div>
+                      </div>
+                      <div>
+                        <span className="text-[7px] font-bold uppercase tracking-[0.2em] text-[#8E8E93] block mb-0.5">Despacho</span>
+                        <p className="text-[10px] font-medium leading-tight opacity-80">{selectedOrder.leads?.address || 'Retiro en Tienda'}</p>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Footer Modal Actions */}
-                {!isEditing && (
-                  <div className="pt-6 border-t border-[#F2F2F7] flex flex-col sm:flex-row gap-3">
-                    <button
-                      onClick={generateInvoice}
-                      disabled={isInvoicing}
-                      className={`flex-1 h-12 bg-[#E96A51] text-white rounded-xl font-bold text-xs shadow-lg shadow-[#E96A51]/20 flex items-center justify-center gap-2 active:scale-95 transition-all ${isInvoicing ? 'opacity-50' : 'hover:bg-[#D55F49]'}`}
-                    >
-                      {isInvoicing ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                          Generando...
-                        </>
-                      ) : (
-                        <>
-                          <FileText size={18} /> Generar Factura
-                        </>
-                      )}
-                    </button>
-                    <button
-                      onClick={() => setIsEditing(true)}
-                      className="px-6 h-12 bg-white border-2 border-[#F2F2F7] text-[#1C1C1E] rounded-xl font-bold text-xs hover:bg-[#F2F2F7] transition-all flex items-center justify-center gap-2"
-                    >
-                      <Edit2 size={16} /> Editar
-                    </button>
-                  </div>
-                )}
               </div>
+            </div>
+
+            {/* Footer Modal Actions - Fixed at Bottom */}
+            <div className="px-8 py-5 bg-[#F2F2F7]/30 border-t border-[#F2F2F7] flex gap-3">
+              {!isEditing && (
+                <>
+                  <button
+                    onClick={generateInvoice}
+                    disabled={isInvoicing}
+                    className={`flex-1 h-11 bg-[#E96A51] text-white rounded-xl font-bold text-[11px] shadow-lg shadow-[#E96A51]/20 flex items-center justify-center gap-2 active:scale-95 transition-all ${isInvoicing ? 'opacity-50' : 'hover:bg-[#D55F49]'}`}
+                  >
+                    {isInvoicing ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <><FileText size={16} /> GENERAR FACTURA</>}
+                  </button>
+                  <button onClick={() => setIsEditing(true)} className="px-6 h-11 bg-white border border-[#F2F2F7] text-[#1C1C1E] rounded-xl font-bold text-[11px] hover:bg-[#F2F2F7] transition-all flex items-center justify-center gap-2 shadow-sm">
+                    <Edit2 size={14} /> EDITAR
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
