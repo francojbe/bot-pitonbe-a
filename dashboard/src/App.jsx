@@ -160,11 +160,11 @@ function App() {
   }
 
   const statusColors = {
-    'NUEVO': 'bg-blue-100 text-blue-800 border-blue-200',
-    'DISEÑO': 'bg-purple-100 text-purple-800 border-purple-200',
-    'PRODUCCIÓN': 'bg-orange-100 text-orange-800 border-orange-200',
-    'LISTO': 'bg-green-100 text-green-800 border-green-200',
-    'ENTREGADO': 'bg-gray-100 text-gray-800 border-gray-200'
+    'NUEVO': 'bg-[#FDF2F0] text-[#E96A51] border-[#FADCD6]',
+    'DISEÑO': 'bg-[#F2EDFF] text-[#6338F1] border-[#E5DBFF]',
+    'PRODUCCIÓN': 'bg-[#FFF8EC] text-[#FF9F0A] border-[#FFECCF]',
+    'LISTO': 'bg-[#EBFBF2] text-[#34C759] border-[#D1F7E4]',
+    'ENTREGADO': 'bg-[#F2F2F7] text-[#8E8E93] border-[#E5E5EA]'
   }
 
   // Estado de vista con persistencia
@@ -182,65 +182,76 @@ function App() {
     : orders.filter(o => o.status === filter)
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
-      {/* Navbar */}
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center gap-2">
-              <div className="bg-indigo-600 p-2 rounded-lg text-white">
-                <Printer size={24} />
-              </div>
-              <span className="font-bold text-xl tracking-tight text-indigo-900">Pitrón Beña</span>
-              <span className="text-xs font-medium px-2 py-1 bg-gray-100 rounded-full text-gray-500">Admin</span>
+    <div className="min-h-screen bg-[#FDFDFD] text-[#1C1C1E] font-sans selection:bg-[#E96A51]/20">
+      {/* Navbar Minimalista */}
+      <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="bg-[#E96A51] w-10 h-10 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-[#E96A51]/20">
+              <Printer size={20} weight="bold" />
             </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-500">v1.1</span>
+            <div>
+              <span className="font-bold text-xl tracking-tight block leading-tight">Pitron Beña</span>
+              <span className="text-[10px] uppercase tracking-widest text-[#8E8E93] font-bold">Workspace App</span>
+            </div>
+          </div>
+
+          <div className="hidden sm:flex items-center gap-1 bg-[#F2F2F7] p-1 rounded-2xl">
+            <button className="px-4 py-1.5 rounded-xl text-xs font-bold bg-white shadow-sm text-[#1C1C1E]">Dashboard</button>
+            <button className="px-4 py-1.5 rounded-xl text-xs font-bold text-[#8E8E93] hover:text-[#1C1C1E]">Leads</button>
+            <button className="px-4 py-1.5 rounded-xl text-xs font-bold text-[#8E8E93] hover:text-[#1C1C1E]">Reportes</button>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-[#F2F2F7] border-2 border-white overflow-hidden shadow-sm">
+              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Franco" alt="avatar" />
             </div>
           </div>
         </div>
       </nav>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-6 py-10 scale-[0.98] sm:scale-100 origin-top transition-transform">
 
-        {/* Header Stats / Title */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        {/* iOS Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Gestión de Pedidos</h1>
-            <p className="text-gray-500">Administra tus trabajos de impresión en tiempo real.</p>
+            <h1 className="text-4xl font-extrabold tracking-tight mb-2">Hola, Pitrón Beña 👋</h1>
+            <p className="text-[#8E8E93] font-medium text-lg">Tienes <span className="text-[#E96A51] font-bold">{orders.filter(o => o.status === 'NUEVO').length} pedidos nuevos</span> esperando revisión.</p>
           </div>
-          <div className="flex gap-2">
-            <div className="bg-gray-100 p-1 rounded-lg flex gap-1">
+
+          <div className="flex items-center gap-3">
+            <div className="flex bg-[#F2F2F7] p-1 rounded-2xl border border-[#E5E5EA]">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-md ${viewMode === 'grid' ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+                className={`p-2.5 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-white shadow-lg text-[#1C1C1E]' : 'text-[#8E8E93] hover:text-[#1C1C1E]'}`}
               >
-                <LayoutGrid size={18} />
+                <LayoutGrid size={20} />
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`p-2 rounded-md ${viewMode === 'list' ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+                className={`p-2.5 rounded-xl transition-all ${viewMode === 'list' ? 'bg-white shadow-lg text-[#1C1C1E]' : 'text-[#8E8E93] hover:text-[#1C1C1E]'}`}
               >
-                <List size={18} />
+                <List size={20} />
               </button>
             </div>
-            <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 shadow-sm flex items-center gap-2">
-              <ClipboardList size={16} /> Nuevo Pedido
+
+            <button className="bg-[#E96A51] text-white h-[46px] px-6 rounded-2xl text-sm font-bold hover:bg-[#D55F49] transition-all shadow-xl shadow-[#E96A51]/30 flex items-center gap-2 active:scale-95">
+              <ClipboardList size={18} /> Nuevo Trabajo
             </button>
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+        {/* Filters - Pill Style */}
+        <div className="flex gap-2 mb-10 overflow-x-auto pb-4 scrollbar-hide">
           {['TODOS', 'NUEVO', 'DISEÑO', 'PRODUCCIÓN', 'LISTO', 'ENTREGADO'].map(st => (
             <button
               key={st}
               onClick={() => setFilter(st)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap
+              className={`px-5 py-2.5 rounded-2xl text-[13px] font-bold transition-all whitespace-nowrap border-2
                 ${filter === st
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'bg-white text-gray-600 hover:bg-gray-100 border border-transparent'}`}
+                  ? 'bg-[#1C1C1E] text-white border-[#1C1C1E] shadow-xl'
+                  : 'bg-white text-[#8E8E93] border-[#F2F2F7] hover:border-[#8E8E93]/20 hover:text-[#1C1C1E]'}`}
             >
               {st}
             </button>
@@ -255,8 +266,8 @@ function App() {
             <p className="text-gray-500">No hay pedidos en esta categoría.</p>
           </div>
         ) : viewMode === 'grid' ? (
-          /* VISTA GRID (TARJETAS) */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          /* iOS CARDS (Bento Style) */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredOrders.map(order => (
               <div
                 key={order.id}
@@ -265,33 +276,36 @@ function App() {
                   setEditForm({ description: order.description, total_amount: order.total_amount })
                   setIsEditing(false)
                 }}
-                className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer overflow-hidden group"
+                className="bg-white rounded-[2.5rem] border border-[#F2F2F7] shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_60px_-15px_rgba(233,106,81,0.1)] transition-all duration-500 cursor-pointer overflow-hidden group hover:-translate-y-2 p-1"
               >
-                <div className="p-5">
-                  <div className="flex justify-between items-start mb-4">
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${statusColors[order.status] || 'bg-gray-100 text-gray-800'}`}>
+                <div className="p-7">
+                  <div className="flex justify-between items-start mb-6">
+                    <span className={`px-4 py-1 rounded-2xl text-[11px] font-black tracking-widest uppercase border ${statusColors[order.status]}`}>
                       {order.status}
                     </span>
-                    <span className="text-xs text-gray-400 font-mono">#{order.id.slice(0, 8)}</span>
+                    <span className="text-[10px] text-[#C7C7CC] font-bold tracking-tighter uppercase">ID · {order.id.slice(0, 8)}</span>
                   </div>
 
-                  <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1">{order.description}</h3>
-                  <p className="text-sm text-gray-500 mb-4 flex items-center gap-1">
-                    <Phone size={12} /> {order.leads?.name || order.leads?.phone_number}
-                  </p>
+                  <h3 className="text-xl font-bold text-[#1C1C1E] mb-2 leading-snug line-clamp-2 h-14">{order.description}</h3>
 
-                  <div className="border-t border-gray-100 pt-3 flex justify-between items-center text-sm">
-                    <span className="font-bold text-gray-900">
-                      ${order.total_amount?.toLocaleString() || '0'}
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      {new Date(order.created_at).toLocaleDateString()}
-                    </span>
+                  <div className="flex items-center gap-3 mb-8">
+                    <div className="w-8 h-8 rounded-full bg-[#1C1C1E] flex items-center justify-center text-white text-[10px] font-bold uppercase">
+                      {order.leads?.name?.slice(0, 2) || 'CL'}
+                    </div>
+                    <p className="text-sm text-[#8E8E93] font-semibold">{order.leads?.name || order.leads?.phone_number}</p>
                   </div>
-                </div>
-                <div className="bg-gray-50 px-5 py-2 text-xs text-indigo-600 font-medium flex justify-between items-center group-hover:bg-indigo-50 transition-colors">
-                  Ver detalles
-                  <MoreHorizontal size={16} />
+
+                  <div className="bg-[#F2F2F7]/50 rounded-3xl p-5 flex justify-between items-center transition-colors group-hover:bg-[#E96A51]/5">
+                    <div>
+                      <span className="text-[10px] uppercase tracking-widest text-[#8E8E93] font-bold block mb-1">Monto Total</span>
+                      <span className="text-2xl font-black text-[#1C1C1E] tracking-tight">
+                        ${order.total_amount?.toLocaleString() || '0'}
+                      </span>
+                    </div>
+                    <div className="bg-white w-10 h-10 rounded-2xl flex items-center justify-center text-[#E96A51] shadow-sm transform group-hover:rotate-12 transition-transform">
+                      <MoreHorizontal size={20} />
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
@@ -310,149 +324,55 @@ function App() {
                   <th className="relative px-6 py-3"><span className="sr-only">Ver</span></th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredOrders.map(order => (
-                  <tr
-                    key={order.id}
-                    onClick={() => {
-                      setSelectedOrder(order)
-                      setEditForm({ description: order.description, total_amount: order.total_amount })
-                      setIsEditing(false)
-                    }}
-                    className="hover:bg-gray-50 cursor-pointer transition-colors"
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-col">
-                        <span className="text-xs font-mono text-gray-500">#{order.id.slice(0, 6)}</span>
-                        <span className={`mt-1 inline-flex w-fit items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusColors[order.status]}`}>
+          /* iOS LIST VIEW */
+          <div className="bg-white rounded-[2.5rem] shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] border border-[#F2F2F7] overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-[#F2F2F7]">
+                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Estado</th>
+                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Descripción del Trabajo</th>
+                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Cliente</th>
+                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#8E8E93] text-right">Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#F2F2F7]">
+                  {filteredOrders.map(order => (
+                    <tr
+                      key={order.id}
+                      onClick={() => {
+                        setSelectedOrder(order)
+                        setEditForm({ description: order.description, total_amount: order.total_amount })
+                        setIsEditing(false)
+                      }}
+                      className="hover:bg-[#F2F2F7]/30 cursor-pointer transition-colors group"
+                    >
+                      <td className="px-8 py-6">
+                        <span className={`px-4 py-1 rounded-2xl text-[10px] font-black tracking-widest uppercase border ${statusColors[order.status]}`}>
                           {order.status}
                         </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900 line-clamp-1 max-w-xs" title={order.description}>
-                        {order.description}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{order.leads?.name || 'Cliente'}</div>
-                      <div className="text-xs text-gray-500">{order.leads?.phone_number}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                      ${order.total_amount?.toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(order.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button className="text-indigo-600 hover:text-indigo-900">
-                        <MoreHorizontal size={18} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      </td>
+                      <td className="px-8 py-6">
+                        <p className="font-bold text-[#1C1C1E] text-[15px] line-clamp-1">{order.description}</p>
+                        <p className="text-[10px] text-[#C7C7CC] font-bold uppercase mt-1 tracking-tighter">Orden {order.id.slice(0, 8)}</p>
+                      </td>
+                      <td className="px-8 py-6">
+                        <p className="font-semibold text-[#8E8E93] text-sm">{order.leads?.name || order.leads?.phone_number}</p>
+                      </td>
+                      <td className="px-8 py-6 text-right">
+                        <p className="font-black text-[#1C1C1E] text-lg">${order.total_amount?.toLocaleString() || '0'}</p>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </main>
 
-      {/* Modal Detalle */}
+      {/* iOS STYLE MODAL */}
       {selectedOrder && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-1">Orden #{selectedOrder.id.slice(0, 8)}</h2>
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className="text-sm text-gray-500">Estado:</span>
-                    <select
-                      value={selectedOrder.status}
-                      onChange={(e) => updateOrderStatus(e.target.value)}
-                      className={`
-                        px-3 py-1 rounded-full text-xs font-bold border outline-none cursor-pointer
-                        appearance-none pr-8 bg-no-repeat bg-[right_0.5rem_center]
-                        ${statusColors[selectedOrder.status]}
-                        hover:opacity-80 transition-opacity
-                      `}
-                      style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")` }}
-                    >
-                      {['NUEVO', 'DISEÑO', 'PRODUCCIÓN', 'LISTO', 'ENTREGADO'].map(st => (
-                        <option key={st} value={st} className="bg-white text-gray-900">
-                          {st}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleDeleteOrder}
-                    className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors mr-2"
-                    title="Eliminar Pedido"
-                  >
-                    <Trash2 size={20} />
-                  </button>
-                  <button onClick={() => { setSelectedOrder(null); setIsEditing(false); }} className="p-2 hover:bg-gray-100 rounded-full text-gray-500">
-                    <X size={24} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Columna Izquierda: Datos del Trabajo */}
-                <div className="space-y-6">
-                  {isEditing ? (
-                    <form onSubmit={handleEditSubmit} className="space-y-4">
-                      <div>
-                        <label className="text-xs font-semibold text-gray-400 uppercase">Descripción</label>
-                        <textarea
-                          value={editForm.description}
-                          onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                          className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                          rows="3"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs font-semibold text-gray-400 uppercase">Monto Total ($)</label>
-                        <input
-                          type="number"
-                          value={editForm.total_amount}
-                          onChange={(e) => setEditForm({ ...editForm, total_amount: e.target.value })}
-                          className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                        />
-                      </div>
-                      <div className="flex gap-2">
-                        <button type="submit" className="flex-1 bg-indigo-600 text-white py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 shadow-sm">
-                          <Save size={16} /> Guardar Cambios
-                        </button>
-                        <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2 text-gray-500 hover:text-gray-700 font-medium text-sm">
-                          Cancelar
-                        </button>
-                      </div>
-                    </form>
-                  ) : (
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Detalle del Trabajo</h3>
-                      <p className="text-lg text-gray-800 font-medium">{selectedOrder.description}</p>
-                      <p className="text-2xl font-bold text-indigo-600 mt-2">${selectedOrder.total_amount?.toLocaleString()}</p>
-                    </div>
-                  )}
-
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Archivos Adjuntos</h3>
-                    {selectedOrder.files_url && selectedOrder.files_url.length > 0 ? (
-                      <div className="grid grid-cols-1 gap-2">
-                        {selectedOrder.files_url.map((url, idx) => {
-                          const isImage = url.match(/\.(jpeg|jpg|gif|png|webp)/i);
-                          const fileName = url.split('/').pop();
-
-                          return (
-                            <div key={idx} className="group relative bg-gray-50 border border-gray-200 rounded-xl p-3 flex items-center justify-between hover:border-indigo-300 transition-colors">
-                              <div className="flex items-center gap-3 overflow-hidden">
-                                {isImage ? (
-                                  <div className="w-10 h-10 rounded-lg bg-gray-200 flex-shrink-0 overflow-hidden border border-gray-100">
                                     <img src={url} alt="thumbnail" className="w-full h-full object-cover" />
                                   </div>
                                 ) : (
@@ -500,83 +420,165 @@ function App() {
                                   <Download size={16} />
                                 </button>
                               </div>
-                            </div>
+                            </div >
                           );
-                        })}
-                      </div>
+})}
+                      </div >
                     ) : (
-                      <p className="text-sm text-gray-400 italic bg-gray-50 p-4 rounded-xl border border-dashed border-gray-200">
-                        No hay archivos adjuntos para este pedido.
-                      </p>
-                    )}
-                  </div>
+  <p className="text-sm text-gray-400 italic bg-gray-50 p-4 rounded-xl border border-dashed border-gray-200">
+    No hay archivos adjuntos para este pedido.
+  </p>
+)}
+                  </div >
+                </div >
+
+  {/* Clients & Files Grid */ }
+  < div className = "space-y-8" >
+    {/* Archivos Adjuntos */ }
+    < div >
+    <h3 className="text-[11px] font-black uppercase tracking-widest text-[#C7C7CC] mb-4">Archivos del Proyecto</h3>
+{
+  selectedOrder.files_url && selectedOrder.files_url.length > 0 ? (
+    <div className="grid grid-cols-1 gap-3">
+      {selectedOrder.files_url.map((url, idx) => {
+        const isImage = url.match(/\.(jpeg|jpg|gif|png|webp)/i);
+        const fileName = url.split('/').pop();
+
+        return (
+          <div key={idx} className="group bg-[#F2F2F7]/40 border border-[#F2F2F7] rounded-3xl p-4 flex items-center justify-between hover:bg-[#E96A51]/5 hover:border-[#E96A51]/20 transition-all">
+            <div className="flex items-center gap-4 overflow-hidden">
+              {isImage ? (
+                <div className="w-12 h-12 rounded-2xl bg-white flex-shrink-0 overflow-hidden border border-[#F2F2F7] shadow-sm">
+                  <img src={url} alt="thumbnail" className="w-full h-full object-cover" />
                 </div>
-
-                {/* Columna Derecha: Datos Cliente */}
-                <div className="bg-gray-50 p-5 rounded-xl border border-gray-100 space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                    <CreditCard size={16} className="text-gray-400" /> Datos del Cliente
-                  </h3>
-
-                  <div className="space-y-1">
-                    <span className="text-xs text-gray-400 uppercase">Nombre</span>
-                    <p className="font-medium text-gray-800">{selectedOrder.leads?.name || 'Sin Nombre'}</p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-xs text-gray-400 uppercase">RUT</span>
-                    <p className="font-medium text-gray-800">{selectedOrder.leads?.rut || '--'}</p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-xs text-gray-400 uppercase">Teléfono</span>
-                    <p className="font-medium text-gray-800 font-mono">{selectedOrder.leads?.phone_number}</p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-xs text-gray-400 uppercase">Dirección</span>
-                    <p className="font-medium text-gray-800 text-sm">{selectedOrder.leads?.address || 'Retiro en tienda'}</p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-xs text-gray-400 uppercase">Email</span>
-                    <p className="font-medium text-gray-800 text-sm break-all">{selectedOrder.leads?.email || '--'}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Footer Actions */}
-              {!isEditing && (
-                <div className="mt-8 pt-6 border-t border-gray-100 flex justify-end gap-3">
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 font-medium text-sm flex items-center gap-2"
-                  >
-                    <Edit2 size={16} /> Editar
-                  </button>
-                  <button
-                    onClick={generateInvoice}
-                    disabled={isInvoicing}
-                    className={`px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium text-sm shadow-sm flex items-center gap-2 transition-all ${isInvoicing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-700'}`}
-                  >
-                    {isInvoicing ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                        Generando...
-                      </>
-                    ) : (
-                      <>
-                        <FileText size={16} /> Generar Factura PDF
-                      </>
-                    )}
-                  </button>
+              ) : (
+                <div className="w-12 h-12 rounded-2xl bg-white flex-shrink-0 flex items-center justify-center text-[#E96A51] border border-[#F2F2F7] shadow-sm">
+                  <FileText size={20} />
                 </div>
               )}
+              <div className="overflow-hidden">
+                <p className="text-[13px] font-bold text-[#1C1C1E] truncate max-w-[180px]">{fileName}</p>
+                <p className="text-[10px] text-[#8E8E93] font-bold uppercase tracking-tight">{isImage ? 'Imagen' : 'Documento'}</p>
+              </div>
+            </div>
+            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={() => window.open(url, '_blank')}
+                className="p-2.5 bg-white text-[#1C1C1E] rounded-xl shadow-sm hover:scale-110 transition-transform"
+                title="Ver"
+              >
+                <ExternalLink size={16} />
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch(url);
+                    const blob = await response.blob();
+                    const blobUrl = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = blobUrl;
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(blobUrl);
+                  } catch (err) {
+                    console.error("Error descarga:", err);
+                    window.open(url, '_blank');
+                  }
+                }}
+                className="p-2.5 bg-white text-[#E96A51] rounded-xl shadow-sm hover:scale-110 transition-transform"
+                title="Descargar"
+              >
+                <Download size={16} />
+              </button>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })}
     </div>
+  ) : (
+  <div className="bg-[#F2F2F7]/30 border-2 border-dashed border-[#F2F2F7] rounded-[2rem] p-8 text-center">
+    <p className="text-[13px] text-[#C7C7CC] font-bold italic">Sin archivos adjuntos</p>
+  </div>
+)
+}
+                    </div >
+                  </div >
+
+  {/* Datos Cliente */ }
+  < div className = "bg-[#F2F2F7]/40 p-8 rounded-[2.5rem] border border-[#F2F2F7] space-y-6 self-start" >
+                    <h3 className="text-[11px] font-black uppercase tracking-widest text-[#1C1C1E] flex items-center gap-2">
+                       <div className="w-2 h-2 rounded-full bg-[#E96A51]"></div> Ficha del Cliente
+                    </h3>
+
+                    <div className="grid grid-cols-1 gap-6">
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Nombre</span>
+                        <p className="font-bold text-[#1C1C1E] text-sm">{selectedOrder.leads?.name || '---'}</p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Teléfono</span>
+                        <p className="font-bold text-[#1C1C1E] text-sm flex items-center gap-2">
+                           {selectedOrder.leads?.phone_number}
+                           <a href={`https://wa.me/${selectedOrder.leads?.phone_number}`} target="_blank" className="p-1.5 bg-green-500/10 text-green-600 rounded-lg hover:bg-green-500 hover:text-white transition-all">
+                              <Phone size={12} />
+                           </a>
+                        </p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">RUT</span>
+                        <p className="font-bold text-[#1C1C1E] text-sm">{selectedOrder.leads?.rut || '--'}</p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-[#8E8E93]">Dirección / Email</span>
+                        <p className="font-bold text-[#1C1C1E] text-[13px] leading-relaxed">
+                          {selectedOrder.leads?.address || 'Sin Dirección'} <br/>
+                          <span className="text-[#8E8E93] font-medium">{selectedOrder.leads?.email || '--'}</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div >
+                </div >
+
+  {/* Footer Modal */ }
+{
+  !isEditing && (
+    <div className="pt-8 border-t border-[#F2F2F7] flex flex-col sm:flex-row gap-4">
+      <button
+        onClick={() => setIsInvoicing(false) || generateInvoice()}
+        disabled={isInvoicing}
+        className={`flex-1 h-14 bg-[#E96A51] text-white rounded-2xl font-bold text-sm shadow-xl shadow-[#E96A51]/20 flex items-center justify-center gap-3 active:scale-95 transition-all ${isInvoicing ? 'opacity-50' : 'hover:bg-[#D55F49]'}`}
+      >
+        {isInvoicing ? (
+          <>
+            <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
+            Generando...
+          </>
+        ) : (
+          <>
+            <FileText size={20} /> Generar Factura PDF
+          </>
+        )}
+      </button>
+      <button
+        onClick={() => setIsEditing(true)}
+        className="px-8 h-14 bg-white border-2 border-[#F2F2F7] text-[#1C1C1E] rounded-2xl font-bold text-sm hover:bg-[#F2F2F7] transition-all flex items-center justify-center gap-2"
+      >
+        <Edit2 size={18} /> Editar Orden
+      </button>
+    </div>
+  )
+}
+              </div >
+            </div >
+          </div >
+        </div >
+      )}
+    </div >
   )
 }
 
