@@ -19,7 +19,8 @@ import {
   Trash2,
   Save,
   Edit2,
-  User
+  User,
+  UserPlus
 } from 'lucide-react'
 
 function App() {
@@ -35,6 +36,7 @@ function App() {
   const [leads, setLeads] = useState([])
   const [selectedLead, setSelectedLead] = useState(null)
   const [isEditingLead, setIsEditingLead] = useState(false)
+  const [isCreatingLead, setIsCreatingLead] = useState(false)
   const [leadForm, setLeadForm] = useState({ name: '', phone_number: '', rut: '', address: '', email: '' })
 
   useEffect(() => {
@@ -98,17 +100,29 @@ function App() {
 
   async function handleLeadSubmit(e) {
     e.preventDefault()
-    const { error } = await supabase
-      .from('leads')
-      .update(leadForm)
-      .eq('id', selectedLead.id)
 
-    if (error) {
-      alert('Error al actualizar: ' + error.message)
+    if (isCreatingLead) {
+      const { error } = await supabase.from('leads').insert([leadForm])
+      if (error) {
+        alert('Error al crear: ' + error.message)
+      } else {
+        setIsCreatingLead(false)
+        setLeadForm({ name: '', phone_number: '', rut: '', address: '', email: '' })
+        fetchLeads()
+      }
     } else {
-      setLeads(leads.map(l => l.id === selectedLead.id ? { ...l, ...leadForm } : l))
-      setIsEditingLead(false)
-      setSelectedLead(null)
+      const { error } = await supabase
+        .from('leads')
+        .update(leadForm)
+        .eq('id', selectedLead.id)
+
+      if (error) {
+        alert('Error al actualizar: ' + error.message)
+      } else {
+        setLeads(leads.map(l => l.id === selectedLead.id ? { ...l, ...leadForm } : l))
+        setIsEditingLead(false)
+        setSelectedLead(null)
+      }
     }
   }
 
@@ -262,7 +276,15 @@ function App() {
         {/* --- CLIENTES TAB --- */}
         {activeTab === 'clientes' && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
-            <h1 className="text-4xl font-extrabold tracking-tight mb-2">Mis Clientes</h1>
+            <div className="flex justify-between items-end">
+              <div><h1 className="text-4xl font-extrabold tracking-tight mb-2">Mis Clientes</h1><p className="text-[#8E8E93] font-medium text-lg">Directorio de contactos ({leads.length}).</p></div>
+              <button
+                onClick={() => { setLeadForm({ name: '', phone_number: '', rut: '', address: '', email: '' }); setIsCreatingLead(true); }}
+                className="bg-[#E96A51] text-white h-12 px-6 rounded-2xl text-sm font-bold flex items-center gap-2 shadow-xl shadow-[#E96A51]/20 active:scale-95 transition-all"
+              >
+                <UserPlus size={18} /> Nuevo Cliente
+              </button>
+            </div>
             <div className="bg-white rounded-[2.5rem] border border-[#F2F2F7] overflow-hidden shadow-sm">
               <table className="w-full text-left">
                 <thead><tr className="border-b border-[#F2F2F7]"><th className="px-8 py-6 text-[10px] font-black uppercase text-[#8E8E93]">Cliente</th><th className="px-8 py-6 text-[10px] font-black uppercase text-[#8E8E93]">WhatsApp</th><th className="px-8 py-6 text-[10px] font-black uppercase text-[#8E8E93]">E-mail / RUT</th><th className="px-8 py-6 text-[10px] font-black uppercase text-[#8E8E93] text-right">Acciones</th></tr></thead>
@@ -270,7 +292,7 @@ function App() {
                   <tr key={client.id} className="hover:bg-[#F2F2F7]/20 group transition-colors">
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-[#1C1C1E] text-white flex items-center justify-center font-black">{client.name?.slice(0, 1).toUpperCase()}</div>
+                        <div className="w-10 h-10 rounded-2xl bg-[#1C1C1E] text-white flex items-center justify-center font-black">{client.name?.slice(0, 1).toUpperCase() || 'C'}</div>
                         <div><p className="font-bold text-[15px]">{client.name || 'Sin Nombre'}</p><p className="text-[10px] text-[#C7C7CC] font-bold">RUT: {client.rut || '---'}</p></div>
                       </div>
                     </td>
@@ -291,29 +313,31 @@ function App() {
         )}
       </main>
 
-      {/* --- EDIT LEAD MODAL --- */}
-      {isEditingLead && (
+      {/* --- CREATE/EDIT LEAD MODAL --- */}
+      {(isCreatingLead || isEditingLead) && (
         <div className="fixed inset-0 bg-[#1C1C1E]/40 z-50 flex items-center justify-center p-4 backdrop-blur-md">
           <div className="bg-white rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl animate-in zoom-in duration-300">
             <div className="flex justify-between items-center mb-8">
-              <h2 className="text-2xl font-black">Editar Cliente</h2>
-              <button onClick={() => setIsEditingLead(false)} className="p-2 bg-[#F2F2F7] rounded-xl"><X size={20} /></button>
+              <h2 className="text-2xl font-black">{isCreatingLead ? 'Nuevo Cliente' : 'Editar Cliente'}</h2>
+              <button onClick={() => { setIsCreatingLead(false); setIsEditingLead(false); }} className="p-2 bg-[#F2F2F7] rounded-xl"><X size={20} /></button>
             </div>
             <form onSubmit={handleLeadSubmit} className="space-y-4">
-              <div className="space-y-1"><label className="text-[9px] font-black uppercase text-[#8E8E93]">Nombre Completo</label><input type="text" value={leadForm.name} onChange={e => setLeadForm({ ...leadForm, name: e.target.value })} className="w-full bg-[#F2F2F7] rounded-xl p-3 font-bold text-sm outline-none focus:ring-2 ring-[#E96A51]/20" /></div>
+              <div className="space-y-1"><label className="text-[9px] font-black uppercase text-[#8E8E93]">Nombre Completo</label><input type="text" required value={leadForm.name} onChange={e => setLeadForm({ ...leadForm, name: e.target.value })} className="w-full bg-[#F2F2F7] rounded-xl p-3 font-bold text-sm outline-none px-4" placeholder="Ej: Juan Pérez" /></div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1"><label className="text-[9px] font-black uppercase text-[#8E8E93]">WhatsApp</label><input type="text" value={leadForm.phone_number} onChange={e => setLeadForm({ ...leadForm, phone_number: e.target.value })} className="w-full bg-[#F2F2F7] rounded-xl p-3 font-bold text-sm outline-none" /></div>
-                <div className="space-y-1"><label className="text-[9px] font-black uppercase text-[#8E8E93]">RUT</label><input type="text" value={leadForm.rut} onChange={e => setLeadForm({ ...leadForm, rut: e.target.value })} className="w-full bg-[#F2F2F7] rounded-xl p-3 font-bold text-sm outline-none" /></div>
+                <div className="space-y-1"><label className="text-[9px] font-black uppercase text-[#8E8E93]">WhatsApp</label><input type="text" required value={leadForm.phone_number} onChange={e => setLeadForm({ ...leadForm, phone_number: e.target.value })} className="w-full bg-[#F2F2F7] rounded-xl p-3 font-bold text-sm outline-none px-4" placeholder="569..." /></div>
+                <div className="space-y-1"><label className="text-[9px] font-black uppercase text-[#8E8E93]">RUT</label><input type="text" value={leadForm.rut} onChange={e => setLeadForm({ ...leadForm, rut: e.target.value })} className="w-full bg-[#F2F2F7] rounded-xl p-3 font-bold text-sm outline-none px-4" placeholder="12.345.678-9" /></div>
               </div>
-              <div className="space-y-1"><label className="text-[9px] font-black uppercase text-[#8E8E93]">Email</label><input type="email" value={leadForm.email} onChange={e => setLeadForm({ ...leadForm, email: e.target.value })} className="w-full bg-[#F2F2F7] rounded-xl p-3 font-bold text-sm outline-none" /></div>
-              <div className="space-y-1"><label className="text-[9px] font-black uppercase text-[#8E8E93]">Dirección</label><textarea value={leadForm.address} onChange={e => setLeadForm({ ...leadForm, address: e.target.value })} className="w-full bg-[#F2F2F7] rounded-xl p-3 font-bold text-sm outline-none h-20 resize-none" /></div>
-              <button type="submit" className="w-full h-12 bg-[#1C1C1E] text-white rounded-xl font-bold mt-4 shadow-lg active:scale-95 transition-all">Guardar Cambios</button>
+              <div className="space-y-1"><label className="text-[9px] font-black uppercase text-[#8E8E93]">Email</label><input type="email" value={leadForm.email} onChange={e => setLeadForm({ ...leadForm, email: e.target.value })} className="w-full bg-[#F2F2F7] rounded-xl p-3 font-bold text-sm outline-none px-4" placeholder="correo@ejemplo.com" /></div>
+              <div className="space-y-1"><label className="text-[9px] font-black uppercase text-[#8E8E93]">Dirección</label><textarea value={leadForm.address} onChange={e => setLeadForm({ ...leadForm, address: e.target.value })} className="w-full bg-[#F2F2F7] rounded-xl p-4 font-bold text-sm outline-none h-24 resize-none px-4" placeholder="Calle Ejemplo 123, Comuna" /></div>
+              <button type="submit" className="w-full h-12 bg-[#1C1C1E] text-white rounded-xl font-bold mt-4 shadow-lg active:scale-95 transition-all uppercase tracking-widest text-xs">
+                {isCreatingLead ? 'Crear Cliente' : 'Guardar Cambios'}
+              </button>
             </form>
           </div>
         </div>
       )}
 
-      {/* --- ORDER MODAL (Side-by-Side iOS Style) --- */}
+      {/* --- ORDER MODAL --- */}
       {selectedOrder && (
         <div className="fixed inset-0 bg-[#1C1C1E]/40 z-50 flex items-center justify-center p-4 backdrop-blur-md">
           <div className="bg-white rounded-[2.5rem] w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col animate-in zoom-in duration-300">
