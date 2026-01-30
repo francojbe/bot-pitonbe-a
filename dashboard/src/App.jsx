@@ -327,77 +327,153 @@ function App() {
       <main className="max-w-7xl mx-auto px-6 py-10 pb-32 sm:pb-10">
         {activeTab === 'dashboard' && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {/* --- HEADER --- */}
             <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-12">
-              <div><h1 className="text-4xl font-extrabold tracking-tight mb-2">Hola, Pitrón Beña 👋</h1><p className="font-medium text-lg opacity-60">Tienes <span className="text-[#E96A51] font-bold">{orders.filter(o => o.status === 'NUEVO').length} pedidos</span> nuevos.</p></div>
+              <div>
+                <h1 className="text-4xl font-extrabold tracking-tight mb-2 flex items-center gap-2">
+                  Hola, Pitrón Beña <span className="animate-wave hover:animate-spin cursor-default">👋</span>
+                </h1>
+                <p className={`font-medium text-lg ${isDarkMode ? 'text-zinc-400' : 'text-gray-500'}`}>
+                  Tienes <button onClick={() => setFilter('NUEVO')} className="text-[#E96A51] font-bold hover:underline">{orders.filter(o => o.status === 'NUEVO').length} pedidos</button> nuevos por revisar.
+                </p>
+              </div>
               <div className="flex gap-3">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" size={16} />
+                <div className="relative group">
+                  <Search className={`absolute left-3 top-1/2 -translate-y-1/2 transition-colors ${isDarkMode ? 'text-zinc-500 group-focus-within:text-zinc-300' : 'text-gray-400 group-focus-within:text-gray-600'}`} size={16} />
                   <input
                     type="text"
                     placeholder="Buscar pedido..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className={`pl-10 pr-4 py-2.5 rounded-2xl text-sm font-bold w-full md:w-64 outline-none focus:ring-2 ring-[#E96A51]/20 transition-all placeholder:opacity-40 ${isDarkMode ? 'bg-white/5 focus:bg-white/10' : 'bg-[#F2F2F7] focus:bg-white'}`}
+                    className={`pl-10 pr-4 py-2.5 rounded-xl text-sm font-medium w-full md:w-64 outline-none border transition-all ${isDarkMode ? 'bg-[#18181b] border-white/10 focus:border-white/20 text-white placeholder:text-zinc-600' : 'bg-white border-gray-200 focus:border-[#E96A51]/50 focus:ring-4 focus:ring-[#E96A51]/5 text-gray-900 placeholder:text-gray-400'}`}
                   />
                 </div>
-                <div className={`flex p-1 rounded-2xl border ${isDarkMode ? 'bg-white/5 border-white/5' : 'bg-[#F2F2F7] border-[#E5E5EA]'}`}>
-                  <button onClick={() => setViewMode('grid')} className={`p-2 rounded-xl transition-all ${viewMode === 'grid' ? (isDarkMode ? 'bg-[#27272a] shadow' : 'bg-white shadow') : 'opacity-40'}`}><LayoutGrid size={20} /></button>
-                  <button onClick={() => setViewMode('list')} className={`p-2 rounded-xl transition-all ${viewMode === 'list' ? (isDarkMode ? 'bg-[#27272a] shadow' : 'bg-white shadow') : 'opacity-40'}`}><List size={20} /></button>
+                <div className={`flex p-1 rounded-xl border ${isDarkMode ? 'bg-[#18181b] border-white/10' : 'bg-white border-gray-200'}`}>
+                  <button onClick={() => setViewMode('grid')} className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? (isDarkMode ? 'bg-zinc-800 text-white shadow-sm' : 'bg-gray-100 text-gray-900') : 'text-gray-400 hover:text-gray-600'}`}><LayoutGrid size={18} /></button>
+                  <button onClick={() => setViewMode('list')} className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? (isDarkMode ? 'bg-zinc-800 text-white shadow-sm' : 'bg-gray-100 text-gray-900') : 'text-gray-400 hover:text-gray-600'}`}><List size={18} /></button>
                 </div>
               </div>
             </div>
 
-            {/* --- KPI CARDS --- */}
+            {/* --- KPI CARDS - SAAS CLEAN LOOK --- */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-              <div className={`p-6 rounded-[2rem] border shadow-sm flex items-center justify-between ${isDarkMode ? 'bg-[#18181b] border-white/5' : 'bg-white border-[#F2F2F7]'}`}>
-                <div><span className="text-[10px] font-black opacity-40 uppercase block mb-1">Ventas Totales</span><p className="text-2xl font-black">${kpiSales.toLocaleString()}</p></div>
-                <div className="bg-[#E96A51]/10 p-3 rounded-2xl text-[#E96A51]"><DollarSign size={20} /></div>
+              <div className={`p-6 rounded-xl border shadow-sm transition-all hover:-translate-y-1 ${isDarkMode ? 'bg-[#18181b] border-white/5' : 'bg-white border-gray-100 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.02)]'}`}>
+                <div className="flex justify-between items-start mb-4">
+                  <span className={`text-xs font-semibold tracking-wider uppercase ${isDarkMode ? 'text-zinc-500' : 'text-gray-500'}`}>Ventas Totales</span>
+                  <div className={`p-2 rounded-full ${isDarkMode ? 'bg-emerald-500/10 text-emerald-500' : 'bg-emerald-50 text-emerald-600'}`}><DollarSign size={16} /></div>
+                </div>
+                <p className={`text-3xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>${kpiSales.toLocaleString()}</p>
               </div>
-              <div className={`p-6 rounded-[2rem] border shadow-sm flex items-center justify-between ${isDarkMode ? 'bg-[#18181b] border-white/5' : 'bg-white border-[#F2F2F7]'}`}>
-                <div><span className="text-[10px] font-black opacity-40 uppercase block mb-1">Órdenes Activas</span><p className="text-2xl font-black">{kpiActive}</p></div>
-                <div className={`p-3 rounded-2xl text-[#6338F1] ${isDarkMode ? 'bg-purple-900/20' : 'bg-[#F2EDFF]'}`}><Briefcase size={20} /></div>
+
+              <div className={`p-6 rounded-xl border shadow-sm transition-all hover:-translate-y-1 ${isDarkMode ? 'bg-[#18181b] border-white/5' : 'bg-white border-gray-100 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.02)]'}`}>
+                <div className="flex justify-between items-start mb-4">
+                  <span className={`text-xs font-semibold tracking-wider uppercase ${isDarkMode ? 'text-zinc-500' : 'text-gray-500'}`}>Órdenes Activas</span>
+                  <div className={`p-2 rounded-full ${isDarkMode ? 'bg-indigo-500/10 text-indigo-500' : 'bg-indigo-50 text-indigo-600'}`}><Briefcase size={16} /></div>
+                </div>
+                <p className={`text-3xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{kpiActive}</p>
               </div>
-              <div className={`p-6 rounded-[2rem] border shadow-sm flex items-center justify-between ${isDarkMode ? 'bg-[#18181b] border-white/5' : 'bg-white border-[#F2F2F7]'}`}>
-                <div><span className="text-[10px] font-black opacity-40 uppercase block mb-1">Ticket Promedio</span><p className="text-2xl font-black">${Math.round(kpiAvgTicket).toLocaleString()}</p></div>
-                <div className={`p-3 rounded-2xl text-[#34C759] ${isDarkMode ? 'bg-green-900/20' : 'bg-[#EBFBF2]'}`}><CreditCard size={20} /></div>
+
+              <div className={`p-6 rounded-xl border shadow-sm transition-all hover:-translate-y-1 ${isDarkMode ? 'bg-[#18181b] border-white/5' : 'bg-white border-gray-100 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.02)]'}`}>
+                <div className="flex justify-between items-start mb-4">
+                  <span className={`text-xs font-semibold tracking-wider uppercase ${isDarkMode ? 'text-zinc-500' : 'text-gray-500'}`}>Ticket Promedio</span>
+                  <div className={`p-2 rounded-full ${isDarkMode ? 'bg-violet-500/10 text-violet-500' : 'bg-violet-50 text-violet-600'}`}><CreditCard size={16} /></div>
+                </div>
+                <p className={`text-3xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>${Math.round(kpiAvgTicket).toLocaleString()}</p>
               </div>
-              <div className={`p-6 rounded-[2rem] border shadow-sm flex items-center justify-between ${isDarkMode ? 'bg-[#18181b] border-white/5' : 'bg-white border-[#F2F2F7]'}`}>
-                <div><span className="text-[10px] font-black opacity-40 uppercase block mb-1">Nuevos Leads (24h)</span><p className="text-2xl font-black">{kpiNewLeads}</p></div>
-                <div className={`p-3 rounded-2xl text-[#FF9F0A] ${isDarkMode ? 'bg-orange-900/20' : 'bg-[#FFF8EC]'}`}><Users size={20} /></div>
+
+              <div className={`p-6 rounded-xl border shadow-sm transition-all hover:-translate-y-1 ${isDarkMode ? 'bg-[#18181b] border-white/5' : 'bg-white border-gray-100 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.02)]'}`}>
+                <div className="flex justify-between items-start mb-4">
+                  <span className={`text-xs font-semibold tracking-wider uppercase ${isDarkMode ? 'text-zinc-500' : 'text-gray-500'}`}>Leads (24h)</span>
+                  <div className={`p-2 rounded-full ${isDarkMode ? 'bg-orange-500/10 text-orange-500' : 'bg-orange-50 text-orange-600'}`}><Users size={16} /></div>
+                </div>
+                <p className={`text-3xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{kpiNewLeads}</p>
               </div>
             </div>
 
-            <div className="flex gap-2 mb-10 overflow-x-auto pb-2">
-              {['TODOS', 'NUEVO', 'DISEÑO', 'PRODUCCIÓN', 'LISTO', 'ENTREGADO'].map(st => (
-                <button key={st} onClick={() => setFilter(st)} className={`px-5 py-2 rounded-2xl text-[13px] font-bold border-2 transition-all ${filter === st ? (isDarkMode ? 'bg-white text-black border-white' : 'bg-[#1C1C1E] text-white border-[#1C1C1E]') : (isDarkMode ? 'bg-transparent border-white/10 hover:border-white/30 text-zinc-400' : 'bg-white text-[#8E8E93] border-[#F2F2F7]')}`}>{st}</button>
-              ))}
+            {/* --- FILTERS TAB BAR --- */}
+            <div className="flex gap-1 mb-8 overflow-x-auto pb-1 no-scrollbar">
+              {['TODOS', 'NUEVO', 'DISEÑO', 'PRODUCCIÓN', 'LISTO', 'ENTREGADO'].map(st => {
+                const isActive = filter === st
+                return (
+                  <button
+                    key={st}
+                    onClick={() => setFilter(st)}
+                    className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${isActive ? 'bg-[#1C1C1E] text-white shadow-md dark:bg-white dark:text-black' : (isDarkMode ? 'text-zinc-500 hover:text-white hover:bg-white/5' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100')}`}
+                  >
+                    {st}
+                  </button>
+                )
+              })}
             </div>
-            {loading ? <div className="text-center py-20 opacity-50">Cargando...</div> : (
+
+            {loading ? <div className="text-center py-20 opacity-50">Cargando pedidos...</div> : (
               viewMode === 'grid' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredOrders.map(order => (
-                    <div key={order.id} onClick={() => { setSelectedOrder(order); setEditForm({ description: order.description, total_amount: order.total_amount }); setIsEditing(false); }} className={`rounded-[2.5rem] border shadow-sm hover:shadow-xl transition-all p-7 cursor-pointer group hover:-translate-y-1 ${isDarkMode ? 'bg-[#18181b] border-white/5 hover:shadow-orange-500/5' : 'bg-white border-[#F2F2F7] hover:shadow-[#E96A51]/5'}`}>
-                      <div className="flex justify-between mb-6"><span className={`px-4 py-1 rounded-2xl text-[11px] font-black tracking-widest uppercase border ${statusColors[order.status]}`}>{order.status}</span><span className="text-[9px] font-bold opacity-30">#{order.id.slice(0, 6)}</span></div>
-                      <h3 className="text-xl font-bold mb-8 line-clamp-2 h-14">{order.description}</h3>
-                      <div className={`rounded-3xl p-5 flex justify-between items-center transition-colors ${isDarkMode ? 'bg-white/5 group-hover:bg-white/10' : 'bg-[#F2F2F7]/50 group-hover:bg-[#E96A51]/5'}`}>
-                        <div><span className="text-[10px] font-bold block opacity-40">TOTAL</span><span className="text-2xl font-black">${order.total_amount?.toLocaleString()}</span></div>
-                        <MoreHorizontal className="text-[#E96A51]" />
+                    <div key={order.id} onClick={() => { setSelectedOrder(order); setEditForm({ description: order.description, total_amount: order.total_amount }); setIsEditing(false); }} className={`rounded-2xl border shadow-sm hover:shadow-lg transition-all p-6 cursor-pointer group hover:-translate-y-1 ${isDarkMode ? 'bg-[#18181b] border-white/5 hover:border-white/10' : 'bg-white border-gray-100'}`}>
+                      <div className="flex justify-between items-start mb-4">
+                        <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider uppercase ${statusColors[order.status] ? (isDarkMode ? statusColors[order.status].replace('bg-', 'bg-opacity-20 bg-').split(' ')[0] + ' ' + statusColors[order.status].split(' ')[1] : statusColors[order.status].split(' ')[0] + ' ' + statusColors[order.status].split(' ')[1]) : 'bg-gray-100 text-gray-500'}`}>{order.status}</span>
+                        <span className={`text-xs font-mono font-medium ${isDarkMode ? 'text-zinc-600' : 'text-gray-400'}`}>#{order.id.slice(0, 6)}</span>
+                      </div>
+                      <h3 className={`text-base font-medium mb-6 line-clamp-2 h-12 leading-snug ${isDarkMode ? 'text-zinc-300' : 'text-gray-700'}`}>{order.description}</h3>
+                      <div className="flex justify-between items-end border-t pt-4 border-dashed border-gray-100 dark:border-white/5">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${isDarkMode ? 'bg-zinc-800 text-zinc-400' : 'bg-gray-100 text-gray-500'}`}>
+                            {order.leads?.name?.slice(0, 1).toUpperCase() || <User size={10} />}
+                          </div>
+                          <span className={`text-xs ${isDarkMode ? 'text-zinc-500' : 'text-gray-500'}`}>{order.leads?.name || 'Anónimo'}</span>
+                        </div>
+                        <span className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>${order.total_amount?.toLocaleString()}</span>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className={`rounded-[2.5rem] border overflow-hidden shadow-sm ${isDarkMode ? 'bg-[#18181b] border-white/5' : 'bg-white border-[#F2F2F7]'}`}>
-                  <table className="w-full text-left">
-                    <thead><tr className={`border-b ${isDarkMode ? 'border-white/5' : 'border-[#F2F2F7]'}`}><th className="px-8 py-6 text-[10px] font-black uppercase opacity-40">Estado</th><th className="px-8 py-6 text-[10px] font-black uppercase opacity-40">Descripción</th><th className="px-8 py-6 text-[10px] font-black uppercase opacity-40">Cliente</th><th className="px-8 py-6 text-[10px] font-black uppercase opacity-40 text-right">Total</th></tr></thead>
-                    <tbody className={`divide-y ${isDarkMode ? 'divide-white/5' : 'divide-[#F2F2F7]'}`}>{filteredOrders.map(order => (
-                      <tr key={order.id} onClick={() => { setSelectedOrder(order); setEditForm({ description: order.description, total_amount: order.total_amount }); setIsEditing(false); }} className={`cursor-pointer transition-colors ${isDarkMode ? 'hover:bg-white/5' : 'hover:bg-[#F2F2F7]/40'}`}>
-                        <td className="px-8 py-6"><span className={`px-4 py-1 rounded-2xl text-[10px] font-black border ${statusColors[order.status]}`}>{order.status}</span></td>
-                        <td className="px-8 py-6"><p className="font-bold text-[15px]">{order.description}</p></td>
-                        <td className="px-8 py-6 font-medium opacity-60">{order.leads?.name || order.leads?.phone_number}</td>
-                        <td className="px-8 py-6 text-right font-black text-lg">${order.total_amount?.toLocaleString()}</td>
+                <div className={`rounded-xl border shadow-sm overflow-hidden ${isDarkMode ? 'bg-[#18181b] border-white/5' : 'bg-white border-gray-100 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.02)]'}`}>
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className={`border-b ${isDarkMode ? 'border-white/5 bg-white/5' : 'border-gray-100 bg-gray-50/50'}`}>
+                        <th className={`px-6 py-4 text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-zinc-500' : 'text-gray-500'}`}>Estado</th>
+                        <th className={`px-6 py-4 text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-zinc-500' : 'text-gray-500'}`}>Descripción</th>
+                        <th className={`px-6 py-4 text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-zinc-500' : 'text-gray-500'}`}>Cliente</th>
+                        <th className={`px-6 py-4 text-xs font-semibold uppercase tracking-wider text-right ${isDarkMode ? 'text-zinc-500' : 'text-gray-500'}`}>Total</th>
                       </tr>
-                    ))}</tbody>
+                    </thead>
+                    <tbody className={`divide-y ${isDarkMode ? 'divide-white/5' : 'divide-gray-100'}`}>
+                      {filteredOrders.map(order => {
+                        // Refined Status Badges Logic
+                        let badgeStyle = 'bg-gray-100 text-gray-600'
+                        if (order.status === 'NUEVO') badgeStyle = isDarkMode ? 'bg-rose-500/10 text-rose-400' : 'bg-rose-50 text-rose-600'
+                        if (order.status === 'DISEÑO') badgeStyle = isDarkMode ? 'bg-indigo-500/10 text-indigo-400' : 'bg-indigo-50 text-indigo-600'
+                        if (order.status === 'PRODUCCIÓN') badgeStyle = isDarkMode ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-600'
+                        if (order.status === 'LISTO') badgeStyle = isDarkMode ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600'
+                        if (order.status === 'ENTREGADO') badgeStyle = isDarkMode ? 'bg-zinc-800 text-zinc-400' : 'bg-gray-100 text-gray-500'
+
+                        return (
+                          <tr key={order.id} onClick={() => { setSelectedOrder(order); setEditForm({ description: order.description, total_amount: order.total_amount }); setIsEditing(false); }} className={`cursor-pointer transition-colors ${isDarkMode ? 'hover:bg-white/[0.02]' : 'hover:bg-gray-50'}`}>
+                            <td className="px-6 py-4">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${badgeStyle}`}>
+                                {order.status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 max-w-md">
+                              <p className={`text-sm font-medium line-clamp-1 ${isDarkMode ? 'text-zinc-300' : 'text-gray-700'}`}>{order.description}</p>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] bg-gray-100 text-gray-600 ${isDarkMode ? 'bg-zinc-800 text-zinc-400' : ''}`}>
+                                  {order.leads?.name?.slice(0, 1) || <User size={10} />}
+                                </div>
+                                <span className={`text-sm ${isDarkMode ? 'text-zinc-400' : 'text-gray-600'}`}>{order.leads?.name || order.leads?.phone_number}</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <span className={`text-sm font-bold font-mono tracking-tight ${isDarkMode ? 'text-zinc-200' : 'text-gray-900'}`}>${order.total_amount?.toLocaleString()}</span>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
                   </table>
                 </div>
               )
