@@ -23,14 +23,18 @@ import {
   UserPlus,
   Users,
   Briefcase,
-  DollarSign
+  DollarSign,
+  BarChart2,
+  PieChart
 } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart as RePieChart, Pie } from 'recharts'
 
 function App() {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [filter, setFilter] = useState('TODOS')
+  const [searchTerm, setSearchTerm] = useState('')
   const [isEditing, setIsEditing] = useState(false)
   const [editForm, setEditForm] = useState({ description: '', total_amount: 0 })
   const [activeTab, setActiveTab] = useState('dashboard')
@@ -205,7 +209,16 @@ function App() {
   const [viewMode, setViewMode] = useState(() => localStorage.getItem('dashboard_view_mode') || 'list')
   useEffect(() => { localStorage.setItem('dashboard_view_mode', viewMode) }, [viewMode])
 
-  const filteredOrders = filter === 'TODOS' ? orders : orders.filter(o => o.status === filter)
+
+  // --- FILTERS & SEARCH ---
+  const filteredOrders = orders.filter(o => {
+    const matchesStatus = filter === 'TODOS' ? true : o.status === filter
+    const searchLower = searchTerm.toLowerCase()
+    const matchesSearch = o.description?.toLowerCase().includes(searchLower) ||
+      o.leads?.name?.toLowerCase().includes(searchLower) ||
+      o.id?.toLowerCase().includes(searchLower)
+    return matchesStatus && matchesSearch
+  })
 
   // --- KPI CALCULATIONS ---
   const kpiSales = orders.filter(o => o.status === 'LISTO' || o.status === 'ENTREGADO').reduce((acc, o) => acc + (o.total_amount || 0), 0)
@@ -215,6 +228,14 @@ function App() {
     const today = new Date().toDateString()
     return new Date(l.created_at).toDateString() === today
   }).length
+
+  // --- CHARTS DATA ---
+  const ordersByStatus = Object.keys(statusColors).map(status => ({
+    name: status,
+    value: orders.filter(o => o.status === status).length,
+    color: status === 'NUEVO' ? '#E96A51' : status === 'DISEÑO' ? '#6338F1' : status === 'PRODUCCIÓN' ? '#FF9F0A' : status === 'LISTO' ? '#34C759' : '#8E8E93'
+  })).filter(d => d.value > 0)
+
 
   return (
     <div className="min-h-screen bg-[#FDFDFD] text-[#1C1C1E] font-sans">
@@ -241,6 +262,16 @@ function App() {
             <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-12">
               <div><h1 className="text-4xl font-extrabold tracking-tight mb-2">Hola, Pitrón Beña 👋</h1><p className="text-[#8E8E93] font-medium text-lg">Tienes <span className="text-[#E96A51] font-bold">{orders.filter(o => o.status === 'NUEVO').length} pedidos</span> nuevos.</p></div>
               <div className="flex gap-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8E8E93]" size={16} />
+                  <input
+                    type="text"
+                    placeholder="Buscar pedido..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="bg-[#F2F2F7] pl-10 pr-4 py-2.5 rounded-2xl text-sm font-bold w-full md:w-64 outline-none focus:ring-2 ring-[#E96A51]/20 transition-all placeholder:text-[#C7C7CC]"
+                  />
+                </div>
                 <div className="flex bg-[#F2F2F7] p-1 rounded-2xl border border-[#E5E5EA]">
                   <button onClick={() => setViewMode('grid')} className={`p-2 rounded-xl ${viewMode === 'grid' ? 'bg-white shadow text-[#1C1C1E]' : 'text-[#8E8E93]'}`}><LayoutGrid size={20} /></button>
                   <button onClick={() => setViewMode('list')} className={`p-2 rounded-xl ${viewMode === 'list' ? 'bg-white shadow text-[#1C1C1E]' : 'text-[#8E8E93]'}`}><List size={20} /></button>
@@ -341,6 +372,47 @@ function App() {
                   </tr>
                 ))}</tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* --- REPORTES TAB --- */}
+        {activeTab === 'reportes' && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
+            <h1 className="text-4xl font-extrabold tracking-tight mb-2">Reportes</h1>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="bg-white p-8 rounded-[2.5rem] border border-[#F2F2F7] shadow-sm">
+                <h3 className="text-lg font-black mb-6 flex items-center gap-2"><PieChart size={20} className="text-[#6338F1]" /> Distribución de Estados</h3>
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RePieChart>
+                      <Pie data={ordersByStatus} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                        {ordersByStatus.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                        itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
+                      />
+                    </RePieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex flex-wrap gap-4 justify-center mt-4">
+                  {ordersByStatus.map(d => (
+                    <div key={d.name} className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: d.color }}></div>
+                      <span className="text-xs font-bold text-[#8E8E93]">{d.name} ({d.value})</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-white p-8 rounded-[2.5rem] border border-[#F2F2F7] shadow-sm flex flex-col items-center justify-center text-center space-y-4">
+                <div className="bg-[#F2F2F7] p-6 rounded-full text-[#C7C7CC]"><BarChart2 size={40} /></div>
+                <h3 className="text-lg font-black text-[#8E8E93]">Próximamente</h3>
+                <p className="text-sm font-medium text-[#C7C7CC] max-w-xs">Estamos recopilando más datos históricos para generar el gráfico de evolución de ventas.</p>
+              </div>
             </div>
           </div>
         )}
