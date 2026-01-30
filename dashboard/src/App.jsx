@@ -20,7 +20,10 @@ import {
   Save,
   Edit2,
   User,
-  UserPlus
+  UserPlus,
+  Users,
+  Briefcase,
+  DollarSign
 } from 'lucide-react'
 
 function App() {
@@ -204,6 +207,15 @@ function App() {
 
   const filteredOrders = filter === 'TODOS' ? orders : orders.filter(o => o.status === filter)
 
+  // --- KPI CALCULATIONS ---
+  const kpiSales = orders.filter(o => o.status === 'LISTO' || o.status === 'ENTREGADO').reduce((acc, o) => acc + (o.total_amount || 0), 0)
+  const kpiActive = orders.filter(o => o.status === 'DISEÑO' || o.status === 'PRODUCCIÓN').length
+  const kpiAvgTicket = orders.length > 0 ? (orders.reduce((acc, o) => acc + (o.total_amount || 0), 0) / orders.length) : 0
+  const kpiNewLeads = leads.filter(l => {
+    const today = new Date().toDateString()
+    return new Date(l.created_at).toDateString() === today
+  }).length
+
   return (
     <div className="min-h-screen bg-[#FDFDFD] text-[#1C1C1E] font-sans">
       <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-gray-100 h-20 flex items-center px-6">
@@ -235,6 +247,27 @@ function App() {
                 </div>
               </div>
             </div>
+
+            {/* --- KPI CARDS --- */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+              <div className="bg-white p-6 rounded-[2rem] border border-[#F2F2F7] shadow-sm flex items-center justify-between">
+                <div><span className="text-[10px] font-black text-[#8E8E93] uppercase block mb-1">Ventas Totales</span><p className="text-2xl font-black">${kpiSales.toLocaleString()}</p></div>
+                <div className="bg-[#E96A51]/10 p-3 rounded-2xl text-[#E96A51]"><DollarSign size={20} /></div>
+              </div>
+              <div className="bg-white p-6 rounded-[2rem] border border-[#F2F2F7] shadow-sm flex items-center justify-between">
+                <div><span className="text-[10px] font-black text-[#8E8E93] uppercase block mb-1">Órdenes Activas</span><p className="text-2xl font-black">{kpiActive}</p></div>
+                <div className="bg-[#F2EDFF] p-3 rounded-2xl text-[#6338F1]"><Briefcase size={20} /></div>
+              </div>
+              <div className="bg-white p-6 rounded-[2rem] border border-[#F2F2F7] shadow-sm flex items-center justify-between">
+                <div><span className="text-[10px] font-black text-[#8E8E93] uppercase block mb-1">Ticket Promedio</span><p className="text-2xl font-black">${Math.round(kpiAvgTicket).toLocaleString()}</p></div>
+                <div className="bg-[#EBFBF2] p-3 rounded-2xl text-[#34C759]"><CreditCard size={20} /></div>
+              </div>
+              <div className="bg-white p-6 rounded-[2rem] border border-[#F2F2F7] shadow-sm flex items-center justify-between">
+                <div><span className="text-[10px] font-black text-[#8E8E93] uppercase block mb-1">Nuevos Leads (24h)</span><p className="text-2xl font-black">{kpiNewLeads}</p></div>
+                <div className="bg-[#FFF8EC] p-3 rounded-2xl text-[#FF9F0A]"><Users size={20} /></div>
+              </div>
+            </div>
+
             <div className="flex gap-2 mb-10 overflow-x-auto pb-2">
               {['TODOS', 'NUEVO', 'DISEÑO', 'PRODUCCIÓN', 'LISTO', 'ENTREGADO'].map(st => (
                 <button key={st} onClick={() => setFilter(st)} className={`px-5 py-2 rounded-2xl text-[13px] font-bold border-2 ${filter === st ? 'bg-[#1C1C1E] text-white border-[#1C1C1E]' : 'bg-white text-[#8E8E93] border-[#F2F2F7]'}`}>{st}</button>
