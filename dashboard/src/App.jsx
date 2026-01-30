@@ -355,12 +355,12 @@ function App() {
               </div>
             </div>
 
-            {/* --- KPI CARDS - SAAS CLEAN LOOK --- */}
+            {/* --- KPI CARDS - SAAS CLEAN LOOK WITH CUSTOM ICONS --- */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
               <div className={`p-6 rounded-xl border shadow-sm transition-all hover:-translate-y-1 ${isDarkMode ? 'bg-[#18181b] border-white/5' : 'bg-white border-gray-100 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.02)]'}`}>
                 <div className="flex justify-between items-start mb-4">
                   <span className={`text-xs font-semibold tracking-wider uppercase ${isDarkMode ? 'text-zinc-500' : 'text-gray-500'}`}>Ventas Totales</span>
-                  <div className={`p-2 rounded-full ${isDarkMode ? 'bg-emerald-500/10 text-emerald-500' : 'bg-emerald-50 text-emerald-600'}`}><DollarSign size={16} /></div>
+                  <img src="/icons/kpi-sales.png" alt="Ventas" className="w-12 h-12 object-contain" />
                 </div>
                 <p className={`text-3xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>${kpiSales.toLocaleString()}</p>
               </div>
@@ -368,7 +368,7 @@ function App() {
               <div className={`p-6 rounded-xl border shadow-sm transition-all hover:-translate-y-1 ${isDarkMode ? 'bg-[#18181b] border-white/5' : 'bg-white border-gray-100 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.02)]'}`}>
                 <div className="flex justify-between items-start mb-4">
                   <span className={`text-xs font-semibold tracking-wider uppercase ${isDarkMode ? 'text-zinc-500' : 'text-gray-500'}`}>Órdenes Activas</span>
-                  <div className={`p-2 rounded-full ${isDarkMode ? 'bg-indigo-500/10 text-indigo-500' : 'bg-indigo-50 text-indigo-600'}`}><Briefcase size={16} /></div>
+                  <img src="/icons/kpi-orders.png" alt="Órdenes" className="w-12 h-12 object-contain" />
                 </div>
                 <p className={`text-3xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{kpiActive}</p>
               </div>
@@ -376,7 +376,7 @@ function App() {
               <div className={`p-6 rounded-xl border shadow-sm transition-all hover:-translate-y-1 ${isDarkMode ? 'bg-[#18181b] border-white/5' : 'bg-white border-gray-100 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.02)]'}`}>
                 <div className="flex justify-between items-start mb-4">
                   <span className={`text-xs font-semibold tracking-wider uppercase ${isDarkMode ? 'text-zinc-500' : 'text-gray-500'}`}>Ticket Promedio</span>
-                  <div className={`p-2 rounded-full ${isDarkMode ? 'bg-violet-500/10 text-violet-500' : 'bg-violet-50 text-violet-600'}`}><CreditCard size={16} /></div>
+                  <img src="/icons/kpi-ticket.png" alt="Ticket" className="w-12 h-12 object-contain" />
                 </div>
                 <p className={`text-3xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>${Math.round(kpiAvgTicket).toLocaleString()}</p>
               </div>
@@ -384,7 +384,7 @@ function App() {
               <div className={`p-6 rounded-xl border shadow-sm transition-all hover:-translate-y-1 ${isDarkMode ? 'bg-[#18181b] border-white/5' : 'bg-white border-gray-100 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.02)]'}`}>
                 <div className="flex justify-between items-start mb-4">
                   <span className={`text-xs font-semibold tracking-wider uppercase ${isDarkMode ? 'text-zinc-500' : 'text-gray-500'}`}>Leads (24h)</span>
-                  <div className={`p-2 rounded-full ${isDarkMode ? 'bg-orange-500/10 text-orange-500' : 'bg-orange-50 text-orange-600'}`}><Users size={16} /></div>
+                  <img src="/icons/kpi-leads.png" alt="Leads" className="w-12 h-12 object-contain" />
                 </div>
                 <p className={`text-3xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{kpiNewLeads}</p>
               </div>
