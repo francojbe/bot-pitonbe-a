@@ -103,11 +103,21 @@ function App() {
   }
 
   // --- LEAD ACTIONS ---
-  async function handleDeleteLead(id) {
-    // Usamos toast con promise/action en lugar de confirm
-    const isConfirmed = window.confirm('¿Estás seguro de eliminar este cliente? Se borrarán sus datos permanentemente.')
-    if (!isConfirmed) return
+  // --- LEAD ACTIONS ---
+  function handleDeleteLead(id) {
+    toast('¿Eliminar este cliente?', {
+      description: 'Esta acción borrará sus datos y pedidos permanentemente.',
+      action: {
+        label: 'Eliminar',
+        onClick: () => deleteLeadConfirmed(id),
+      },
+      cancel: {
+        label: 'Cancelar',
+      },
+    })
+  }
 
+  async function deleteLeadConfirmed(id) {
     const promise = supabase.from('leads').delete().eq('id', id)
 
     toast.promise(promise, {
@@ -197,8 +207,21 @@ function App() {
     })
   }
 
-  async function handleDeleteOrder() {
-    if (!selectedOrder || !confirm('¿Eliminar pedido?')) return
+  function handleDeleteOrder() {
+    if (!selectedOrder) return
+    toast('¿Eliminar este pedido?', {
+      description: 'Esta acción no se puede deshacer.',
+      action: {
+        label: 'Eliminar',
+        onClick: () => deleteOrderConfirmed(),
+      },
+      cancel: {
+        label: 'Cancelar',
+      },
+    })
+  }
+
+  async function deleteOrderConfirmed() {
     const promise = supabase.from('orders').delete().eq('id', selectedOrder.id)
 
     toast.promise(promise, {
