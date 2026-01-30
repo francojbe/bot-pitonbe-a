@@ -417,28 +417,104 @@ function App() {
                 <UserPlus size={18} /> Nuevo Cliente
               </button>
             </div>
-            <div className={`rounded-[2.5rem] border overflow-hidden shadow-sm ${isDarkMode ? 'bg-[#18181b] border-white/5' : 'bg-white border-[#F2F2F7]'}`}>
-              <table className="w-full text-left">
-                <thead><tr className={`border-b ${isDarkMode ? 'border-white/5' : 'border-[#F2F2F7]'}`}><th className="px-8 py-6 text-[10px] font-black uppercase opacity-40">Cliente</th><th className="px-8 py-6 text-[10px] font-black uppercase opacity-40">WhatsApp</th><th className="px-8 py-6 text-[10px] font-black uppercase opacity-40">E-mail / RUT</th><th className="px-8 py-6 text-[10px] font-black uppercase opacity-40 text-right">Acciones</th></tr></thead>
-                <tbody className={`divide-y ${isDarkMode ? 'divide-white/5' : 'divide-[#F2F2F7]'}`}>{leads.map(client => (
-                  <tr key={client.id} className={`group transition-colors ${isDarkMode ? 'hover:bg-white/5' : 'hover:bg-[#F2F2F7]/20'}`}>
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black ${isDarkMode ? 'bg-white text-black' : 'bg-[#1C1C1E] text-white'}`}>{client.name?.slice(0, 1).toUpperCase() || 'C'}</div>
-                        <div><p className="font-bold text-[15px]">{client.name || 'Sin Nombre'}</p><p className="text-[10px] font-bold opacity-40">RUT: {client.rut || '---'}</p></div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6 font-bold opacity-60">{client.phone_number}</td>
-                    <td className="px-8 py-6"><p className="text-xs font-bold">{client.email || '---'}</p></td>
-                    <td className="px-8 py-6 text-right">
-                      <div className="flex justify-end gap-2">
-                        <a href={`https://wa.me/${client.phone_number}`} target="_blank" className={`p-2 rounded-xl transition-all ${isDarkMode ? 'bg-green-900/20 text-green-400 hover:bg-green-600 hover:text-white' : 'bg-[#EBFBF2] text-[#34C759] hover:bg-[#34C759] hover:text-white'}`}><Phone size={14} /></a>
-                        <button onClick={() => { setSelectedLead(client); setLeadForm({ name: client.name || '', phone_number: client.phone_number || '', rut: client.rut || '', address: client.address || '', email: client.email || '' }); setIsEditingLead(true); }} className={`p-2 rounded-xl transition-all ${isDarkMode ? 'bg-purple-900/20 text-purple-400 hover:bg-purple-600 hover:text-white' : 'bg-[#F2EDFF] text-[#6338F1] hover:bg-[#6338F1] hover:text-white'}`}><Edit2 size={14} /></button>
-                        <button onClick={() => handleDeleteLead(client.id)} className={`p-2 rounded-xl transition-all ${isDarkMode ? 'bg-red-900/20 text-red-400 hover:bg-red-600 hover:text-white' : 'bg-[#FDF2F0] text-[#E96A51] hover:bg-[#E96A51] hover:text-white'}`}><Trash2 size={14} /></button>
-                      </div>
-                    </td>
+            {/* --- CLIENT LIST - SAAS CLEAN LOOK --- */}
+            <div className={`rounded-xl border shadow-sm transition-all overflow-hidden ${isDarkMode ? 'bg-[#18181b] border-white/5 shadow-none' : 'bg-white border-gray-100 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.02)]'}`}>
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className={`border-b ${isDarkMode ? 'border-white/5 bg-white/5' : 'border-gray-100 bg-gray-50/50'}`}>
+                    <th className={`px-6 py-4 text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-zinc-500' : 'text-gray-500'}`}>Cliente</th>
+                    <th className={`px-6 py-4 text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-zinc-500' : 'text-gray-500'}`}>WhatsApp</th>
+                    <th className={`px-6 py-4 text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-zinc-500' : 'text-gray-500'}`}>Detalles</th>
+                    <th className={`px-6 py-4 text-xs font-semibold uppercase tracking-wider text-right ${isDarkMode ? 'text-zinc-500' : 'text-gray-500'}`}>Acciones</th>
                   </tr>
-                ))}</tbody>
+                </thead>
+                <tbody className={`divide-y ${isDarkMode ? 'divide-white/5' : 'divide-gray-100'}`}>
+                  {leads.map(client => {
+                    // Logic for pastel avatars
+                    const colors = [
+                      'bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300',
+                      'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-300',
+                      'bg-violet-50 text-violet-600 dark:bg-violet-900/40 dark:text-violet-300',
+                      'bg-amber-50 text-amber-600 dark:bg-amber-900/40 dark:text-amber-300',
+                      'bg-rose-50 text-rose-600 dark:bg-rose-900/40 dark:text-rose-300',
+                      'bg-cyan-50 text-cyan-600 dark:bg-cyan-900/40 dark:text-cyan-300'
+                    ]
+                    const colorIndex = (client.name?.charCodeAt(0) || 0) % colors.length
+                    const avatarColor = colors[colorIndex]
+
+                    // Logic for nice phone format (+56 9 XXXX XXXX)
+                    const rawPhone = client.phone_number?.replace(/\D/g, '') || ''
+                    const formattedPhone = rawPhone.length > 8
+                      ? `+${rawPhone.slice(0, 2)} ${rawPhone.slice(2, 3)} ${rawPhone.slice(3, 7)} ${rawPhone.slice(7)}`
+                      : client.phone_number
+
+                    return (
+                      <tr key={client.id} className={`group transition-colors ${isDarkMode ? 'hover:bg-white/[0.02]' : 'hover:bg-gray-50'}`}>
+                        <td className="px-6 py-4 align-middle">
+                          <div className="flex items-center gap-4">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${avatarColor}`}>
+                              {client.name?.slice(0, 1).toUpperCase() || <User size={16} />}
+                            </div>
+                            <div>
+                              <p className={`font-medium text-sm ${isDarkMode ? 'text-zinc-100' : 'text-gray-900'}`}>{client.name || 'Sin Nombre'}</p>
+                              <p className={`text-xs ${isDarkMode ? 'text-zinc-500' : 'text-gray-400'}`}>ID: {client.id?.slice(0, 4)}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 align-middle">
+                          <div className="flex items-center gap-2">
+                            <div className={`p-1.5 rounded-full ${isDarkMode ? 'bg-green-500/10 text-green-400' : 'bg-green-50 text-green-600'}`}>
+                              <Phone size={12} strokeWidth={2.5} />
+                            </div>
+                            <span className={`text-sm font-medium ${isDarkMode ? 'text-zinc-300' : 'text-gray-600'}`}>{formattedPhone}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 align-middle">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <span className={`text-xs uppercase font-semibold tracking-wider ${isDarkMode ? 'text-zinc-600' : 'text-gray-400'}`}>EMAIL</span>
+                              <span className={`text-xs ${client.email ? (isDarkMode ? 'text-zinc-300' : 'text-gray-600') : (isDarkMode ? 'text-zinc-700' : 'text-gray-300 italic')}`}>
+                                {client.email || 'No registrado'}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-xs uppercase font-semibold tracking-wider ${isDarkMode ? 'text-zinc-600' : 'text-gray-400'}`}>RUT</span>
+                              <span className={`text-xs ${client.rut ? (isDarkMode ? 'text-zinc-300' : 'text-gray-600') : (isDarkMode ? 'text-zinc-700' : 'text-gray-300 italic')}`}>
+                                {client.rut || 'No registrado'}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 align-middle text-right">
+                          <div className="flex justify-end gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                            <a
+                              href={`https://wa.me/${client.phone_number}`}
+                              target="_blank"
+                              title="Abrir WhatsApp"
+                              className={`p-2 rounded-lg transition-all ${isDarkMode ? 'hover:bg-green-500/10 text-zinc-400 hover:text-green-400' : 'hover:bg-green-50 text-gray-400 hover:text-green-600'}`}
+                            >
+                              <Phone size={16} />
+                            </a>
+                            <button
+                              onClick={() => { setSelectedLead(client); setLeadForm({ name: client.name || '', phone_number: client.phone_number || '', rut: client.rut || '', address: client.address || '', email: client.email || '' }); setIsEditingLead(true); }}
+                              title="Editar Cliente"
+                              className={`p-2 rounded-lg transition-all ${isDarkMode ? 'hover:bg-blue-500/10 text-zinc-400 hover:text-blue-400' : 'hover:bg-blue-50 text-gray-400 hover:text-blue-600'}`}
+                            >
+                              <Edit2 size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteLead(client.id)}
+                              title="Eliminar Cliente"
+                              className={`p-2 rounded-lg transition-all ${isDarkMode ? 'hover:bg-red-500/10 text-zinc-400 hover:text-red-400' : 'hover:bg-red-50 text-gray-400 hover:text-red-600'}`}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
               </table>
             </div>
           </div>
