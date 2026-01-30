@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabase'
+import { Toaster, toast } from 'sonner'
 import {
   ClipboardList,
   Search,
@@ -103,98 +104,120 @@ function App() {
 
   // --- LEAD ACTIONS ---
   async function handleDeleteLead(id) {
-    if (!confirm('¿Estás seguro de eliminar este cliente? Se borrarán sus datos permanentemente.')) return
+    // Usamos toast con promise/action en lugar de confirm
+    const isConfirmed = window.confirm('¿Estás seguro de eliminar este cliente? Se borrarán sus datos permanentemente.')
+    if (!isConfirmed) return
 
-    const { error } = await supabase.from('leads').delete().eq('id', id)
-    if (error) {
-      alert('Error al eliminar: ' + error.message)
-    } else {
-      setLeads(leads.filter(l => l.id !== id))
-      if (selectedLead?.id === id) setSelectedLead(null)
-    }
+    const promise = supabase.from('leads').delete().eq('id', id)
+
+    toast.promise(promise, {
+      loading: 'Eliminando cliente...',
+      success: () => {
+        setLeads(leads.filter(l => l.id !== id))
+        if (selectedLead?.id === id) setSelectedLead(null)
+        return 'Cliente eliminado correctamente'
+      },
+      error: (err) => {
+        return 'Error al eliminar: ' + err.message
+      }
+    })
   }
 
   async function handleLeadSubmit(e) {
     e.preventDefault()
 
     if (isCreatingLead) {
-      const { error } = await supabase.from('leads').insert([leadForm])
-      if (error) {
-        alert('Error al crear: ' + error.message)
-      } else {
-        setIsCreatingLead(false)
-        setLeadForm({ name: '', phone_number: '', rut: '', address: '', email: '' })
-        fetchLeads()
-      }
+      const promise = supabase.from('leads').insert([leadForm])
+      toast.promise(promise, {
+        loading: 'Creando cliente...',
+        success: () => {
+          setIsCreatingLead(false)
+          setLeadForm({ name: '', phone_number: '', rut: '', address: '', email: '' })
+          fetchLeads()
+          return 'Cliente creado exitosamente'
+        },
+        error: (err) => 'Error al crear: ' + err.message
+      })
     } else {
-      const { error } = await supabase
-        .from('leads')
-        .update(leadForm)
-        .eq('id', selectedLead.id)
-
-      if (error) {
-        alert('Error al actualizar: ' + error.message)
-      } else {
-        setLeads(leads.map(l => l.id === selectedLead.id ? { ...l, ...leadForm } : l))
-        setIsEditingLead(false)
-        setSelectedLead(null)
-      }
+      const promise = supabase.from('leads').update(leadForm).eq('id', selectedLead.id)
+      toast.promise(promise, {
+        loading: 'Actualizando cliente...',
+        success: () => {
+          setLeads(leads.map(l => l.id === selectedLead.id ? { ...l, ...leadForm } : l))
+          setIsEditingLead(false)
+          setSelectedLead(null)
+          return 'Cliente actualizado correctamente'
+        },
+        error: (err) => 'Error al actualizar: ' + err.message
+      })
     }
   }
 
   // --- ORDER ACTIONS ---
   async function updateOrderStatus(newStatus) {
     if (!selectedOrder) return
-    const { error } = await supabase.from('orders').update({ status: newStatus }).eq('id', selectedOrder.id)
+    const promise = supabase.from('orders').update({ status: newStatus }).eq('id', selectedOrder.id)
 
-    if (error) {
-      alert('Error al actualizar estado')
-    } else {
-      setOrders(orders.map(o => o.id === selectedOrder.id ? { ...o, status: newStatus } : o))
-      setSelectedOrder({ ...selectedOrder, status: newStatus })
+    toast.promise(promise, {
+      loading: 'Actualizando estado...',
+      success: () => {
+        setOrders(orders.map(o => o.id === selectedOrder.id ? { ...o, status: newStatus } : o))
+        setSelectedOrder({ ...selectedOrder, status: newStatus })
 
-      try {
+        // Trigger notification silently or with a separate toast
         const apiUrl = import.meta.env.VITE_API_URL || 'https://recuperadora-agente-pb.nojauc.easypanel.host'
-        await fetch(`${apiUrl}/notify_update`, {
+        fetch(`${apiUrl}/notify_update`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ order_id: selectedOrder.id, new_status: newStatus })
-        })
-      } catch (err) { console.error(err) }
-    }
+        }).catch(console.error)
+
+        return `Estado actualizado a ${newStatus}`
+      },
+      error: 'Error al actualizar estado'
+    })
   }
 
   async function handleEditSubmit(e) {
     e.preventDefault()
-    const { error } = await supabase.from('orders').update({
+    const promise = supabase.from('orders').update({
       description: editForm.description,
       total_amount: parseInt(editForm.total_amount)
     }).eq('id', selectedOrder.id)
 
-    if (error) {
-      alert('Error al actualizar')
-    } else {
-      setOrders(orders.map(o => o.id === selectedOrder.id ? { ...o, ...editForm } : o))
-      setSelectedOrder({ ...selectedOrder, ...editForm })
-      setIsEditing(false)
-    }
+    toast.promise(promise, {
+      loading: 'Guardando cambios...',
+      success: () => {
+        setOrders(orders.map(o => o.id === selectedOrder.id ? { ...o, ...editForm } : o))
+        setSelectedOrder({ ...selectedOrder, ...editForm })
+        setIsEditing(false)
+        return 'Orden actualizada'
+      },
+      error: 'Error al actualizar'
+    })
   }
 
   async function handleDeleteOrder() {
     if (!selectedOrder || !confirm('¿Eliminar pedido?')) return
-    const { error } = await supabase.from('orders').delete().eq('id', selectedOrder.id)
-    if (error) alert('Error')
-    else {
-      setOrders(orders.filter(o => o.id !== selectedOrder.id))
-      setSelectedOrder(null)
-    }
+    const promise = supabase.from('orders').delete().eq('id', selectedOrder.id)
+
+    toast.promise(promise, {
+      loading: 'Eliminando pedido...',
+      success: () => {
+        setOrders(orders.filter(o => o.id !== selectedOrder.id))
+        setSelectedOrder(null)
+        return 'Pedido eliminado'
+      },
+      error: 'Error al eliminar pedido'
+    })
   }
 
   const [isInvoicing, setIsInvoicing] = useState(false)
   async function generateInvoice() {
     if (!selectedOrder) return
     setIsInvoicing(true)
-    try {
+
+    const promise = (async () => {
       const apiUrl = import.meta.env.VITE_API_URL || 'https://recuperadora-agente-pb.nojauc.easypanel.host'
       const res = await fetch(`${apiUrl}/generate_invoice`, {
         method: 'POST',
@@ -202,9 +225,16 @@ function App() {
         body: JSON.stringify({ order_id: selectedOrder.id, new_status: selectedOrder.status })
       })
       const result = await res.json()
-      alert(result.status === 'success' ? '✅ Enviada' : '❌ Error: ' + result.message)
-    } catch (err) { alert('Error de conexión') }
-    finally { setIsInvoicing(false) }
+      if (result.status !== 'success') throw new Error(result.message)
+      return result
+    })()
+
+    toast.promise(promise, {
+      loading: 'Generando factura...',
+      success: 'Factura enviada exitosamente',
+      error: (err) => 'Error: ' + err.message,
+      finally: () => setIsInvoicing(false)
+    })
   }
 
   const statusColors = {
@@ -248,6 +278,7 @@ function App() {
 
   return (
     <div className={`min-h-screen font-sans transition-colors duration-300 ${isDarkMode ? 'bg-[#09090b] text-[#FAFAFA]' : 'bg-[#FDFDFD] text-[#1C1C1E]'}`}>
+      <Toaster position="top-center" richColors theme={isDarkMode ? 'dark' : 'light'} />
       <nav className={`sticky top-0 z-40 border-b h-20 flex items-center px-6 backdrop-blur-md transition-colors ${isDarkMode ? 'bg-[#09090b]/80 border-white/5' : 'bg-white/80 border-gray-100'}`}>
         <div className="max-w-7xl mx-auto w-full flex justify-between items-center">
           <div className="flex items-center gap-3">
