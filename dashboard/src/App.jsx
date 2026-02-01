@@ -100,99 +100,155 @@ function App() {
         body: JSON.stringify({ order_id: id, new_status: newStatus })
       }).catch(console.error)
     }
-    async function deleteOrders(idsToDelete) {
-      if (!idsToDelete || idsToDelete.length === 0) return
+  }
+  async function deleteOrders(idsToDelete) {
+    if (!idsToDelete || idsToDelete.length === 0) return
 
-      const { error } = await supabase.from('orders').delete().in('id', idsToDelete)
-      if (error) {
-        toast.error('Error eliminando órdenes')
-        console.error(error)
-      } else {
-        setOrders(prev => prev.filter(o => !idsToDelete.includes(o.id)))
-        setSelectedIds(new Set())
-        toast.success(`${idsToDelete.length} orden(es) eliminada(s)`)
-      }
+    const { error } = await supabase.from('orders').delete().in('id', idsToDelete)
+    if (error) {
+      toast.error('Error eliminando órdenes')
+      console.error(error)
+    } else {
+      setOrders(prev => prev.filter(o => !idsToDelete.includes(o.id)))
+      setSelectedIds(new Set())
+      toast.success(`${idsToDelete.length} orden(es) eliminada(s)`)
     }
-
-    // --- VIEWS ---
-    return (
-      <div className={`min-h-screen font-sans transition-colors duration-300 ${isDarkMode ? 'bg-[#09090b] text-[#FAFAFA]' : 'bg-[#FDFDFD] text-[#1C1C1E]'}`}>
-        <Toaster position="top-center" richColors theme={isDarkMode ? 'dark' : 'light'} />
-
-        {/* NAVBAR */}
-        <nav className={`sticky top-0 z-40 border-b h-16 flex items-center px-4 sm:px-6 backdrop-blur-md transition-colors ${isDarkMode ? 'bg-[#09090b]/80 border-white/5' : 'bg-white/80 border-gray-100'}`}>
-          <div className="flex-1 flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-[#E96A51] to-[#e75336] w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-lg shadow-[#E96A51]/20"><Printer size={18} /></div>
-              <div>
-                <span className="font-bold text-lg tracking-tight block leading-tight">Pitron Beña</span>
-                <span className="text-[10px] uppercase tracking-widest font-bold opacity-50">Manager</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <div className={`hidden md:flex p-1 rounded-xl mx-4 ${isDarkMode ? 'bg-white/5' : 'bg-gray-100'}`}>
-                {['dashboard', 'clientes', 'reportes'].map(tab => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`px-6 py-1.5 rounded-lg text-xs font-bold transition-all capitalize ${activeTab === tab ? (isDarkMode ? 'bg-[#27272a] shadow text-white' : 'bg-white shadow text-black') : 'opacity-60 hover:opacity-100'}`}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </div>
-
-              {activeTab === 'dashboard' && (
-                <div className={`flex p-1 rounded-lg border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200'}`}>
-                  <button onClick={() => setViewMode('kanban')} className={`p-1.5 rounded-md transition-all ${viewMode === 'kanban' ? (isDarkMode ? 'bg-zinc-700 text-white' : 'bg-gray-100 text-black shadow-sm') : 'opacity-40 hover:opacity-100'}`} title="Vista Kanban"><LayoutGrid size={16} /></button>
-                  <button onClick={() => setViewMode('list')} className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? (isDarkMode ? 'bg-zinc-700 text-white' : 'bg-gray-100 text-black shadow-sm') : 'opacity-40 hover:opacity-100'}`} title="Vista Lista"><List size={16} /></button>
-                </div>
-              )}
-
-              <button onClick={() => setIsDarkMode(!isDarkMode)} className={`p-2 rounded-full transition-colors ${isDarkMode ? 'bg-white/10 text-yellow-300' : 'bg-gray-100 text-gray-600'}`}>
-                {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-              </button>
-            </div>
-          </div>
-        </nav>
-
-        {/* MAIN CONTENT */}
-        <main className="h-[calc(100vh-4rem)] p-4 sm:p-6 overflow-hidden">
-          {activeTab === 'dashboard' && (
-            viewMode === 'kanban'
-              ? <KanbanBoard orders={orders} onSelectOrder={setSelectedOrder} isDarkMode={isDarkMode} />
-              : <ListView orders={orders} onSelectOrder={setSelectedOrder} isDarkMode={isDarkMode} selectedIds={selectedIds} setSelectedIds={setSelectedIds} onDelete={deleteOrders} />
-          )}
-          {activeTab === 'clientes' && <LeadsView leads={leads} orders={orders} leadSearch={leadSearch} setLeadSearch={setLeadSearch} onEdit={(l) => { setSelectedLead(l); setLeadForm(l); setIsEditingLead(true) }} isDarkMode={isDarkMode} openCreate={() => { setLeadForm({}); setIsCreatingLead(true) }} />}
-          {activeTab === 'reportes' && <ReportsView orders={orders} isDarkMode={isDarkMode} />}
-        </main>
-
-        {/* DRAWER & MODALS */}
-        {selectedOrder && (
-          <OrderDrawer
-            order={selectedOrder}
-            onClose={() => setSelectedOrder(null)}
-            isDarkMode={isDarkMode}
-            updateOrderLocal={(updated) => setOrders(prev => prev.map(o => o.id === updated.id ? updated : o))}
-          />
-        )}
-
-        {(isCreatingLead || isEditingLead) && (
-          <LeadModal
-            isOpen={true}
-            isCreating={isCreatingLead}
-            form={leadForm}
-            setForm={setLeadForm}
-            onClose={() => { setIsCreatingLead(false); setIsEditingLead(false); }}
-            onSubmit={async () => { /* reuse logic */ fetchLeads(); setIsCreatingLead(false); setIsEditingLead(false); }}
-            isDarkMode={isDarkMode}
-          />
-        )}
-      </div>
-    )
   }
 
+  async function handleSaveLead() {
+    try {
+      // Remove ID from form if present to avoid issues on insert, though Supabase handles it usually.
+      // Better to just send the editable fields.
+      const payload = { ...leadForm }
+      delete payload.id
+      delete payload.created_at
+
+      let error
+      if (isCreatingLead) {
+        const { error: err } = await supabase.from('leads').insert([payload])
+        error = err
+      } else {
+        const { error: err } = await supabase.from('leads').update(payload).eq('id', selectedLead.id)
+        error = err
+      }
+
+      if (error) throw error
+
+      toast.success(isCreatingLead ? 'Cliente creado' : 'Cliente actualizado')
+      fetchLeads()
+      setIsCreatingLead(false)
+      setIsEditingLead(false)
+    } catch (e) {
+      toast.error('Error guardando cliente')
+      console.error(e)
+    }
+  }
+
+  // --- VIEWS ---
+  return (
+    <div className={`min-h-screen font-sans transition-colors duration-300 ${isDarkMode ? 'bg-[#09090b] text-[#FAFAFA]' : 'bg-[#FDFDFD] text-[#1C1C1E]'}`}>
+      <Toaster position="top-center" richColors theme={isDarkMode ? 'dark' : 'light'} />
+
+      {/* NAVBAR */}
+      <nav className={`sticky top-0 z-40 border-b h-16 flex items-center px-4 sm:px-6 backdrop-blur-md transition-colors ${isDarkMode ? 'bg-[#09090b]/80 border-white/5' : 'bg-white/80 border-gray-100'}`}>
+        <div className="flex-1 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="bg-gradient-to-br from-[#E96A51] to-[#e75336] w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-lg shadow-[#E96A51]/20"><Printer size={18} /></div>
+            <div>
+              <span className="font-bold text-lg tracking-tight block leading-tight">Pitron Beña</span>
+              <span className="text-[10px] uppercase tracking-widest font-bold opacity-50">Manager</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className={`hidden md:flex p-1 rounded-xl mx-4 ${isDarkMode ? 'bg-white/5' : 'bg-gray-100'}`}>
+              {['dashboard', 'clientes', 'reportes'].map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-6 py-1.5 rounded-lg text-xs font-bold transition-all capitalize ${activeTab === tab ? (isDarkMode ? 'bg-[#27272a] shadow text-white' : 'bg-white shadow text-black') : 'opacity-60 hover:opacity-100'}`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+
+            {activeTab === 'dashboard' && (
+              <div className={`flex p-1 rounded-lg border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200'}`}>
+                <button onClick={() => setViewMode('kanban')} className={`p-1.5 rounded-md transition-all ${viewMode === 'kanban' ? (isDarkMode ? 'bg-zinc-700 text-white' : 'bg-gray-100 text-black shadow-sm') : 'opacity-40 hover:opacity-100'}`} title="Vista Kanban"><LayoutGrid size={16} /></button>
+                <button onClick={() => setViewMode('list')} className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? (isDarkMode ? 'bg-zinc-700 text-white' : 'bg-gray-100 text-black shadow-sm') : 'opacity-40 hover:opacity-100'}`} title="Vista Lista"><List size={16} /></button>
+              </div>
+            )}
+
+            <button onClick={() => setIsDarkMode(!isDarkMode)} className={`p-2 rounded-full transition-colors ${isDarkMode ? 'bg-white/10 text-yellow-300' : 'bg-gray-100 text-gray-600'}`}>
+              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* MAIN CONTENT */}
+      <main className="h-[calc(100vh-4rem)] p-4 sm:p-6 overflow-hidden">
+        {activeTab === 'dashboard' && (
+          viewMode === 'kanban'
+            ? <KanbanBoard orders={orders} onSelectOrder={setSelectedOrder} isDarkMode={isDarkMode} />
+            : <ListView orders={orders} onSelectOrder={setSelectedOrder} isDarkMode={isDarkMode} selectedIds={selectedIds} setSelectedIds={setSelectedIds} onDelete={deleteOrders} />
+        )}
+        {activeTab === 'clientes' && <LeadsView leads={leads} orders={orders} leadSearch={leadSearch} setLeadSearch={setLeadSearch} onEdit={(l) => { setSelectedLead(l); setLeadForm(l); setIsEditingLead(true) }} isDarkMode={isDarkMode} openCreate={() => { setLeadForm({}); setIsCreatingLead(true) }} />}
+        {activeTab === 'reportes' && <ReportsView orders={orders} isDarkMode={isDarkMode} />}
+      </main>
+
+      {/* DRAWER & MODALS */}
+      {selectedOrder && (
+        <OrderDrawer
+          order={selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+          isDarkMode={isDarkMode}
+          updateOrderLocal={(updated) => setOrders(prev => prev.map(o => o.id === updated.id ? updated : o))}
+        />
+      )}
+
+      {(isCreatingLead || isEditingLead) && (
+        <LeadModal
+          isOpen={true}
+          isCreating={isCreatingLead}
+          form={leadForm}
+          setForm={setLeadForm}
+          onClose={() => { setIsCreatingLead(false); setIsEditingLead(false); }}
+          onSubmit={handleSaveLead}
+          isDarkMode={isDarkMode}
+        />
+      )}
+    </div>
+  )
+}
+
+// --- COMPONENTS ---
+
+function KanbanBoard({ orders, onSelectOrder, isDarkMode }) {
+  const columns = ['NUEVO', 'DISEÑO', 'PRODUCCIÓN', 'LISTO', 'ENTREGADO']
+
+  return (
+    <div className="h-full flex gap-4 overflow-x-auto pb-4 no-scrollbar items-start animate-in fade-in zoom-in duration-300">
+      {columns.map(status => {
+        const colOrders = orders.filter(o => o.status === status)
+        return (
+          <div key={status} className={`min-w-[300px] w-[320px] max-w-[320px] flex flex-col h-full rounded-3xl border transition-colors ${isDarkMode ? 'bg-[#121214] border-white/5' : 'bg-gray-50/50 border-gray-100'}`}>
+            <div className={`p-4 flex justify-between items-center border-b ${isDarkMode ? 'border-white/5' : 'border-gray-100'}`}>
+              <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full ${getStatusColor(status)}`}></span>
+                <span className="text-xs font-black tracking-widest opacity-60">{status}</span>
+              </div>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isDarkMode ? 'bg-white/10' : 'bg-gray-200/50'}`}>{colOrders.length}</span>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-3 space-y-3">
+              {colOrders.map(order => (
+                <OrderCard key={order.id} order={order} onClick={() => onSelectOrder(order)} isDarkMode={isDarkMode} />
+              ))}
+              {colOrders.length === 0 && (
+                <div className="h-24 flex items-center justify-center opacity-20 text-xs font-bold uppercase border-2 border-dashed rounded-2xl mx-2">Vacío</div>
+              )}
   // --- COMPONENTS ---
 
   function KanbanBoard({ orders, onSelectOrder, isDarkMode }) {
@@ -458,10 +514,18 @@ function App() {
       const timer = setTimeout(async () => {
         if (JSON.stringify(formData) !== JSON.stringify(order)) {
           setSaving(true)
-          const { error } = await supabase.from('orders').update(formData).eq('id', order.id)
+          
+          // SANITIZE: Remove joined tables (e.g. 'leads') before sending to 'orders' table
+          const { leads, ...cleanData } = formData
+          
+          const { error } = await supabase.from('orders').update(cleanData).eq('id', order.id)
           if (!error) {
-            updateOrderLocal(formData)
-            console.log("Auto-saved")
+             // Update local state with the FULL data (including leads) to keep UI consistent
+             updateOrderLocal(formData)
+             console.log("Auto-saved clean data")
+          } else {
+             console.error("Error auto-saving:", error)
+             toast.error("Error guardando cambios")
           }
           setSaving(false)
         }
