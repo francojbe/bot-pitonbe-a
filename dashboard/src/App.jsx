@@ -1,15 +1,13 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabase'
 import { Toaster, toast } from 'sonner'
-import {
-  LayoutDashboard, Users, PieChart, Settings,
+LayoutDashboard, Users, PieChart, Settings,
   Search, Bell, Moon, Sun, Plus, MoreHorizontal,
   CheckSquare, Square, Trash2, X, FileText,
   CreditCard, Calendar, ChevronRight, Filter,
   ArrowUpRight, Clock, CheckCircle2, DollarSign,
   BarChart2, MoreVertical, LogOut, Menu,
-  User, MapPin, Mail, Phone, ExternalLink, Image
-} from 'lucide-react'
+  User, MapPin, Mail, Phone, ExternalLink, Image, MessageCircle
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip,
   ResponsiveContainer, Cell, PieChart as RePieChart, Pie, Legend, AreaChart, Area, CartesianGrid
@@ -638,54 +636,50 @@ function OrderDrawer({ order, onClose, updateOrderLocal }) {
           </div>
         </div>
       </div>
-      )
+    </div>
+  )
 }
 
-      function LeadsView({leads, search, setSearch, onEdit, onCreate}) {
-  // Lead View kept simple as requested, just styled
+function LeadsView({ leads, search, setSearch, onEdit, onCreate }) {
   return (
-      // ... (Same as before, assumed ok) ...
-      <div className="dashboard-card h-full flex flex-col">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-bold text-[var(--text-primary)]">Directorio de Clientes</h3>
-          <button onClick={onCreate} className="px-4 py-2 bg-[var(--brand-primary)] text-white rounded-full font-bold shadow-lg shadow-[#4318FF]/20">Nuevo Cliente</button>
-        </div>
-        <div className="flex-1 overflow-auto">
-          <table className="w-full text-left">
-            <thead className="bg-[#F9FAFC] dark:bg-white/5">
-              <tr><th className="px-6 py-3 text-xs font-bold text-[var(--text-secondary)]">NOMBRE</th><th className="px-6 py-3 text-xs font-bold text-[var(--text-secondary)]">CONTACTO</th><th className="px-6 py-3"></th></tr>
-            </thead>
-            <tbody>
-              {leads.filter(l => l.name?.toLowerCase().includes(search.toLowerCase())).map(l => (
-                <tr key={l.id} className="border-b border-gray-50 dark:border-white/5 hover:bg-[#F4F7FE] dark:hover:bg-white/5">
-                  <td className="px-6 py-4 font-bold text-[var(--text-primary)]">{l.name}</td>
-                  <td className="px-6 py-4 text-sm text-[var(--text-secondary)]">{l.phone_number}</td>
-                  <td className="px-6 py-4 text-right"><button onClick={() => onEdit(l)} className="text-[var(--brand-primary)] font-bold text-xs">EDITAR</button></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+    <div className="dashboard-card h-full flex flex-col">
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-xl font-bold text-[var(--text-primary)]">Directorio de Clientes</h3>
+        <button onClick={onCreate} className="px-4 py-2 bg-[var(--brand-primary)] text-white rounded-full font-bold shadow-lg shadow-[#4318FF]/20">Nuevo Cliente</button>
       </div>
-      )
+      <div className="flex-1 overflow-auto">
+        <table className="w-full text-left">
+          <thead className="bg-[#F9FAFC] dark:bg-white/5">
+            <tr><th className="px-6 py-3 text-xs font-bold text-[var(--text-secondary)]">NOMBRE</th><th className="px-6 py-3 text-xs font-bold text-[var(--text-secondary)]">CONTACTO</th><th className="px-6 py-3"></th></tr>
+          </thead>
+          <tbody>
+            {leads.filter(l => l.name?.toLowerCase().includes(search.toLowerCase())).map(l => (
+              <tr key={l.id} className="border-b border-gray-50 dark:border-white/5 hover:bg-[#F4F7FE] dark:hover:bg-white/5">
+                <td className="px-6 py-4 font-bold text-[var(--text-primary)]">{l.name}</td>
+                <td className="px-6 py-4 text-sm text-[var(--text-secondary)]">{l.phone_number}</td>
+                <td className="px-6 py-4 text-right"><button onClick={() => onEdit(l)} className="text-[var(--brand-primary)] font-bold text-xs">EDITAR</button></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
 }
 
-      function LeadModal({isOpen, isCreating, form, setForm, onClose, onSubmit}) {
+function LeadModal({ isOpen, isCreating, form, setForm, onClose, onSubmit }) {
   if (!isOpen) return null;
-      return (
-      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-        <div className="absolute inset-0 bg-[#0B1437]/50 backdrop-blur-sm" onClick={onClose}></div>
-        <div className="dashboard-card w-full max-w-md relative animate-in zoom-in duration-200">
-          <h2 className="text-xl font-bold mb-6 text-[var(--text-primary)]">{isCreating ? 'Crear Cliente' : 'Editar Cliente'}</h2>
-          <input className="dashboard-input mb-4" placeholder="Nombre Completo" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
-          <input className="dashboard-input mb-4" placeholder="Teléfono" value={form.phone_number} onChange={e => setForm({ ...form, phone_number: e.target.value })} />
-          <button onClick={onSubmit} className="w-full py-3 bg-[var(--brand-primary)] text-white rounded-xl font-bold shadow-lg shadow-[#4318FF]/20 mt-4">Guardar Cambios</button>
-        </div>
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-[#0B1437]/50 backdrop-blur-sm" onClick={onClose}></div>
+      <div className="dashboard-card w-full max-w-md relative animate-in zoom-in duration-200">
+        <h2 className="text-xl font-bold mb-6 text-[var(--text-primary)]">{isCreating ? 'Crear Cliente' : 'Editar Cliente'}</h2>
+        <input className="dashboard-input mb-4" placeholder="Nombre Completo" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+        <input className="dashboard-input mb-4" placeholder="Teléfono" value={form.phone_number} onChange={e => setForm({ ...form, phone_number: e.target.value })} />
+        <button onClick={onSubmit} className="w-full py-3 bg-[var(--brand-primary)] text-white rounded-xl font-bold shadow-lg shadow-[#4318FF]/20 mt-4">Guardar Cambios</button>
       </div>
-      )
+    </div>
+  )
 }
 
-      // Icon for MessageCircle was missing in imports
-      import {MessageCircle} from 'lucide-react'
-
-      export default App
+export default App
