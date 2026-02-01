@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import React from 'react'
 import { supabase } from './supabase'
 import { Toaster, toast } from 'sonner'
 import {
@@ -9,7 +10,7 @@ import {
   ArrowUpRight, Clock, CheckCircle2, DollarSign,
   BarChart2, MoreVertical, LogOut, Menu,
   User, MapPin, Mail, Phone, ExternalLink, Image, MessageCircle,
-  ChevronLeft
+  ChevronLeft, ChevronDown
 } from 'lucide-react'
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip,
@@ -546,6 +547,69 @@ function StatusBadge({ status, mini }) {
   )
 }
 
+function StatusSelect({ value, onChange, options }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = React.useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'NUEVO': return 'bg-[#FFB547]';
+      case 'DISEÑO': return 'bg-[#4318FF]';
+      case 'PRODUCCIÓN': return 'bg-[#FFB547]'; // Using Orange/Yellow as fallback or define yellow
+      case 'LISTO': return 'bg-[#05CD99]';
+      case 'ENTREGADO': return 'bg-gray-400';
+      default: return 'bg-gray-400';
+    }
+  };
+
+  return (
+    <div className="relative w-full" ref={dropdownRef}>
+      {/* Trigger: Floating Pill Style */}
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between bg-white dark:bg-[#111C44] border border-[#E0E5F2] dark:border-white/10 rounded-2xl px-4 py-3 shadow-[0px_18px_40px_rgba(112,144,176,0.12)] hover:bg-[#F4F7FE] dark:hover:bg-white/5 transition-all outline-none"
+      >
+        <div className="flex items-center gap-3">
+          <span className={`w-2 h-2 rounded-full ${getStatusColor(value)} shadow-[0px_2px_4px_rgba(0,0,0,0.2)]`}></span>
+          <span className="text-sm font-bold text-[#2B3674] dark:text-white">{value}</span>
+        </div>
+        <ChevronDown size={14} className="text-[#A3AED0]" />
+      </button>
+
+      {/* Dropdown List */}
+      {isOpen && (
+        <div className="absolute top-full mt-2 left-0 w-full bg-white dark:bg-[#111C44] rounded-2xl shadow-[0px_18px_40px_rgba(112,144,176,0.12)] z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100 p-2">
+          {options.map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => {
+                onChange(option);
+                setIsOpen(false);
+              }}
+              className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors ${value === option ? 'bg-[#F4F7FE] dark:bg-white/10 text-[#2B3674] dark:text-white' : 'text-[#A3AED0] hover:bg-[#F4F7FE] dark:hover:bg-white/5 hover:text-[#2B3674] dark:hover:text-white'}`}
+            >
+              <span className={`w-2 h-2 rounded-full ${getStatusColor(option)} ${value === option ? 'opacity-100' : 'opacity-40'}`}></span>
+              {option}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function OrderDrawer({ order, onClose, updateOrderLocal }) {
   // RESTORED FULL FUNCTIONALITY DRAWER
   const [form, setForm] = useState({ ...order })
@@ -603,18 +667,15 @@ function OrderDrawer({ order, onClose, updateOrderLocal }) {
 
         <div className="flex-1 overflow-y-auto p-8 space-y-8">
           {/* Status Tracker */}
+          {/* Status Tracker */}
           <div className="flex justify-between items-center bg-[#F4F7FE] dark:bg-white/5 p-4 rounded-xl">
             <div className="flex flex-col w-full">
               <span className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-2">Estado Actual</span>
-              <div className="bg-white dark:bg-[#111C44] rounded-xl px-4 py-2 border border-[#E3E8F3] dark:border-white/10 hover:border-[var(--brand-primary)] transition-all shadow-sm">
-                <select
-                  value={form.status}
-                  onChange={e => setForm({ ...form, status: e.target.value })}
-                  className="bg-transparent w-full text-lg font-bold text-[var(--brand-primary)] outline-none cursor-pointer p-1"
-                >
-                  {['NUEVO', 'DISEÑO', 'PRODUCCIÓN', 'LISTO', 'ENTREGADO'].map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
+              <StatusSelect
+                value={form.status}
+                onChange={newStatus => setForm({ ...form, status: newStatus })}
+                options={['NUEVO', 'DISEÑO', 'PRODUCCIÓN', 'LISTO', 'ENTREGADO']}
+              />
             </div>
           </div>
 
