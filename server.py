@@ -881,16 +881,16 @@ async def notify_status_update(update: StatusUpdate):
         producto = (desc[:37] + "...") if len(desc) > 40 else desc
         status = update.new_status
 
-        # 2. Elegir Plantilla de Mensaje
+        # 2. Elegir Plantilla de Mensaje (SIN DOBLE ASTERISCO)
         mensaje = ""
         if status == "DISEÑO":
-            mensaje = f"🎨 Hola {nombre}, te informamos que tu pedido de *{producto}* ha ingresado a la etapa de **DISEÑO**. Estamos revisando tus archivos."
+            mensaje = f"🎨 Hola {nombre}, te informamos que tu pedido de *{producto}* ha ingresado a la etapa de *DISEÑO*. Estamos revisando tus archivos."
         elif status == "PRODUCCIÓN":
-            mensaje = f"⚙️ ¡Buenas noticias {nombre}! Tu pedido pasó a **PRODUCCIÓN** y ya se está imprimiendo/fabricando."
+            mensaje = f"⚙️ ¡Buenas noticias {nombre}! Tu pedido pasó a *PRODUCCIÓN* y ya se está imprimiendo/fabricando."
         elif status == "LISTO":
-            mensaje = f"📦✨ ¡Tu pedido está **LISTO**! Puedes pasar a retirarlo a nuestro local en **Arturo Prat 230, Local 117**, Santiago Centro. Te esperamos."
+            mensaje = f"📦✨ ¡Tu pedido está *LISTO*! Puedes pasar a retirarlo a nuestro local en *Arturo Prat 230, Local 117*, Santiago Centro. Te esperamos."
         elif status == "ENTREGADO":
-            mensaje = f"✅ ¡Gracias por tu compra {nombre}! Tu pedido figura como **ENTREGADO**. Esperamos verte pronto en Pitrón Beña Impresión."
+            mensaje = f"✅ ¡Gracias por tu compra {nombre}! Tu pedido figura como *ENTREGADO*. Esperamos verte pronto en Pitrón Beña Impresión."
         
         # 3. Enviar Mensaje
         if mensaje:
