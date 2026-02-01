@@ -444,11 +444,12 @@ Pide RUT, Nombre, Dirección y Email para la orden. 📋
 """
 
         
-        # --- LIMPIEZA DE HISTORIAL PREVENTIVA ---
+        # --- LIMPIEZA DE HISTORIAL PREVENTIVA (Cero ** y Cero #) ---
         historial_limpio = []
         for msg in historial:
             if hasattr(msg, 'content') and isinstance(msg.content, str):
-                msg.content = msg.content.replace("**", "*")
+                # Reemplazar ** por * y eliminar # por completo para evitar que el bot imite el formato antiguo
+                msg.content = msg.content.replace("**", "*").replace("#", "")
             historial_limpio.append(msg)
 
         messages_to_ai = [SystemMessage(content=system_prompt)] + historial_limpio + [HumanMessage(content=texto_completo)]
@@ -516,7 +517,8 @@ Pide RUT, Nombre, Dirección y Email para la orden. 📋
         
         # --- LIMPIEZA FINAL DE SALIDA (Asegurar formato WhatsApp) ---
         if resp_content:
-            resp_content = resp_content.replace("**", "*")
+            # Eliminar ** y # de raíz para que nunca lleguen al cliente
+            resp_content = resp_content.replace("**", "*").replace("#", "")
 
         # Guardar y Enviar
         meta_envio = {}
