@@ -1024,3 +1024,58 @@ async def generate_invoice(update: StatusUpdate):
     except Exception as e:
         logger.error(f"🔥 Error Generando Factura: {e}")
         return {"status": "error", "message": str(e)}
+
+class OrderStatusUpdate(BaseModel):
+    order_id: str
+    new_status: str
+
+@app.post("/orders/update_status")
+async def update_order_status(payload: OrderStatusUpdate):
+    """Actualiza estado de orden y notifica al cliente por WhatsApp"""
+    try:
+        # 1. Obtener datos de la orden + lead
+        order_res = supabase.table("orders").select("*, leads(phone_number, name)").eq("id", payload.order_id).execute()
+        if not order_res.data:
+            return {"status": "error", "message": "Orden no encontrada"}
+        
+        order = order_res.data[0]
+        lead = order.get("leads") or {}
+        phone = lead.get("phone_number")
+        name = lead.get("name") or "Cliente"
+        
+        # 2. Actualizar en BD
+        supabase.table("orders").update({"status": payload.new_status}).eq("id", payload.order_id).execute()
+        
+        # 3. Notificar por WhatsApp (Si tiene teléfono)
+        if phone:
+            emojis = {
+                "NUEVO": "🆕",
+                "DISEÑO": "🎨",
+                "PRODUCCIÓN": "⚙️",
+                "LISTO": "✅",
+                "ENTREGADO": "🚀"
+            }
+            emoji = emojis.get(payload.new_status, "ℹ️")
+            
+            msg = f"Hola {name.split(' ')[0]}! 👋\nActualización de tu pedido *#{payload.order_id[:5]}*:\n\nNuevo Estado: *{payload.new_status}* {emoji}\n\n"
+            
+            if payload.new_status == "LISTO":
+                msg += "¡Tu pedido está listo para retiro o despacho! 📦✨ Avísanos cuando vendrás."
+            elif payload.new_status == "DISEÑO":
+                msg += "Estamos trabajando en tu diseño. Pronto te enviaremos una propuesta. 🎨"
+            elif payload.new_status == "PRODUCCIÓN":
+                msg += "Tu pedido ha entrado a máquinas. ¡Ya falta poco! 🖨️"
+            elif payload.new_status == "ENTREGADO":
+                msg += "¡Que lo disfrutes! Gracias por confiar en Pitrón Beña. ⭐"
+            
+            enviar_whatsapp(phone, msg)
+            
+            # Guardar log del mensaje
+            if lead.get("id"):
+                save_message_pro(lead.get("id"), phone, "assistant", msg, intent="STATUS_UPDATE")
+
+        return {"status": "success", "notified": bool(phone)}
+
+    except Exception as e:
+        logger.error(f"Error actualizando estado: {e}")
+        return {"status": "error", "message": str(e)}

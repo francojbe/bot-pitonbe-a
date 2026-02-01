@@ -630,6 +630,32 @@ function OrderDrawer({ order, onClose, updateOrderLocal }) {
     }, 1000); return () => clearTimeout(t)
   }, [form])
 
+  // Handle Status Change with Notification
+  const handleStatusChange = async (newStatus) => {
+    // 1. Optimistic Update
+    setForm({ ...form, status: newStatus });
+
+    // 2. Call Backend to Notify
+    try {
+      const response = await fetch('http://localhost:8000/orders/update_status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: order.id, new_status: newStatus })
+      });
+
+      const data = await response.json();
+      if (data.status === 'success') {
+        if (data.notified) toast.success(`Estado actualizado a ${newStatus} y cliente notificado.`);
+        else toast.success(`Estado actualizado a ${newStatus} (Cliente sin teléfono).`);
+      } else {
+        toast.error("Error al notificar al cliente, pero el estado se guardó.");
+      }
+    } catch (e) {
+      console.error("Error updating status:", e);
+      toast.error("Error de conexión al notificar.");
+    }
+  };
+
   // Send WhatsApp with Quote Logic
   const sendWhatsApp = async () => {
     const phone = order.leads?.phone_number;
@@ -673,7 +699,7 @@ function OrderDrawer({ order, onClose, updateOrderLocal }) {
               <span className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-2">Estado Actual</span>
               <StatusSelect
                 value={form.status}
-                onChange={newStatus => setForm({ ...form, status: newStatus })}
+                onChange={handleStatusChange}
                 options={['NUEVO', 'DISEÑO', 'PRODUCCIÓN', 'LISTO', 'ENTREGADO']}
               />
             </div>
