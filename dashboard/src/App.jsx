@@ -16,6 +16,24 @@ import {
 } from 'recharts'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 
+// --- HELPER FUNCTIONS ---
+const formatPhone = (phone) => {
+  if (!phone) return 'Sin Teléfono'
+  const cleaned = phone.replace(/\D/g, '')
+  if (cleaned.startsWith('569') && cleaned.length === 11) {
+    return `+56 9 ${cleaned.slice(3, 7)} ${cleaned.slice(7)}`
+  }
+  if (cleaned.length === 8) {
+    return `+56 9 ${cleaned.slice(0, 4)} ${cleaned.slice(4)}`
+  }
+  return phone
+}
+
+const formatCurrency = (val) => {
+  if (val === undefined || val === null || isNaN(val)) return '$0'
+  return '$' + Number(val).toLocaleString('es-CL')
+}
+
 function App() {
   // --- STATE CORE ---
   const [orders, setOrders] = useState([])
@@ -442,8 +460,10 @@ function OrderDrawer({ order, onClose, updateOrderLocal }) {
   const sendWhatsApp = async () => {
     const phone = order.leads?.phone_number;
     if (!phone) return toast.error("Cliente sin teléfono");
-    const msg = `Hola ${order.leads?.name}! 👋\n\nTu pedido *${order.id.slice(0, 5)}* está en estado: *${order.status}*\n${order.description}\n\nGracias por preferirnos! ✨`;
-    // In production use a real backend endpoint or wa.me
+
+    // Clean Emoji/Symbols Logic if needed, but standard text is requested.
+    const msg = `Hola ${order.leads?.name || 'Cliente'}! 👋\nTu pedido *${order.id.slice(0, 5)}* está en estado: *${order.status}*\n${order.description}\nEspecificaciones: ${form.material || ''}, ${form.dimensions || ''}, ${form.quantity ? form.quantity + ' un.' : ''}, ${form.print_sides || ''}.\nGracias por preferirnos! ✨`;
+
     window.open(`https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`, '_blank');
   }
 
@@ -466,14 +486,16 @@ function OrderDrawer({ order, onClose, updateOrderLocal }) {
           {/* Status Tracker */}
           <div className="flex justify-between items-center bg-[#F4F7FE] dark:bg-white/5 p-4 rounded-xl">
             <div className="flex flex-col w-full">
-              <span className="text-xs font-bold text-[var(--text-secondary)] uppercase">Estado Actual</span>
-              <select
-                value={form.status}
-                onChange={e => setForm({ ...form, status: e.target.value })}
-                className="bg-transparent text-lg font-bold text-[var(--brand-primary)] outline-none cursor-pointer mt-1 w-full"
-              >
-                {['NUEVO', 'DISEÑO', 'PRODUCCIÓN', 'LISTO', 'ENTREGADO'].map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
+              <span className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-2">Estado Actual</span>
+              <div className="bg-[#F4F7FE] dark:bg-white/5 rounded-xl px-4 py-2 border border-transparent focus-within:border-[var(--brand-primary)] transition-all">
+                <select
+                  value={form.status}
+                  onChange={e => setForm({ ...form, status: e.target.value })}
+                  className="bg-transparent w-full text-lg font-bold text-[var(--brand-primary)] outline-none cursor-pointer"
+                >
+                  {['NUEVO', 'DISEÑO', 'PRODUCCIÓN', 'LISTO', 'ENTREGADO'].map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
             </div>
           </div>
 
@@ -487,7 +509,7 @@ function OrderDrawer({ order, onClose, updateOrderLocal }) {
               <div className="space-y-3">
                 <p className="font-bold text-lg">{order.leads?.name || 'Cliente Desconocido'}</p>
                 <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                  <Phone size={14} /> <a href={`tel:${order.leads?.phone_number}`} className="hover:underline">{order.leads?.phone_number || 'Sin Teléfono'}</a>
+                  <Phone size={14} /> <a href={`tel:${order.leads?.phone_number}`} className="hover:underline">{formatPhone(order.leads?.phone_number)}</a>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
                   <Mail size={14} /> <span>{order.leads?.email || 'Sin Email'}</span>
@@ -576,12 +598,12 @@ function OrderDrawer({ order, onClose, updateOrderLocal }) {
                     placeholder="0"
                   />
                 </div>
-                <div>
+                <div className="col-span-2">
                   <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Lados de Impresión</label>
                   <select
                     value={form.print_sides || '1 Tiro'}
                     onChange={e => setForm({ ...form, print_sides: e.target.value })}
-                    className="w-full p-3 rounded-xl bg-[#F4F7FE] dark:bg-white/5 border border-transparent focus:border-[var(--brand-primary)] outline-none text-[var(--text-primary)] font-bold text-sm cursor-pointer transition-all"
+                    className="w-full p-3 rounded-xl bg-[#F4F7FE] dark:bg-white/5 border border-transparent focus:border-[var(--brand-primary)] outline-none text-[var(--text-primary)] font-bold text-sm cursor-pointer transition-all appearance-none"
                   >
                     <option value="1 Tiro">1 Tiro (Solo Frente)</option>
                     <option value="2 Tiros">2 Tiros (Frente y Dorso)</option>
@@ -662,7 +684,7 @@ function LeadsView({ leads, search, setSearch, onEdit, onCreate }) {
             {leads.filter(l => l.name?.toLowerCase().includes(search.toLowerCase())).map(l => (
               <tr key={l.id} className="border-b border-gray-50 dark:border-white/5 hover:bg-[#F4F7FE] dark:hover:bg-white/5">
                 <td className="px-6 py-4 font-bold text-[var(--text-primary)]">{l.name}</td>
-                <td className="px-6 py-4 text-sm text-[var(--text-secondary)]">{l.phone_number}</td>
+                <td className="px-6 py-4 text-sm text-[var(--text-secondary)]">{formatPhone(l.phone_number)}</td>
                 <td className="px-6 py-4 text-right"><button onClick={() => onEdit(l)} className="text-[var(--brand-primary)] font-bold text-xs">EDITAR</button></td>
               </tr>
             ))}
