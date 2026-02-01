@@ -54,6 +54,32 @@ llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0.1, openai_api_key=OPENA
 message_buffer: Dict[str, Any] = {}
 BUFFER_DELAY = 4.0 # Segundos a esperar por más mensajes
 
+# --- GESTIÓN DE INACTIVIDAD ---
+inactivity_timers: Dict[str, asyncio.Task] = {}
+
+async def inactivity_manager(phone: str, lead_id: str):
+    """Maneja los tiempos de inactividad: 5min alerta, +10min cierre."""
+    try:
+        # 1. Espera de 5 minutos para la ALERTA
+        await asyncio.sleep(300) 
+        
+        alerta = "Te comento que nuestra conversación debería ser continua para poder agendar tu trabajo con éxito; de lo contrario, tendríamos que reagendar todo desde cero."
+        enviar_whatsapp(phone, alerta)
+        save_message_pro(lead_id, phone, "assistant", alerta, metadata={"type": "inactivity_alert"})
+        logger.info(f"⏰ Alerta de inactividad enviada a {phone}")
+
+        # 2. Espera de 10 minutos adicionales para el CIERRE
+        await asyncio.sleep(600)
+        
+        cierre_msg = "La sesión ha expirado por inactividad. Si deseas continuar, por favor envíanos un nuevo mensaje para iniciar de nuevo."
+        enviar_whatsapp(phone, cierre_msg)
+        save_message_pro(lead_id, phone, "assistant", cierre_msg, metadata={"type": "session_closed"})
+        logger.info(f"🚫 Sesión cerrada por inactividad para {phone}")
+
+    except asyncio.CancelledError:
+        logger.info(f"✅ Inactividad cancelada para {phone} (Usuario respondió)")
+
+
 # --- GESTIÓN DE LEADS ---
 def get_or_create_lead(phone: str, push_name: str = None) -> str:
     try:
@@ -131,26 +157,27 @@ def calculate_quote(product_type: str, quantity: int, sides: int = 1, finish: st
     
     # 1. TARJETAS
     if "tarjeta" in p_lower:
-        plazo = "3 a 4 días hábiles"
-        precio_100_1lado = 7000
-        precio_100_2lados = 11000
+        plazo = "1 a 3 días hábiles (Entrega al día siguiente si envías el diseño listo)"
+        precio_100_1lado = 8330 # Antes 7000 neto
+        precio_100_2lados = 13090 # Antes 11000 neto
         if finish == "polilaminado":
-            precio_100_1lado = 12000
-            precio_100_2lados = 16000
+            precio_100_1lado = 14280 # Antes 12000 neto
+            precio_100_2lados = 19040 # Antes 16000 neto
         
-        # Escala unitaria basada en 100u
+        # Escala unitaria basada en 100u ($ / 100u)
         base = precio_100_2lados if sides == 2 else precio_100_1lado
         unit_price = base / 100
         neto = int(unit_price * quantity)
+        iva_incluido = True
 
     # 2. FLYERS
     elif "flyer" in p_lower:
         if quantity == 100 and ("10x15" in s_lower or "10x14" in s_lower):
-            neto = 10756 # $12.800 / 1.19
-            iva_incluido = False
+            neto = 12800 # Antes 10756 neto
+            iva_incluido = True
             plazo = "1 hora (Express)"
         elif quantity >= 1000:
-            iva_incluido = True # Los flyers de 1000u vienen con IVA incluido en tu lista
+            iva_incluido = True
             plazo = "3 a 4 días hábiles"
             if "10x14" in s_lower or "estandar" in s_lower:
                 neto = 47600 if sides == 2 else 23800
@@ -168,46 +195,53 @@ def calculate_quote(product_type: str, quantity: int, sides: int = 1, finish: st
     elif "pendon" in p_lower:
         plazo = "24-48 horas"
         precios_pendon = {
-            "80x200": 47000, "90x200": 57000, "100x200": 68000,
-            "120x200": 98000, "150x200": 134160, "200x200": 260000,
-            "250x200": 304541, "300x200": 465114
+            "80x200": 55930, "90x200": 67830, "100x200": 80920,
+            "120x200": 116620, "150x200": 159650, "200x200": 309400,
+            "250x200": 362404, "300x200": 553486
         }
         neto = 0
         for k, v in precios_pendon.items():
             if k in s_lower.replace(" ", ""):
                 neto = v * quantity
                 break
-        if neto == 0: neto = 47000 * quantity
+        if neto == 0: neto = 55930 * quantity
+        iva_incluido = True
 
     # 4. FOAM / TROVICEL
     elif "foam" in p_lower or "trovicel" in p_lower:
         plazo = "2 a 3 días"
         if "33x48" in s_lower:
-            neto = 6000 * quantity
+            neto = 7140 * quantity
         else: # Tamaño carta o menor
-            if quantity < 10: unit = 3000
-            elif quantity < 20: unit = 2500
-            elif quantity < 30: unit = 2300
-            else: unit = 2000
+            if quantity < 10: unit = 3570
+            elif quantity < 20: unit = 2975
+            elif quantity < 30: unit = 2737
+            else: unit = 2380
             neto = unit * quantity
+        iva_incluido = True
 
     if neto == 0:
         return f"⚠️ No tengo precio automático para {product_type} {size}. Por favor, consulta manualmente."
 
-    # Costo Diseño
+    # Costo Diseño (Valores con IVA Incluido)
+    # Tiers: basico ($7.140), medio ($35.700), avanzado ($71.400), premium ($214.200)
     costo_diseno = 0
-    if design_service == "basico": costo_diseno = 30000
-    elif design_service == "medio": costo_diseno = 60000
-    elif design_service == "complejo": costo_diseno = 180000
+    ds_lower = design_service.lower()
     
-    # Cálculo Final
-    if iva_incluido:
-        total = neto + costo_diseno
-        detalle = f"Base (IVA Inc): ${neto:,} + Diseño: ${costo_diseno:,}"
-    else:
-        iva = int(neto * 0.19)
-        total = neto + iva + costo_diseno
-        detalle = f"Neto: ${neto:,} + IVA: ${iva:,} + Diseño: ${costo_diseno:,}"
+    if "basico" in ds_lower: costo_diseno = 7140
+    elif "medio" in ds_lower: costo_diseno = 35700
+    elif "avanzado" in ds_lower: costo_diseno = 71400
+    elif "premium" in ds_lower: costo_diseno = 214200
+    
+    # Aplicar Diseño Gratuito si la compra supera los $60.000 (Aplica al nivel básico)
+    bono_txt = ""
+    if neto >= 60000 and "basico" in ds_lower:
+        costo_diseno = 0
+        bono_txt = " (Bonificación por compra > $60k)"
+    
+    # Cálculo Final (Todo ya tiene IVA)
+    total = neto + costo_diseno
+    detalle = f"Valor Base (IVA Inc): ${neto:,} + Diseño (IVA Inc): ${costo_diseno:,}{bono_txt}"
 
     return f"""
     💰 COTIZACIÓN OFICIAL:
@@ -218,10 +252,12 @@ def calculate_quote(product_type: str, quantity: int, sides: int = 1, finish: st
     💵 TOTAL FINAL: ${total:,} (IVA Incluido)
     """
 
+
+
 @tool
-def register_order(description: str, amount: int, rut: str, address: str, email: str, has_file: bool, files: List[str] = None, lead_id: str = "inject_me", phone: str = None) -> str:
+def register_order(description: str, amount: int, rut: str, address: str, email: str, has_file: bool, name: str = None, address_custom: str = None, files: List[str] = None, lead_id: str = "inject_me", phone: str = None) -> str:
     """
-    Registra la orden y actualiza datos del cliente.
+    Registra la orden y actualiza datos del cliente (RUT, Nombre, Email, Dirección).
     
     CRITICAL:
     - amount: DEBE SER EL PRECIO TOTAL EN DINERO (CLP). (Ej: 16560). NO LA CANTIDAD DE PRODUCTOS.
@@ -235,12 +271,15 @@ def register_order(description: str, amount: int, rut: str, address: str, email:
 
     try:
         # Logs para depuración
-        print(f"📝 Registrando Orden - RUT: {rut} | Email: {email} | Addr: {address} | Phone: {phone}")
+        print(f"📝 Registrando Orden - Cliente: {name} | RUT: {rut} | Email: {email} | Phone: {phone}")
 
         # 1. Update Lead (Using PHONE for safety if available, else ID)
         update_data = {}
+        if name and name.strip() not in ["", "None", "N/A"]: update_data["name"] = name
         if rut and rut.strip() not in ["", "None", "N/A"]: update_data["rut"] = rut
-        if address and address.strip() not in ["", "None", "N/A"]: update_data["address"] = address
+        # Usamos 'address' del parámetro o 'address_custom' si existiera (aquí 'address' es el estándar)
+        final_address = address or address_custom
+        if final_address and final_address.strip() not in ["", "None", "N/A"]: update_data["address"] = final_address
         if email and email.strip() not in ["", "None", "N/A"]: update_data["email"] = email
         
         if update_data:
@@ -265,8 +304,14 @@ def register_order(description: str, amount: int, rut: str, address: str, email:
 
 async def procesar_y_responder(phone: str, mensajes_acumulados: List[str], push_name: str):
     """Procesa el bloque completo de mensajes usando Agentic Workflow."""
+    # CANCELAR timer de inactividad previo si el usuario respondió
+    if phone in inactivity_timers:
+        inactivity_timers[phone].cancel()
+        del inactivity_timers[phone]
+
     try:
         texto_completo = " ".join(mensajes_acumulados)
+
         logger.info(f"🤖 Procesando bloque para {phone}: {texto_completo}")
         
         lead_id = get_or_create_lead(phone, push_name)
@@ -352,66 +397,42 @@ async def procesar_y_responder(phone: str, mensajes_acumulados: List[str], push_
 
         historial = get_chat_history_pro(lead_id)
         contexto = buscar_contexto(texto_completo)
-        
         system_prompt = f"""
-Eres el Asistente Virtual Oficial de **Pitrón Beña Impresión**.
-Cliente: **{cliente_nombre}**.
+Eres **Richard**, el Asistente Virtual Oficial de **Pitrón Beña Impresión**.
+Cliente Registrado: **{cliente_nombre}**.
 Tiene Archivo: {"✅ SÍ" if has_file_context else "❌ NO"}.
 {datos_detectados}
 {datos_guardados_txt}
+
 🧠 CÓMO USAR TU CONOCIMIENTO:
 1. **DESCUBRIMIENTO (RAG):**
-   - Si el cliente es vago (ej: "necesito publicidad", "quiero imprimir"), **NO ASUMAS** el producto.
-   - Consulta tu "BASE DE CONOCIMIENTO" (abajo) para ver qué opciones existen (Flyers, Tarjetas, Pendones, etc.) y ofrécelas.
+   - Si el cliente es vago, consulta tu "BASE DE CONOCIMIENTO" abajo e infórmale las opciones.
    - Explica características y terminaciones basándote en el texto recuperado.
 
 2. **PRECIOS (HERRAMIENTA):**
-   - Una vez el cliente elija un producto y cantidad, **IGNORA** los precios del texto.
-   - **USA EXCLUSIVAMENTE** la herramienta `calculate_quote` para dar el valor final.
+   - Una vez el cliente elija producto y cantidad, **USA EXCLUSIVAMENTE** la herramienta `calculate_quote`.
 
-📚 BASE DE CONOCIMIENTO (Para productos, opciones y dudas técnicas):
+📚 BASE DE CONOCIMIENTO:
 {contexto}
 
 ⛔ REGLAS DE SEGURIDAD:
-- **No asumas:** Si piden "impresión", pregunta "¿Qué producto necesitas? Tenemos Flyers, Tarjetas, etc."
-- **Regla de Archivos:**
-  - Si el cliente NO tiene archivo y NO contrata diseño -> 🚫 NO vendas. Pide el archivo.
-  - Si dice "tengo el diseño" -> Pídelo ("Por favor envíamelo por aquí"). NO crees la orden aún.
-  - Solo usa `register_order` si `has_file` es True o si contratan diseño explícitamente.
--5. **Recepción de Archivos/Diseños**:
-   - Si recibes una imagen (`[IMAGEN RECIBIDA]`) o documento (`[DOCUMENTO RECIBIDO]`):
-     - **¡CRÍTICO!** ESTO SIGNIFICA QUE `has_file` ES VERDADERO.
-     - Si estabas esperando el archivo para cerrar una venta, **EJECUTA `register_order` DE INMEDIATO** (si ya tienes los datos del cliente).
-     - Si no tienes los datos (RUT, etc), responde: "✅ Archivo recibido correctamente. Ahora por favor indícame tus datos para la factura (RUT, Nombre, Dirección, Email) y procederé."
-     - NO digas "no tengo el archivo" si ves el tag `[IMAGEN RECIBIDA]`.
+- **Prioridad de Nombre:** Si el cliente dice llamarse distinto a "{cliente_nombre}", usa el nuevo nombre y PÁSALO a `register_order`.
+- **Regla de Archivos:** Solo usa `register_order` si `has_file` es True o si contratan diseño.
+- **Datos Fiscales:** Pide RUT, Nombre real/empresa, Dirección y Email.
 
-7. **Validación de Precio y Archivo:**
-   - **NUNCA** inventes el precio. Ejecuta `calculate_quote`.
-   - **CONFIRMACIÓN DE ARCHIVO:** Si `Tiene Archivo` es "✅ SÍ", DEBES mencionar en el resumen qué harás (ej: "Usaremos el archivo enviado recientemente").
-   - Si dudas si el archivo anterior sirve para este nuevo pedido, PREGUNTA: "¿Usamos el mismo diseño anterior o enviarás uno nuevo?".
-
-Formato de Cotización Final (ANTES de `register_order`):
+Formato de Cotización Final:
 🪪 *Producto:* [Nombre]
 📦 *Cantidad:* [N]
 💰 *Neto:* $[Valor]
 🎨 *Diseño:* $[Valor] / *Archivo:* [Confirmar recepción]
 💵 *TOTAL:* $[Total con IVA] (IVA Inc.)
 
-¿Todo correcto? (Espera confirmación de datos y precio)
 📝 FLUJO DE ATENCIÓN:
-1. **Cliente pregunta precio:**
-   - Invoca `calculate_quote(product, quantity, ...)`.
-   - Responde CON el resultado de la tool.
-
-2. **Cliente quiere comprar:**
-   - Pide: RUT, Nombre, Dirección, Email.
-   - **IMPORTANTE:** Cuando uses `register_order`, el campo `amount` debe ser el **PRECIO TOTAL EN PESOS (CLP)** que obtuviste de `calculate_quote`, NO la cantidad de productos.
-   - Una vez recibidos todos los datos y si tienes el archivo/diseño -> `register_order`.
-
-3. **Datos Transferencia:**
-   - Banco Santander, Cta Corriente 79-63175-2, RUT 15.355.843-4 (Luis Pitron).
-
+1. **Cotización:** Invoca `calculate_quote`.
+2. **Registro:** Pide RUT, Nombre, Dirección, Email.
+3. **Pago:** Santander, Cta Corriente 79-63175-2, RUT 15.355.843-4 (Luis Pitron).
 """
+
         
         messages_to_ai = [SystemMessage(content=system_prompt)] + historial + [HumanMessage(content=texto_completo)]
         
@@ -433,6 +454,7 @@ Formato de Cotización Final (ANTES de `register_order`):
         resp_content = response.content
 
         # 2. Ejecutar Tools si las pide
+        order_created_this_turn = False
         if response.tool_calls:
             for tool_call in response.tool_calls:
                 fn_name = tool_call["name"]
@@ -460,6 +482,8 @@ Formato de Cotización Final (ANTES de `register_order`):
                         logger.info(f"💉 Inyectando Email recuperado: {args['email']}")
 
                     res = register_order.invoke(args)
+                    if "✅" in str(res):
+                        order_created_this_turn = True
                 
                 # Añadir resultado al historial de la conversación actual
                 messages_to_ai.append(ToolMessage(tool_call_id=tool_call["id"], content=str(res)))
@@ -482,8 +506,16 @@ Formato de Cotización Final (ANTES de `register_order`):
         save_message_pro(lead_id, phone, "user", texto_completo)
         save_message_pro(lead_id, phone, "assistant", resp_content, tokens=total_tokens, metadata=meta_envio)
 
+        # INICIAR nuevo timer de inactividad tras la respuesta SÓLO SI no se creó una orden
+        if not order_created_this_turn:
+            inactivity_timers[phone] = asyncio.create_task(inactivity_manager(phone, lead_id))
+        else:
+            logger.info(f"✅ Orden detectada para {phone}. Se omite timer de inactividad.")
+
+
     except Exception as e:
         logger.error(f"Error Agente: {e}")
+
 
 # --- CONTROLADOR DEL BUFFER ---
 async def buffer_manager(phone: str, push_name: str):
