@@ -5,58 +5,107 @@
 @tailwind utilities;
 
 :root {
-    /* Soft Enterprise Theme - Horizon UI Inspired */
     --bg-main: #F4F7FE;
     --bg-card: #FFFFFF;
-
     --text-primary: #2B3674;
     --text-secondary: #A3AED0;
-
     --brand-primary: #4318FF;
-
-    --card-radius: 20px;
-    --shadow-card: 0px 18px 40px rgba(112, 144, 176, 0.12);
+    --brand-secondary: #6AD2FF;
 }
 
-body {
-    font-family: 'DM Sans', sans-serif;
-    background-color: var(--bg-main);
-    color: var(--text-primary);
-    -webkit-font-smoothing: antialiased;
-}
-
-@layer components {
-    .dashboard-card {
-        @apply bg-white rounded-[20px] transition-all duration-300;
-        box-shadow: var(--shadow-card);
-        border: none;
-    }
-
-    .dashboard-icon {
-        @apply text-[#4318FF] bg-[#F4F7FE] p-3 rounded-full;
-    }
-
-    /* Remove Default Borders */
-    .no-border {
-        border: none !important;
-    }
-}
-
-/* Dark Mode Overrides - Navy/Midnight Theme */
-.dark :root {
+.dark {
     --bg-main: #0B1437;
     --bg-card: #111C44;
     --text-primary: #FFFFFF;
     --text-secondary: #A3AED0;
-    --shadow-card: none;
+    --brand-primary: #7551FF;
 }
 
-.dark body {
+body {
     background-color: var(--bg-main);
     color: var(--text-primary);
+    font-family: 'DM Sans', sans-serif;
+}
+
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #A3AED0;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #707EAE;
+}
+
+/* Utilities */
+.dashboard-card {
+    background-color: var(--bg-card);
+    border-radius: 20px;
+    box-shadow: 0px 18px 40px rgba(112, 144, 176, 0.12);
+    /* Soft colored shadow */
+    padding: 24px;
+    transition: all 0.3s ease;
 }
 
 .dark .dashboard-card {
-    background-color: var(--bg-card);
     box-shadow: none;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dashboard-input {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 16px;
+    border: 1px solid transparent;
+    background-color: #F4F7FE;
+    /* Light blue-grey background */
+    color: #2B3674;
+    font-weight: 500;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.dark .dashboard-input {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #FFF;
+}
+
+.dashboard-input:focus {
+    border-color: var(--brand-primary);
+    background-color: #FFF;
+}
+
+.dark .dashboard-input:focus {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Soft Buttons */
+.btn-primary-soft {
+    background: linear-gradient(90deg, #4318FF 0%, #6648FF 100%);
+    color: white;
+    border-radius: 50px;
+    padding: 12px 24px;
+    font-weight: 700;
+    border: none;
+    box-shadow: 0px 10px 20px -10px rgba(67, 24, 255, 0.6);
+    /* Soft directional shadow */
+    transition: all 0.3s ease;
+}
+
+.btn-primary-soft:hover {
+    transform: translateY(-2px);
+    box-shadow: 0px 15px 25px -10px rgba(67, 24, 255, 0.7);
+}
+
+.btn-primary-soft:active {
+    transform: translateY(0px);
 }

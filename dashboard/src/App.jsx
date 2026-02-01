@@ -421,7 +421,12 @@ function StatusBadge({ status, mini }) {
 function OrderDrawer({ order, onClose, updateOrderLocal }) {
   // RESTORED FULL FUNCTIONALITY DRAWER
   const [form, setForm] = useState({ ...order })
-  const isPaid = (form.total_amount || 0) <= (form.deposit_amount || 0)
+
+  // Safe Calculations
+  const total = Number(form.total_amount) || 0
+  const deposit = Number(form.deposit_amount) || 0
+  const balance = total - deposit
+  const isPaid = balance <= 0
 
   useEffect(() => {
     const t = setTimeout(async () => {
@@ -460,17 +465,16 @@ function OrderDrawer({ order, onClose, updateOrderLocal }) {
         <div className="flex-1 overflow-y-auto p-8 space-y-8">
           {/* Status Tracker */}
           <div className="flex justify-between items-center bg-[#F4F7FE] dark:bg-white/5 p-4 rounded-xl">
-            <div className="flex flex-col">
+            <div className="flex flex-col w-full">
               <span className="text-xs font-bold text-[var(--text-secondary)] uppercase">Estado Actual</span>
               <select
                 value={form.status}
                 onChange={e => setForm({ ...form, status: e.target.value })}
-                className="bg-transparent text-lg font-bold text-[var(--brand-primary)] outline-none cursor-pointer mt-1"
+                className="bg-transparent text-lg font-bold text-[var(--brand-primary)] outline-none cursor-pointer mt-1 w-full"
               >
                 {['NUEVO', 'DISEÑO', 'PRODUCCIÓN', 'LISTO', 'ENTREGADO'].map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
-            <StatusBadge status={form.status} />
           </div>
 
           {/* Client Info Section */}
@@ -499,17 +503,17 @@ function OrderDrawer({ order, onClose, updateOrderLocal }) {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-[var(--text-secondary)] font-medium">Total Estimado</span>
-                  <input type="number" value={form.total_amount} onChange={e => setForm({ ...form, total_amount: Number(e.target.value) })} className="text-right font-bold w-32 bg-transparent outline-none border-b border-transparent focus:border-[var(--brand-primary)] transition-colors" />
+                  <input type="number" value={form.total_amount} onChange={e => setForm({ ...form, total_amount: Number(e.target.value) })} className="text-right font-bold w-32 bg-transparent outline-none border-b border-gray-200 dark:border-white/10 focus:border-[var(--brand-primary)] transition-colors text-[#A3AED0]" />
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-[var(--text-secondary)] font-medium">Abonado</span>
-                  <input type="number" value={form.deposit_amount || 0} onChange={e => setForm({ ...form, deposit_amount: Number(e.target.value) })} className="text-right font-bold w-32 bg-transparent outline-none border-b border-transparent focus:border-[var(--brand-primary)] transition-colors text-green-600" />
+                  <input type="number" value={form.deposit_amount || 0} onChange={e => setForm({ ...form, deposit_amount: Number(e.target.value) })} className="text-right font-bold w-32 bg-transparent outline-none border-b border-gray-200 dark:border-white/10 focus:border-[var(--brand-primary)] transition-colors text-[#A3AED0]" />
                 </div>
-                <div className="h-px bg-gray-100 dark:bg-white/10"></div>
+                <div className="h-px bg-gray-100 dark:bg-white/10 my-2"></div>
                 <div className="flex justify-between items-center">
-                  <span className="font-bold text-[var(--text-primary)]">Saldo Pendiente</span>
-                  <span className={`font-black text-lg ${isPaid ? 'text-green-500' : 'text-red-500'}`}>
-                    {isPaid ? 'PAGADO' : `$${(form.total_amount - form.deposit_amount).toLocaleString('es-CL')}`}
+                  <span className="font-bold text-[var(--text-primary)] text-lg">Saldo Pendiente</span>
+                  <span className={`font-black text-2xl ${isPaid ? 'text-green-500' : 'text-red-500'}`}>
+                    {isPaid ? 'PAGADO' : `$${balance.toLocaleString('es-CL')}`}
                   </span>
                 </div>
               </div>
@@ -523,7 +527,7 @@ function OrderDrawer({ order, onClose, updateOrderLocal }) {
                   <select
                     value={form.material || ''}
                     onChange={e => setForm({ ...form, material: e.target.value })}
-                    className="w-full p-3 rounded-xl bg-[#F4F7FE] dark:bg-white/5 border-none outline-none text-[var(--text-primary)] font-bold text-sm cursor-pointer"
+                    className="w-full p-3 rounded-xl bg-[#F4F7FE] dark:bg-white/5 border border-transparent focus:border-[var(--brand-primary)] outline-none text-[var(--text-primary)] font-bold text-sm cursor-pointer transition-all"
                   >
                     <option value="">Seleccionar...</option>
                     <option value="Couché 300g">Couché 300g</option>
@@ -538,7 +542,7 @@ function OrderDrawer({ order, onClose, updateOrderLocal }) {
                   <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Medidas</label>
                   <div className="relative">
                     <select
-                      className="w-full p-3 rounded-xl bg-[#F4F7FE] dark:bg-white/5 border-none outline-none text-[var(--text-primary)] font-bold text-sm cursor-pointer"
+                      className="w-full p-3 rounded-xl bg-[#F4F7FE] dark:bg-white/5 border border-transparent focus:border-[var(--brand-primary)] outline-none text-[var(--text-primary)] font-bold text-sm cursor-pointer transition-all"
                       onChange={e => setForm({ ...form, dimensions: e.target.value })}
                       value={['9x5 cm', '10x15 cm', 'A4', 'A3', 'Carta', 'Oficio'].includes(form.dimensions) ? form.dimensions : 'custom'}
                     >
@@ -557,7 +561,7 @@ function OrderDrawer({ order, onClose, updateOrderLocal }) {
                         placeholder="Ej: 50x50 cm"
                         value={form.dimensions || ''}
                         onChange={e => setForm({ ...form, dimensions: e.target.value })}
-                        className="mt-2 w-full p-2 rounded-lg bg-[#F4F7FE] dark:bg-white/5 border-none text-sm font-bold"
+                        className="mt-2 w-full p-2 rounded-lg bg-[#F4F7FE] dark:bg-white/5 border-none text-sm font-bold animate-in fade-in"
                       />
                     )}
                   </div>
@@ -568,7 +572,7 @@ function OrderDrawer({ order, onClose, updateOrderLocal }) {
                     type="number"
                     value={form.quantity || ''}
                     onChange={e => setForm({ ...form, quantity: e.target.value })}
-                    className="w-full p-3 rounded-xl bg-[#F4F7FE] dark:bg-white/5 border-none outline-none text-[var(--text-primary)] font-bold text-sm"
+                    className="w-full p-3 rounded-xl bg-[#F4F7FE] dark:bg-white/5 border border-transparent focus:border-[var(--brand-primary)] outline-none text-[var(--text-primary)] font-bold text-sm transition-all"
                     placeholder="0"
                   />
                 </div>
@@ -577,7 +581,7 @@ function OrderDrawer({ order, onClose, updateOrderLocal }) {
                   <select
                     value={form.print_sides || '1 Tiro'}
                     onChange={e => setForm({ ...form, print_sides: e.target.value })}
-                    className="w-full p-3 rounded-xl bg-[#F4F7FE] dark:bg-white/5 border-none outline-none text-[var(--text-primary)] font-bold text-sm cursor-pointer"
+                    className="w-full p-3 rounded-xl bg-[#F4F7FE] dark:bg-white/5 border border-transparent focus:border-[var(--brand-primary)] outline-none text-[var(--text-primary)] font-bold text-sm cursor-pointer transition-all"
                   >
                     <option value="1 Tiro">1 Tiro (Solo Frente)</option>
                     <option value="2 Tiros">2 Tiros (Frente y Dorso)</option>
@@ -627,7 +631,7 @@ function OrderDrawer({ order, onClose, updateOrderLocal }) {
 
           {/* Footer Actions */}
           <div className="p-6 border-t border-gray-100 dark:border-white/5 bg-[var(--bg-card)] flex gap-4">
-            <button onClick={sendWhatsApp} className="flex-1 py-3 bg-[var(--brand-primary)] text-white rounded-xl font-bold shadow-lg shadow-[#4318FF]/20 hover:scale-[1.02] transition-transform flex items-center justify-center gap-2">
+            <button onClick={sendWhatsApp} className="flex-1 btn-primary-soft flex items-center justify-center gap-2">
               <MessageCircle size={18} /> Enviar WhatsApp
             </button>
             {!isPaid && (
