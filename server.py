@@ -1079,3 +1079,7 @@ async def update_order_status(payload: OrderStatusUpdate):
     except Exception as e:
         logger.error(f"Error actualizando estado: {e}")
         return {"status": "error", "message": str(e)}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
