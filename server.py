@@ -256,7 +256,7 @@ def calculate_quote(product_type: str, quantity: int, sides: int = 1, finish: st
 
 
 @tool
-def register_order(description: str, amount: int, rut: str, address: str, email: str, has_file: bool, name: str = None, address_custom: str = None, files: List[str] = None, lead_id: str = "inject_me", phone: str = None) -> str:
+def register_order(description: str, amount: int, rut: str, address: str, email: str, has_file: bool, name: str = None, address_custom: str = None, files: List[str] = None, lead_id: str = "inject_me", phone: str = None, quantity: int = None, material: str = None, dimensions: str = None, print_sides: str = "1 Tiro") -> str:
     """
     Registra la orden y actualiza datos del cliente (RUT, Nombre, Email, Dirección).
     
@@ -278,7 +278,6 @@ def register_order(description: str, amount: int, rut: str, address: str, email:
         update_data = {}
         if name and name.strip() not in ["", "None", "N/A"]: update_data["name"] = name
         if rut and rut.strip() not in ["", "None", "N/A"]: update_data["rut"] = rut
-        # Usamos 'address' del parámetro o 'address_custom' si existiera (aquí 'address' es el estándar)
         final_address = address or address_custom
         if final_address and final_address.strip() not in ["", "None", "N/A"]: update_data["address"] = final_address
         if email and email.strip() not in ["", "None", "N/A"]: update_data["email"] = email
@@ -286,17 +285,43 @@ def register_order(description: str, amount: int, rut: str, address: str, email:
         if update_data:
             if phone:
                 res_upd = supabase.table("leads").update(update_data).eq("phone_number", phone).execute()
-                print(f"✅ Lead actualizado por teléfono: {len(res_upd.data)} filas.")
             else:
                 supabase.table("leads").update(update_data).eq("id", lead_id).execute()
 
-        # 2. Create Order
+        # 2. INTELIGENT DATA EXTRACTION (Regex Fallback)
+        # Si el LLM no mandó datos estructurados, intentamos adivinar desde la descripción
+        import re
+        
+        # Quantity
+        if not quantity:
+            q_match = re.search(r'(\d+)\s*(?:unidades|u\.|copias|flyers|tarjetas)', desc_lower)
+            if q_match: quantity = int(q_match.group(1))
+        
+        # Dimensions
+        if not dimensions:
+            d_match = re.search(r'(\d+x\d+)', desc_lower)
+            if d_match: dimensions = d_match.group(1) + " cm"
+
+        # Material 
+        if not material:
+            if "couch" in desc_lower: 
+                material = "Couché 300g" if "300" in desc_lower else "Couché 170g"
+            elif "bond" in desc_lower: material = "Bond 80g"
+            elif "adhesivo" in desc_lower: material = "Adhesivo PVC"
+            elif "pendon" in desc_lower: material = "Tela PVC"
+
+        # 3. Create Order
         new_order = {
             "lead_id": lead_id, 
             "description": description, 
             "total_amount": amount, 
             "status": "NUEVO",
-            "files_url": files if files else []
+            "files_url": files if files else [],
+            # Structured Data
+            "quantity": quantity,
+            "material": material,
+            "dimensions": dimensions,
+            "print_sides": print_sides
         }
         res = supabase.table("orders").insert(new_order).execute()
         return f"✅ Orden #{str(res.data[0]['id'])[:8]} Creada Exitosamente."
