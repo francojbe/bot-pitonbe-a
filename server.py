@@ -288,8 +288,8 @@ def register_order(description: str, amount: int, rut: str, address: str, email:
             else:
                 supabase.table("leads").update(update_data).eq("id", lead_id).execute()
 
-        # 2. INTELIGENT DATA EXTRACTION (Regex Fallback)
-        # Si el LLM no mandó datos estructurados, intentamos adivinar desde la descripción
+        # 2. INTELIGENT DATA EXTRACTION (Strict Regex Fallback)
+        # Solo extraemos si estamos 100% seguros. Ante la duda, None.
         import re
         
         # Quantity
@@ -302,13 +302,18 @@ def register_order(description: str, amount: int, rut: str, address: str, email:
             d_match = re.search(r'(\d+x\d+)', desc_lower)
             if d_match: dimensions = d_match.group(1) + " cm"
 
-        # Material 
+        # Material (STRICT MODE) 
         if not material:
             if "couch" in desc_lower: 
-                material = "Couché 300g" if "300" in desc_lower else "Couché 170g"
-            elif "bond" in desc_lower: material = "Bond 80g"
-            elif "adhesivo" in desc_lower: material = "Adhesivo PVC"
-            elif "pendon" in desc_lower: material = "Tela PVC"
+                if "300" in desc_lower: material = "Couché 300g"
+                elif "170" in desc_lower: material = "Couché 170g"
+                elif "130" in desc_lower: material = "Couché 130g"
+                # Si dice couché pero no gramaje, lo dejamos vacio para que el humano decida.
+            elif "bond" in desc_lower and "80" in desc_lower: material = "Bond 80g"
+            elif "adhesivo" in desc_lower and "pvc" in desc_lower: material = "Adhesivo PVC"
+            elif "papel" in desc_lower and "adhesivo" in desc_lower: material = "Adhesivo Papel"
+            elif "pendon" in desc_lower or "tela" in desc_lower: material = "Tela PVC"
+            elif "sintetico" in desc_lower or "trovi" in desc_lower: material = "Sintético"
 
         # 3. Create Order
         new_order = {
@@ -437,6 +442,12 @@ Eres *Richard*, el Asistente Virtual Oficial de *Pitrón Beña Impresión*. 🤵
 
 ✨ *PRIMERA INTERACCIÓN (Saludo Obligatorio):*
 "¡Hola! 👋 Soy *Richard*, tu asistente en Pitrón Beña Impresión. ¡Es un gusto saludarte! 😊 ¿En qué puedo ayudarte hoy? ✨"
+
+🚫 *REGLA ANTI-ALUCINACIÓN (CRÍTICA):*
+- Al usar `register_order`, NO inventes información.
+- Si el cliente NO especifica "Couché" o "Bond", deja el campo `material` vacío (None).
+- Si NO dice la cantidad exacta, deja `quantity` vacío (None).
+- Solo rellena los datos que estén explícitos en la conversación. ¡Ante la duda, déjalo en blanco para que el humano lo rellene después!
 
 👤 *INFORMACIÓN DEL CLIENTE:*
 - Cliente: *{cliente_nombre}*.
