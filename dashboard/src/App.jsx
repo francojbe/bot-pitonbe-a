@@ -9,7 +9,7 @@ import {
   ArrowUpRight, Clock, CheckCircle2, DollarSign,
   BarChart2, MoreVertical, LogOut, Menu,
   User, MapPin, Mail, Phone, ExternalLink, Image, MessageCircle,
-  ChevronLeft, ChevronRight
+  ChevronLeft
 } from 'lucide-react'
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip,
@@ -51,8 +51,11 @@ function App() {
   const [isCreatingLead, setIsCreatingLead] = useState(false)
   const [selectedLead, setSelectedLead] = useState(null)
   const [leadForm, setLeadForm] = useState({ name: '', phone_number: '', rut: '', address: '', email: '' })
-  const [leadForm, setLeadForm] = useState({ name: '', phone_number: '', rut: '', address: '', email: '' })
   const [leadSearch, setLeadSearch] = useState('')
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1)
+  const ITEMS_PER_PAGE = 10
 
   // Delete Confirmation State
   const [deleteConfirmation, setDeleteConfirmation] = useState({ isOpen: false, ids: [], dontAskAgain: false })
@@ -177,16 +180,21 @@ function App() {
         {/* CONTENT */}
         <main className="flex-1 overflow-y-auto p-6 scroll-smooth">
           {activeTab === 'dashboard' && (
-            <DashboardView
-              orders={orders}
-              viewMode={viewMode}
-              setViewMode={setViewMode}
-              onSelectOrder={setSelectedOrder}
-              selectedIds={selectedIds}
-              setSelectedIds={setSelectedIds}
-              onDelete={deleteOrders}
-              onDragEnd={handleDragEnd}
-            />
+            { activeTab === 'dashboard' && (
+              <DashboardView
+                orders={orders}
+                viewMode={viewMode}
+                setViewMode={setViewMode}
+                onSelectOrder={setSelectedOrder}
+                selectedIds={selectedIds}
+                setSelectedIds={setSelectedIds}
+                onDelete={deleteOrders}
+                onDragEnd={handleDragEnd}
+                currentPage={currentPage}
+                setCurrentPage={setCurrentPage}
+                itemsPerPage={ITEMS_PER_PAGE}
+              />
+            )}
           )}
           {activeTab === 'clientes' && (
             <LeadsView
@@ -309,14 +317,19 @@ function Sidebar({ activeTab, setActiveTab, collapsed, setCollapsed }) {
   )
 }
 
-function DashboardView({ orders, viewMode, setViewMode, onSelectOrder, selectedIds, setSelectedIds, onDelete, onDragEnd }) {
+function DashboardView({ orders, viewMode, setViewMode, onSelectOrder, selectedIds, setSelectedIds, onDelete, onDragEnd, currentPage, setCurrentPage, itemsPerPage }) {
+
+  // Pagination Logic
+  const totalPages = Math.ceil(orders.length / itemsPerPage)
+  const paginatedOrders = orders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+
   return (
     <div className="space-y-6 h-full flex flex-col">
       {/* Section Header */}
       <div className="flex justify-between items-center shrink-0">
         <div>
           <h2 className="text-lg font-bold text-[var(--text-primary)]">Ordenes Recientes</h2>
-          <p className="text-sm text-[var(--text-secondary)]">Gestión activa de producción.</p>
+          <p className="text-sm text-[var(--text-secondary)]">Mostrando {paginatedOrders.length} de {orders.length} órdenes</p>
         </div>
         <div className="flex bg-[var(--bg-card)] p-1 rounded-xl shadow-sm">
           <button onClick={() => setViewMode('list')} className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-[var(--brand-main)] text-[var(--brand-primary)] bg-[#F4F7FE]' : 'text-[var(--text-secondary)]'}`}><MoreVertical size={18} className="rotate-90" /></button>
@@ -334,58 +347,84 @@ function DashboardView({ orders, viewMode, setViewMode, onSelectOrder, selectedI
         </div>
       )}
 
-      {viewMode === 'kanban' ? (
-        <DragDropContext onDragEnd={onDragEnd}>
-          <KanbanBoard orders={orders} onSelectOrder={onSelectOrder} />
-        </DragDropContext>
-      ) : (
-        <div className="dashboard-card overflow-hidden !p-0">
-          <table className="w-full">
-            <thead className="bg-[#F9FAFC] dark:bg-white/5 border-b border-transparent dark:border-white/5">
-              <tr>
-                <th className="px-6 py-4 w-12"><input type="checkbox" className="accent-[#4318FF] w-4 h-4 rounded cursor-pointer" onChange={(e) => setSelectedIds(e.target.checked ? new Set(orders.map(o => o.id)) : new Set())} checked={selectedIds.size === orders.length && orders.length > 0} /></th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Descripción</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Estado</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Finanzas</th>
-                <th className="px-6 py-4 text-right text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Fecha</th>
-                <th className="px-6 py-4"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-white/5">
-              {orders.map(order => {
-                const balance = (order.total_amount || 0) - (order.deposit_amount || 0)
-                const isSel = selectedIds.has(order.id)
-                return (
-                  <tr key={order.id} onClick={() => onSelectOrder(order)} className={`group hover:bg-[#F4F7FE] dark:hover:bg-white/5 cursor-pointer transition-colors ${isSel ? 'bg-[#F4F7FE] dark:bg-white/5' : ''}`}>
-                    <td className="px-6 py-4" onClick={(e) => { e.stopPropagation(); const n = new Set(selectedIds); n.has(order.id) ? n.delete(order.id) : n.add(order.id); setSelectedIds(n) }}>
-                      <div className={`w-5 h-5 rounded flex items-center justify-center border transition-all ${isSel ? 'bg-[#4318FF] border-[#4318FF] text-white' : 'border-gray-300'}`}>
-                        {isSel && <CheckSquare size={14} />}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm font-bold text-[var(--text-primary)] mb-1">{order.description || 'Orden sin título'}</p>
-                      <p className="text-xs text-[var(--text-secondary)] flex items-center gap-1"><Users size={12} /> {order.leads?.name || 'Cliente'}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <StatusBadge status={order.status} />
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col">
-                        <span className="text-sm font-bold text-[var(--text-primary)]">${(order.total_amount || 0).toLocaleString('es-CL')}</span>
-                        <span className={`text-[10px] font-bold ${balance <= 0 ? 'text-green-500' : 'text-red-500'}`}>{balance <= 0 ? 'PAGADO' : `Debe $${balance.toLocaleString('es-CL')}`}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right text-xs font-medium text-[var(--text-secondary)]">
-                      {new Date(order.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 text-right" onClick={e => e.stopPropagation()}>
-                      <button onClick={() => onDelete([order.id])} className="p-2 rounded-lg hover:bg-red-50 text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={16} /></button>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+      {/* Content */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        {viewMode === 'kanban' ? (
+          <DragDropContext onDragEnd={onDragEnd}>
+            <KanbanBoard orders={paginatedOrders} onSelectOrder={onSelectOrder} />
+          </DragDropContext>
+        ) : (
+          <div className="dashboard-card overflow-hidden !p-0">
+            <table className="w-full">
+              <thead className="bg-[#F9FAFC] dark:bg-white/5 border-b border-transparent dark:border-white/5">
+                <tr>
+                  <th className="px-6 py-4 w-12"><input type="checkbox" className="accent-[#4318FF] w-4 h-4 rounded cursor-pointer" onChange={(e) => setSelectedIds(e.target.checked ? new Set(paginatedOrders.map(o => o.id)) : new Set())} checked={selectedIds.size === paginatedOrders.length && paginatedOrders.length > 0} /></th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Descripción</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Estado</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Finanzas</th>
+                  <th className="px-6 py-4 text-right text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Fecha</th>
+                  <th className="px-6 py-4"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-white/5">
+                {paginatedOrders.map(order => {
+                  const balance = (order.total_amount || 0) - (order.deposit_amount || 0)
+                  const isSel = selectedIds.has(order.id)
+                  return (
+                    <tr key={order.id} onClick={() => onSelectOrder(order)} className={`group hover:bg-[#F4F7FE] dark:hover:bg-white/5 cursor-pointer transition-colors ${isSel ? 'bg-[#F4F7FE] dark:bg-white/5' : ''}`}>
+                      <td className="px-6 py-4" onClick={(e) => { e.stopPropagation(); const n = new Set(selectedIds); n.has(order.id) ? n.delete(order.id) : n.add(order.id); setSelectedIds(n) }}>
+                        <div className={`w-5 h-5 rounded flex items-center justify-center border transition-all ${isSel ? 'bg-[#4318FF] border-[#4318FF] text-white' : 'border-gray-300'}`}>
+                          {isSel && <CheckSquare size={14} />}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-sm font-bold text-[var(--text-primary)] mb-1">{order.description || 'Orden sin título'}</p>
+                        <p className="text-xs text-[var(--text-secondary)] flex items-center gap-1"><Users size={12} /> {order.leads?.name || 'Cliente'}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <StatusBadge status={order.status} />
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-[var(--text-primary)]">${(order.total_amount || 0).toLocaleString('es-CL')}</span>
+                          <span className={`text-[10px] font-bold ${balance <= 0 ? 'text-green-500' : 'text-red-500'}`}>{balance <= 0 ? 'PAGADO' : `Debe $${balance.toLocaleString('es-CL')}`}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right text-xs font-medium text-[var(--text-secondary)]">
+                        {new Date(order.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 text-right" onClick={e => e.stopPropagation()}>
+                        <button onClick={() => onDelete([order.id])} className="p-2 rounded-lg hover:bg-red-50 text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={16} /></button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex justify-between items-center pt-2 shrink-0 border-t border-gray-100 dark:border-white/5">
+          <p className="text-sm text-[var(--text-secondary)]">Página {currentPage} de {totalPages}</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="p-2 rounded-lg border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-[var(--text-primary)]"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="p-2 rounded-lg border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-[var(--text-primary)]"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
         </div>
       )}
     </div>
