@@ -43,7 +43,7 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [viewMode, setViewMode] = useState(() => localStorage.getItem('dashboard_view_mode') || 'kanban')
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') === 'dark')
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem('sidebar_collapsed') === 'true')
 
   // Drawer & Modals
   const [selectedOrder, setSelectedOrder] = useState(null)
@@ -68,6 +68,7 @@ function App() {
   }, [isDarkMode])
 
   useEffect(() => { localStorage.setItem('dashboard_view_mode', viewMode) }, [viewMode])
+  useEffect(() => { localStorage.setItem('sidebar_collapsed', isSidebarCollapsed) }, [isSidebarCollapsed])
 
   useEffect(() => {
     fetchOrders()
@@ -231,10 +232,10 @@ function App() {
       {/* Delete Confirmation Modal */}
       {deleteConfirmation.isOpen && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-[#0B1437]/50 backdrop-blur-sm" onClick={() => setDeleteConfirmation({ ...deleteConfirmation, isOpen: false })}></div>
+          <div className="absolute inset-0 bg-black/20 dark:bg-[#0B1437]/60 backdrop-blur-sm transition-colors" onClick={() => setDeleteConfirmation({ ...deleteConfirmation, isOpen: false })}></div>
           <div className="relative bg-white dark:bg-[#111C44] rounded-2xl shadow-2xl p-6 max-w-sm w-full animate-in zoom-in duration-200">
             <div className="flex flex-col items-center text-center">
-              <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
+              <div className="w-12 h-12 bg-red-100/50 text-red-600 dark:bg-red-500/10 dark:text-red-500 rounded-full flex items-center justify-center mb-4">
                 <Trash2 size={24} />
               </div>
               <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">¿Eliminar {deleteConfirmation.ids.length} orden(es)?</h3>
@@ -256,7 +257,7 @@ function App() {
                 </button>
                 <button
                   onClick={confirmDelete}
-                  className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-bold shadow-lg shadow-red-500/30 hover:shadow-red-500/40 hover:-translate-y-0.5 transition-all"
+                  className="flex-1 py-2.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 ring-1 ring-red-100 dark:bg-red-500/20 dark:text-red-500 dark:hover:bg-red-500/30 dark:ring-0 text-sm font-bold transition-all"
                 >
                   Eliminar
                 </button>
