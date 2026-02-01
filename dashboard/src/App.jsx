@@ -180,21 +180,19 @@ function App() {
         {/* CONTENT */}
         <main className="flex-1 overflow-y-auto p-6 scroll-smooth">
           {activeTab === 'dashboard' && (
-            { activeTab === 'dashboard' && (
-              <DashboardView
-                orders={orders}
-                viewMode={viewMode}
-                setViewMode={setViewMode}
-                onSelectOrder={setSelectedOrder}
-                selectedIds={selectedIds}
-                setSelectedIds={setSelectedIds}
-                onDelete={deleteOrders}
-                onDragEnd={handleDragEnd}
-                currentPage={currentPage}
-                setCurrentPage={setCurrentPage}
-                itemsPerPage={ITEMS_PER_PAGE}
-              />
-            )}
+            <DashboardView
+              orders={orders}
+              viewMode={viewMode}
+              setViewMode={setViewMode}
+              onSelectOrder={setSelectedOrder}
+              selectedIds={selectedIds}
+              setSelectedIds={setSelectedIds}
+              onDelete={deleteOrders}
+              onDragEnd={handleDragEnd}
+              currentPage={currentPage}
+              setCurrentPage={setCurrentPage}
+              itemsPerPage={ITEMS_PER_PAGE}
+            />
           )}
           {activeTab === 'clientes' && (
             <LeadsView
