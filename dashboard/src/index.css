@@ -1,32 +1,62 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    -webkit-font-smoothing: antialiased;
+    /* Soft Enterprise Theme - Horizon UI Inspired */
+    --bg-main: #F4F7FE;
+    --bg-card: #FFFFFF;
+
+    --text-primary: #2B3674;
+    --text-secondary: #A3AED0;
+
+    --brand-primary: #4318FF;
+
+    --card-radius: 20px;
+    --shadow-card: 0px 18px 40px rgba(112, 144, 176, 0.12);
 }
 
 body {
-    background-color: #FDFDFD;
-    color: #1C1C1E;
+    font-family: 'DM Sans', sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
 }
 
-.custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
+@layer components {
+    .dashboard-card {
+        @apply bg-white rounded-[20px] transition-all duration-300;
+        box-shadow: var(--shadow-card);
+        border: none;
+    }
+
+    .dashboard-icon {
+        @apply text-[#4318FF] bg-[#F4F7FE] p-3 rounded-full;
+    }
+
+    /* Remove Default Borders */
+    .no-border {
+        border: none !important;
+    }
 }
 
-.custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
+/* Dark Mode Overrides - Navy/Midnight Theme */
+.dark :root {
+    --bg-main: #0B1437;
+    --bg-card: #111C44;
+    --text-primary: #FFFFFF;
+    --text-secondary: #A3AED0;
+    --shadow-card: none;
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #F2F2F7;
-    border-radius: 10px;
+.dark body {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #E5E5EA;
+.dark .dashboard-card {
+    background-color: var(--bg-card);
+    box-shadow: none;
 }
