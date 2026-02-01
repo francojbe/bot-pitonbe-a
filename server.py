@@ -370,12 +370,16 @@ async def procesar_y_responder(phone: str, mensajes_acumulados: List[str], push_
         
         recent_txt = " ".join(recent_valid_content)
         
-        # Detectar presencia y URL de archivo
-        import re
-        url_match = re.search(r"((?:https?://|www\.)[^\s]+(?:\.jpg|\.png|\.pdf))", recent_txt + " " + texto_completo)
-        extracted_url = url_match.group(1) if url_match else None
+        # Detectar presencia de archivos y tipos
+        has_file_context = "[DOCUMENTO RECIBIDO (PDF VÁLIDO):" in recent_txt or "[DOCUMENTO RECIBIDO (PDF VÁLIDO):" in texto_completo
+        has_invalid_file = "[ARCHIVO_INVALIDO:" in recent_txt or "[ARCHIVO_INVALIDO:" in texto_completo
         
-        has_file_context = "[IMAGEN RECIBIDA" in recent_txt or "[DOCUMENTO RECIBIDO" in recent_txt or "[IMAGEN RECIBIDA" in texto_completo
+        # Extraer URL del archivo válido (si hay)
+        import re
+        extracted_url = None
+        if has_file_context:
+            url_match = re.search(r"URL: ((?:https?://|www\.)[^\s\]]+)", recent_txt + " " + texto_completo)
+            extracted_url = url_match.group(1) if url_match else None
 
         # EXTRACCIÓN INTELIGENTE DE DATOS DE CLIENTE (RUT/EMAIL) DEL HISTORIAL
         # Para que no olvide datos dados hace 3 mensajes.
@@ -426,6 +430,10 @@ Eres *Richard*, el Asistente Virtual Oficial de *Pitrón Beña Impresión*. 🤵
 
 📚 *CONOCIMIENTO RECUPERADO:*
 {contexto}
+
+⛔ *REGLA DE ARCHIVOS (PDF OBLIGATORIO):*
+- Si en el historial aparece `[ARCHIVO_INVALIDO]`, DEBES informar al cliente de inmediato: "Lo siento, para garantizar la máxima calidad de impresión, solo aceptamos archivos en formato *PDF*. Por favor, envíanos tu diseño en PDF para continuar con tu pedido. 📄✨"
+- NO registres órdenes con archivos inválidos.
 
 ⛔ *DATOS FISCALES:*
 Pide RUT, Nombre, Dirección y Email para la orden. 📋
@@ -760,7 +768,7 @@ async def webhook_whatsapp(request: Request):
             elif "extendedTextMessage" in real_message:
                 texto = real_message["extendedTextMessage"].get("text", "")
             
-            # 2. Imágenes
+            # 2. Imágenes (Prohibidas bajo la nueva regla de "Solo PDF")
             elif "imageMessage" in real_message:
                 img_msg = real_message["imageMessage"]
                 caption = img_msg.get("caption", "")
@@ -769,23 +777,19 @@ async def webhook_whatsapp(request: Request):
                 b64 = img_msg.get("evolution_base64") or img_msg.get("base64")
                 url_msg = img_msg.get("evolution_media_url") or img_msg.get("mediaUrl") or img_msg.get("url")
                 
-                # Detectar mime y extensión real
+                # Detectar mime
                 mime = img_msg.get("mimetype", "image/jpeg")
                 ext = "jpg"
                 if "png" in mime: ext = "png"
                 elif "webp" in mime: ext = "webp"
-                elif "gif" in mime: ext = "gif"
 
-                logger.info(f"🖼️ Procesando imagen ({mime}). URL origen: {url_msg[:50]}...")
+                logger.info(f"🖼️ Procesando imagen ({mime}).")
                 final_url = save_media_to_supabase(b64, url_msg, mime, ext)
-
                 
-                if final_url:
-                    texto = f"[IMAGEN RECIBIDA: {final_url}] {caption}"
-                else:
-                    texto = f"[IMAGEN RECIBIDA (Fallo local): {url_msg}] {caption}"
+                # LA REGLA: Si es imagen, avisar que no sirve (se requiere PDF)
+                texto = f"[ARCHIVO_INVALIDO: Imagen (Mime: {mime})] Se recibió una imagen ({final_url}), pero el sistema requiere PDF para impresión profesional. {caption}"
 
-            # 3. Documentos
+            # 3. Documentos (Solo PDF permitido)
             elif "documentMessage" in real_message:
                 doc_msg = real_message["documentMessage"]
                 filename = doc_msg.get("title", "doc")
@@ -795,18 +799,21 @@ async def webhook_whatsapp(request: Request):
                 url_msg = doc_msg.get("evolution_media_url") or doc_msg.get("mediaUrl") or doc_msg.get("url")
                 mime_type = doc_msg.get("mimetype", "application/pdf")
                 
-                ext = "pdf"
-                if "image" in mime_type: ext = "jpg"
-                elif "word" in mime_type: ext = "docx"
-                elif "excel" in mime_type: ext = "xlsx"
+                logger.info(f"📄 Procesando documento ({mime_type}).")
                 
-                logger.info(f"📄 Procesando documento. URL origen: {url_msg[:50]}...")
-                final_url = save_media_to_supabase(b64, url_msg, mime_type, ext)
-
-                if final_url:
-                    texto = f"[DOCUMENTO RECIBIDO: {filename} - URL: {final_url}] {caption}"
+                # Determinar extensión basada en mime
+                ext = "pdf"
+                if "pdf" not in mime_type.lower():
+                    if "image" in mime_type: ext = "jpg"
+                    elif "word" in mime_type: ext = "docx"
+                    elif "excel" in mime_type: ext = "xlsx"
+                    
+                    final_url = save_media_to_supabase(b64, url_msg, mime_type, ext)
+                    texto = f"[ARCHIVO_INVALIDO: Documento No-PDF (Mime: {mime_type})] El archivo {filename} ({final_url}) no es un PDF. El sistema solo acepta PDF. {caption}"
                 else:
-                    texto = f"[DOCUMENTO RECIBIDO: {filename} - URL origen: {url_msg}] {caption}"
+                    # ES UN PDF VÁLIDO
+                    final_url = save_media_to_supabase(b64, url_msg, mime_type, "pdf")
+                    texto = f"[DOCUMENTO RECIBIDO (PDF VÁLIDO): {filename} - URL: {final_url}] {caption}"
 
                     
         except Exception as e:
