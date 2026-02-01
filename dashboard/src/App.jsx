@@ -461,8 +461,17 @@ function OrderDrawer({ order, onClose, updateOrderLocal }) {
     const phone = order.leads?.phone_number;
     if (!phone) return toast.error("Cliente sin teléfono");
 
-    // Clean Emoji/Symbols Logic if needed, but standard text is requested.
-    const msg = `Hola ${order.leads?.name || 'Cliente'}! 👋\nTu pedido *${order.id.slice(0, 5)}* está en estado: *${order.status}*\n${order.description}\nEspecificaciones: ${form.material || ''}, ${form.dimensions || ''}, ${form.quantity ? form.quantity + ' un.' : ''}, ${form.print_sides || ''}.\nGracias por preferirnos! ✨`;
+    // Construct Specs List
+    const specs = [
+      form.material,
+      form.dimensions,
+      form.quantity ? `${form.quantity} un.` : null,
+      form.print_sides
+    ].filter(Boolean).join(', ');
+
+    const specText = specs ? `\nEspecificaciones: ${specs}.` : '';
+
+    const msg = `Hola ${order.leads?.name || 'Cliente'}! 👋\nTu pedido *${order.id.slice(0, 5)}* está en estado: *${order.status}*\n${order.description}${specText}\nGracias por preferirnos! ✨`;
 
     window.open(`https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`, '_blank');
   }
@@ -487,11 +496,11 @@ function OrderDrawer({ order, onClose, updateOrderLocal }) {
           <div className="flex justify-between items-center bg-[#F4F7FE] dark:bg-white/5 p-4 rounded-xl">
             <div className="flex flex-col w-full">
               <span className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-2">Estado Actual</span>
-              <div className="bg-[#F4F7FE] dark:bg-white/5 rounded-xl px-4 py-2 border border-transparent focus-within:border-[var(--brand-primary)] transition-all">
+              <div className="bg-white dark:bg-[#111C44] rounded-xl px-4 py-2 border border-[#E3E8F3] dark:border-white/10 hover:border-[var(--brand-primary)] transition-all shadow-sm">
                 <select
                   value={form.status}
                   onChange={e => setForm({ ...form, status: e.target.value })}
-                  className="bg-transparent w-full text-lg font-bold text-[var(--brand-primary)] outline-none cursor-pointer"
+                  className="bg-transparent w-full text-lg font-bold text-[var(--brand-primary)] outline-none cursor-pointer p-1"
                 >
                   {['NUEVO', 'DISEÑO', 'PRODUCCIÓN', 'LISTO', 'ENTREGADO'].map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
@@ -525,11 +534,35 @@ function OrderDrawer({ order, onClose, updateOrderLocal }) {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-[var(--text-secondary)] font-medium">Total Estimado</span>
-                  <input type="number" value={form.total_amount} onChange={e => setForm({ ...form, total_amount: Number(e.target.value) })} className="text-right font-bold w-32 bg-transparent outline-none border-b border-gray-200 dark:border-white/10 focus:border-[var(--brand-primary)] transition-colors text-[#A3AED0]" />
+                  <div className="relative">
+                    <span className="absolute left-0 top-1/2 -translate-y-1/2 text-[#A3AED0] font-bold text-sm pointer-events-none">$</span>
+                    <input
+                      type="text"
+                      value={form.total_amount ? Number(form.total_amount).toLocaleString('es-CL') : ''}
+                      onChange={e => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        setForm({ ...form, total_amount: val ? Number(val) : 0 })
+                      }}
+                      className="text-right font-bold w-32 bg-transparent outline-none border-b border-gray-200 dark:border-white/10 focus:border-[var(--brand-primary)] transition-colors text-[#A3AED0] pl-4"
+                      placeholder="0"
+                    />
+                  </div>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-[var(--text-secondary)] font-medium">Abonado</span>
-                  <input type="number" value={form.deposit_amount || 0} onChange={e => setForm({ ...form, deposit_amount: Number(e.target.value) })} className="text-right font-bold w-32 bg-transparent outline-none border-b border-gray-200 dark:border-white/10 focus:border-[var(--brand-primary)] transition-colors text-[#A3AED0]" />
+                  <div className="relative">
+                    <span className="absolute left-0 top-1/2 -translate-y-1/2 text-[#A3AED0] font-bold text-sm pointer-events-none">$</span>
+                    <input
+                      type="text"
+                      value={form.deposit_amount ? Number(form.deposit_amount).toLocaleString('es-CL') : ''}
+                      onChange={e => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        setForm({ ...form, deposit_amount: val ? Number(val) : 0 })
+                      }}
+                      className="text-right font-bold w-32 bg-transparent outline-none border-b border-gray-200 dark:border-white/10 focus:border-[var(--brand-primary)] transition-colors text-[#A3AED0] pl-4"
+                      placeholder="0"
+                    />
+                  </div>
                 </div>
                 <div className="h-px bg-gray-100 dark:bg-white/10 my-2"></div>
                 <div className="flex justify-between items-center">
@@ -598,7 +631,7 @@ function OrderDrawer({ order, onClose, updateOrderLocal }) {
                     placeholder="0"
                   />
                 </div>
-                <div className="col-span-2">
+                <div>
                   <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Lados de Impresión</label>
                   <select
                     value={form.print_sides || '1 Tiro'}
