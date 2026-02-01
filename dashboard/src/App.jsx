@@ -51,7 +51,11 @@ function App() {
   const [isCreatingLead, setIsCreatingLead] = useState(false)
   const [selectedLead, setSelectedLead] = useState(null)
   const [leadForm, setLeadForm] = useState({ name: '', phone_number: '', rut: '', address: '', email: '' })
+  const [leadForm, setLeadForm] = useState({ name: '', phone_number: '', rut: '', address: '', email: '' })
   const [leadSearch, setLeadSearch] = useState('')
+
+  // Delete Confirmation State
+  const [deleteConfirmation, setDeleteConfirmation] = useState({ isOpen: false, ids: [], dontAskAgain: false })
 
   // --- EFFECTS ---
   useEffect(() => {
@@ -81,12 +85,30 @@ function App() {
   }
   async function deleteOrders(ids) {
     if (!ids.length) return
+    const skipConfirm = localStorage.getItem('skip_delete_confirmation') === 'true'
+
+    if (skipConfirm) {
+      performDelete(ids)
+    } else {
+      setDeleteConfirmation({ isOpen: true, ids, dontAskAgain: false })
+    }
+  }
+
+  async function performDelete(ids) {
     const { error } = await supabase.from('orders').delete().in('id', ids)
     if (!error) {
       setOrders(prev => prev.filter(o => !ids.includes(o.id)))
       setSelectedIds(new Set())
       toast.success(`${ids.length} orden(es) eliminada(s)`)
+      setDeleteConfirmation({ isOpen: false, ids: [], dontAskAgain: false })
     } else toast.error('Error al eliminar')
+  }
+
+  function confirmDelete() {
+    if (deleteConfirmation.dontAskAgain) {
+      localStorage.setItem('skip_delete_confirmation', 'true')
+    }
+    performDelete(deleteConfirmation.ids)
   }
   async function handleSaveLead() {
     try {
@@ -198,6 +220,44 @@ function App() {
           onClose={() => { setIsCreatingLead(false); setIsEditingLead(false) }}
           onSubmit={handleSaveLead}
         />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmation.isOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-[#0B1437]/50 backdrop-blur-sm" onClick={() => setDeleteConfirmation({ ...deleteConfirmation, isOpen: false })}></div>
+          <div className="relative bg-white dark:bg-[#111C44] rounded-2xl shadow-2xl p-6 max-w-sm w-full animate-in zoom-in duration-200">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
+                <Trash2 size={24} />
+              </div>
+              <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">¿Eliminar {deleteConfirmation.ids.length} orden(es)?</h3>
+              <p className="text-sm text-[var(--text-secondary)] mb-6">Esta acción no se puede deshacer. Las órdenes se borrarán permanentemente.</p>
+
+              <div className="flex items-center gap-2 mb-6 cursor-pointer" onClick={() => setDeleteConfirmation(prev => ({ ...prev, dontAskAgain: !prev.dontAskAgain }))}>
+                <div className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${deleteConfirmation.dontAskAgain ? 'bg-[var(--brand-primary)] border-[var(--brand-primary)] text-white' : 'border-gray-300 dark:border-white/20'}`}>
+                  {deleteConfirmation.dontAskAgain && <CheckSquare size={14} />}
+                </div>
+                <span className="text-xs font-medium text-[var(--text-secondary)]">No volver a preguntar</span>
+              </div>
+
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => setDeleteConfirmation({ ...deleteConfirmation, isOpen: false })}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-bold shadow-lg shadow-red-500/30 hover:shadow-red-500/40 hover:-translate-y-0.5 transition-all"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
