@@ -8,7 +8,8 @@ import {
   CreditCard, Calendar, ChevronRight, Filter,
   ArrowUpRight, Clock, CheckCircle2, DollarSign,
   BarChart2, MoreVertical, LogOut, Menu,
-  User, MapPin, Mail, Phone, ExternalLink, Image, MessageCircle
+  User, MapPin, Mail, Phone, ExternalLink, Image, MessageCircle,
+  ChevronLeft, ChevronRight
 } from 'lucide-react'
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip,
@@ -213,14 +214,6 @@ function Sidebar({ activeTab, setActiveTab, collapsed, setCollapsed }) {
 
   return (
     <aside className={`${collapsed ? 'w-20' : 'w-72'} bg-[var(--bg-card)] hidden md:flex flex-col h-full p-4 border-r border-transparent dark:border-white/5 transition-all duration-300 relative`}>
-      {/* Retract Button */}
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-8 w-6 h-6 bg-white dark:bg-[#111C44] text-[var(--brand-primary)] rounded-full shadow-md border border-gray-100 dark:border-white/10 z-50 hover:scale-110 transition-transform flex items-center justify-center cursor-pointer"
-      >
-        {collapsed ? <ChevronRight size={14} /> : <div className="text-xs font-bold">{'<'}</div>}
-      </button>
-
       <div className={`flex items-center gap-3 px-2 mb-10 ${collapsed ? 'justify-center' : ''}`}>
         <div className="bg-gradient-to-br from-[#4318FF] to-[#868CFF] min-w-[32px] w-8 h-8 rounded-lg flex items-center justify-center text-white"><LayoutDashboard size={18} /></div>
         {!collapsed && <div className="text-[var(--text-primary)] font-black text-xl tracking-tighter uppercase whitespace-nowrap overflow-hidden">PITRÓN</div>}
@@ -243,6 +236,15 @@ function Sidebar({ activeTab, setActiveTab, collapsed, setCollapsed }) {
           )
         })}
       </div>
+
+      {/* Aesthetic Bottom Toggle */}
+      <button
+        onClick={() => setCollapsed(!collapsed)}
+        className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl text-[var(--text-secondary)] font-medium hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/5 transition-all mt-auto ${collapsed ? 'justify-center' : ''}`}
+      >
+        {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+        {!collapsed && <span className="whitespace-nowrap overflow-hidden">Contraer Menú</span>}
+      </button>
     </aside>
   )
 }
