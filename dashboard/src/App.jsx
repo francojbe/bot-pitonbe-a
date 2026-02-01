@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabase'
 import { Toaster, toast } from 'sonner'
-LayoutDashboard, Users, PieChart, Settings,
+import {
+  LayoutDashboard, Users, PieChart, Settings,
   Search, Bell, Moon, Sun, Plus, MoreHorizontal,
   CheckSquare, Square, Trash2, X, FileText,
   CreditCard, Calendar, ChevronRight, Filter,
   ArrowUpRight, Clock, CheckCircle2, DollarSign,
   BarChart2, MoreVertical, LogOut, Menu,
   User, MapPin, Mail, Phone, ExternalLink, Image, MessageCircle
+} from 'lucide-react'
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip,
   ResponsiveContainer, Cell, PieChart as RePieChart, Pie, Legend, AreaChart, Area, CartesianGrid
