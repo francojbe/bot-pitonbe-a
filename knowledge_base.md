@@ -11,35 +11,39 @@ PB Imprenta SPA (Pitrón Beña) es una imprenta profesional en Santiago Centro, 
 
 ## Regla de Oro: Aprobación para Impresión
 - **Obligatorio**: El cliente debe indicar explícitamente la palabra "**APROBADO**".
-- **Responsabilidad**: Antes de aprobar, el cliente debe revisar cuidadosamente textos, ortografía e imágenes. Una vez aprobado, el cliente asume la responsabilidad total.
-- Sin la palabra "APROBADO", no se inicia el trabajo.
+- **Garantía y Aprobaciones**: El cliente es responsable de revisar ortografía, datos y diseño antes de dar su "APROBADO". Una vez aprobado, el trabajo pasa directamente a producción y no se aceptan reclamos por errores de contenido.
+- **Formato de Archivos**: Los archivos para impresión deben ser preferentemente en **PDF** (curvado/vectorizado) para asegurar la máxima calidad.
 
-## Reglas de Diseño Gráfico y Revisiones
-- **Límite de Cambios**: Se incluyen hasta **3 cambios o revisiones** por diseño.
-- **Exceso de Cambios**: A partir del **4to cambio**, se cobrará automáticamente el valor de un nuevo diseño.
-- **Almacenamiento**: Todos los diseños finales se guardan en una carpeta personalizada con el nombre del cliente para futuras reimpresiones.
+## Reglas de Diseño Gráfico y Condiciones (DISCLAIMER)
+*Estas condiciones aplican a todos los niveles de diseño:*
+1. **Límite de Revisiones**: Se incluyen exactamente **3 cambios o revisiones**. 
+2. **Cargos Extras**: A partir del **4to cambio**, el sistema cobrará automáticamente el valor de un diseño nuevo.
+3. **Propiedad y Entrega**: 
+   - El diseño final se guarda para futuras reimpresiones.
+   - Solo se entregan archivos digitales (JPG, PDF o AI) según el nivel pagado.
+   - No se entregan editables en niveles Básico, Medio o Avanzado.
 
 ## Niveles de Servicio de Diseño (Valores con IVA)
 
 ### 1. Diseño Básico ($7.140)
-- **Alcance**: Similar a un bosquejo o composición simple.
-- **Entrega**: Se envía foto/imagen solo para aprobación. No se entrega archivo digital para otros usos.
+- **Alcance**: Composición simple o bosquejo.
+- **DISCLAIMER**: Incluye hasta 3 cambios. Se envía **solo una imagen/foto para aprobación** por WhatsApp. **NO se entrega ningún archivo digital** para uso externo (redes sociales o impresión en otro lugar). El diseño queda guardado solo para impresiones en Pitrón Beña.
 
 ### 2. Diseño Gratuito (Bonificación)
-- **Requisito**: Aplica automáticamente en compras superiores a **$60.000**.
-- **Condiciones**: Mismas reglas de revisión (máximo 3 cambios).
+- **Requisito**: Compras superiores a **$60.000**.
+- **DISCLAIMER**: Tiene las mismas condiciones que el **Diseño Básico**. (3 cambios máx, solo imagen para aprobación, no se entrega archivo).
 
 ### 3. Diseño Medio ($35.700)
-- **Incluye**: Composición avanzada y optimización.
-- **Entrega**: Se entrega archivo en formato **.JPG** de alta resolución (ideal para redes sociales).
+- **Alcance**: Composición avanzada y optimización.
+- **DISCLAIMER**: Incluye hasta 3 cambios. Al finalizar, se hace entrega de un archivo en formato **.JPG** de alta resolución, ideal para usar en redes sociales o perfiles digitales.
 
 ### 4. Diseño Avanzado ($71.400)
-- **Incluye**: Nivel Medio + Búsqueda de recursos premium.
-- **Entrega**: Se entrega archivo en formato **.PDF** (calidad de impresión, no editable).
+- **Alcance**: Nivel Medio + Búsqueda de recursos premium.
+- **DISCLAIMER**: Incluye hasta 3 cambios. Al finalizar, se hace entrega de un archivo en formato **.PDF** de alta calidad, listo para impresión pero **no editable**. Ideal para tener tu respaldo de impresión.
 
 ### 5. Diseño Premium ($214.200)
-- **Incluye**: Todo lo anterior (JPG + PDF).
-- **Entrega**: Se entrega el archivo **Editable original (.AI - Illustrator)**.
+- **Alcance**: Diseño de alto nivel, desarrollo de marca o complejidad máxima.
+- **DISCLAIMER**: Incluye hasta 3 cambios. Al finalizar, se entrega el paquete completo: **JPG + PDF + Archivo editable original (.AI - Illustrator)**. Este archivo te permite hacer modificaciones futuras con cualquier diseñador.
 
 
 ## Catálogo de Productos y Precios

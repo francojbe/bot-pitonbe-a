@@ -4,11 +4,25 @@ __pycache__/
 *$py.class
 venv/
 .venv/
-.env
 
 # Entorno
 .env
 .env.local
 
-# Logs
+# Logs y Chat
 *.log
+*_chat.txt
+full_chat.txt
+last_payload.json
+
+# Herramientas locales temporales
+test_*.py
+get_*.py
+debug_*.py
+list_*.py
+analyze_*.py
+*.json
+!composer.json
+!package.json
+!firebase.json
+!package-lock.json
