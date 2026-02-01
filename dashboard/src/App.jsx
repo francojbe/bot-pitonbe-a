@@ -233,32 +233,32 @@ function App() {
       {/* Delete Confirmation Modal */}
       {deleteConfirmation.isOpen && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/20 dark:bg-[#0B1437]/60 backdrop-blur-sm transition-colors" onClick={() => setDeleteConfirmation({ ...deleteConfirmation, isOpen: false })}></div>
-          <div className="relative bg-white dark:bg-[#111C44] rounded-2xl shadow-2xl p-6 max-w-sm w-full animate-in zoom-in duration-200">
+          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm transition-colors" onClick={() => setDeleteConfirmation({ ...deleteConfirmation, isOpen: false })}></div>
+          <div className="relative bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full animate-in zoom-in duration-200 border border-[#E0E5F2]">
             <div className="flex flex-col items-center text-center">
-              <div className="w-12 h-12 bg-red-100/50 text-red-600 dark:bg-red-500/10 dark:text-red-500 rounded-full flex items-center justify-center mb-4">
+              <div className="w-12 h-12 bg-red-100/50 text-red-600 rounded-full flex items-center justify-center mb-4">
                 <Trash2 size={24} />
               </div>
-              <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">¿Eliminar {deleteConfirmation.ids.length} orden(es)?</h3>
-              <p className="text-sm text-[var(--text-secondary)] mb-6">Esta acción no se puede deshacer. Las órdenes se borrarán permanentemente.</p>
+              <h3 className="text-lg font-bold text-[#2B3674] mb-2">¿Eliminar {deleteConfirmation.ids.length} orden(es)?</h3>
+              <p className="text-sm text-[#A3AED0] mb-6">Esta acción no se puede deshacer. Las órdenes se borrarán permanentemente.</p>
 
               <div className="flex items-center gap-2 mb-6 cursor-pointer" onClick={() => setDeleteConfirmation(prev => ({ ...prev, dontAskAgain: !prev.dontAskAgain }))}>
-                <div className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${deleteConfirmation.dontAskAgain ? 'bg-[var(--brand-primary)] border-[var(--brand-primary)] text-white' : 'border-gray-300 dark:border-white/20'}`}>
+                <div className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${deleteConfirmation.dontAskAgain ? 'bg-[var(--brand-primary)] border-[var(--brand-primary)] text-white' : 'border-gray-300'}`}>
                   {deleteConfirmation.dontAskAgain && <CheckSquare size={14} />}
                 </div>
-                <span className="text-xs font-medium text-[var(--text-secondary)]">No volver a preguntar</span>
+                <span className="text-xs font-medium text-[#A3AED0]">No volver a preguntar</span>
               </div>
 
               <div className="flex gap-3 w-full">
                 <button
                   onClick={() => setDeleteConfirmation({ ...deleteConfirmation, isOpen: false })}
-                  className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-[#A3AED0] hover:bg-gray-50 hover:text-[#2B3674] transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={confirmDelete}
-                  className="flex-1 py-2.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 ring-1 ring-red-100 dark:bg-red-500/20 dark:text-red-500 dark:hover:bg-red-500/30 dark:ring-0 text-sm font-bold transition-all"
+                  className="flex-1 py-2.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 ring-1 ring-red-100 text-sm font-bold transition-all"
                 >
                   Eliminar
                 </button>
