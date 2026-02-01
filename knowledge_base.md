@@ -1,4 +1,4 @@
-# 🏢 PB Imprenta SPA - Base de Conocimiento Oficial
+🏢 PB Imprenta SPA - Base de Conocimiento Oficial
 
 📍 *Información General y Ubicación*
 PB Imprenta SPA (Pitrón Beña) es una imprenta profesional en Santiago Centro, Chile.
