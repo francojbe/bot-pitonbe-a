@@ -9,7 +9,7 @@ import {
   BarChart2, PieChart, Moon, Sun, CheckCircle2, Clock,
   AlertTriangle, ChevronRight, Send, Paperclip
 } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart as RePieChart, Pie, Legend } from 'recharts'
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart as RePieChart, Pie, Legend, CartesianGrid } from 'recharts'
 
 function App() {
   const [orders, setOrders] = useState([])
@@ -17,7 +17,7 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [activeTab, setActiveTab] = useState('dashboard')
-  const [viewMode, setViewMode] = useState(() => localStorage.getItem('dashboard_view_mode') || 'kanban') // 'kanban' or 'list'
+  const [viewMode, setViewMode] = useState(() => localStorage.getItem('dashboard_view_mode') || 'kanban')
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') === 'dark')
 
   // Leads Management State
@@ -25,6 +25,7 @@ function App() {
   const [isCreatingLead, setIsCreatingLead] = useState(false)
   const [selectedLead, setSelectedLead] = useState(null)
   const [leadForm, setLeadForm] = useState({ name: '', phone_number: '', rut: '', address: '', email: '' })
+  const [leadSearch, setLeadSearch] = useState('')
 
   // Theme Toggle
   useEffect(() => {
@@ -33,7 +34,6 @@ function App() {
     localStorage.setItem('theme', isDarkMode ? 'dark' : 'light')
   }, [isDarkMode])
 
-  // Persist View Mode
   useEffect(() => {
     localStorage.setItem('dashboard_view_mode', viewMode)
   }, [viewMode])
@@ -128,7 +128,6 @@ function App() {
               ))}
             </div>
 
-            {/* View Mode Toggle (Only on Dashboard) */}
             {activeTab === 'dashboard' && (
               <div className={`flex p-1 rounded-lg border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200'}`}>
                 <button onClick={() => setViewMode('kanban')} className={`p-1.5 rounded-md transition-all ${viewMode === 'kanban' ? (isDarkMode ? 'bg-zinc-700 text-white' : 'bg-gray-100 text-black shadow-sm') : 'opacity-40 hover:opacity-100'}`} title="Vista Kanban"><LayoutGrid size={16} /></button>
@@ -150,7 +149,7 @@ function App() {
             ? <KanbanBoard orders={orders} onSelectOrder={setSelectedOrder} isDarkMode={isDarkMode} />
             : <ListView orders={orders} onSelectOrder={setSelectedOrder} isDarkMode={isDarkMode} />
         )}
-        {activeTab === 'clientes' && <LeadsView leads={leads} onEdit={(l) => { setSelectedLead(l); setLeadForm(l); setIsEditingLead(true) }} isDarkMode={isDarkMode} openCreate={() => { setLeadForm({}); setIsCreatingLead(true) }} />}
+        {activeTab === 'clientes' && <LeadsView leads={leads} orders={orders} leadSearch={leadSearch} setLeadSearch={setLeadSearch} onEdit={(l) => { setSelectedLead(l); setLeadForm(l); setIsEditingLead(true) }} isDarkMode={isDarkMode} openCreate={() => { setLeadForm({}); setIsCreatingLead(true) }} />}
         {activeTab === 'reportes' && <ReportsView orders={orders} isDarkMode={isDarkMode} />}
       </main>
 
@@ -190,7 +189,6 @@ function KanbanBoard({ orders, onSelectOrder, isDarkMode }) {
         const colOrders = orders.filter(o => o.status === status)
         return (
           <div key={status} className={`min-w-[300px] w-[320px] max-w-[320px] flex flex-col h-full rounded-3xl border transition-colors ${isDarkMode ? 'bg-[#121214] border-white/5' : 'bg-gray-50/50 border-gray-100'}`}>
-            {/* Header */}
             <div className={`p-4 flex justify-between items-center border-b ${isDarkMode ? 'border-white/5' : 'border-gray-100'}`}>
               <div className="flex items-center gap-2">
                 <span className={`w-2 h-2 rounded-full ${getStatusColor(status)}`}></span>
@@ -199,7 +197,6 @@ function KanbanBoard({ orders, onSelectOrder, isDarkMode }) {
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isDarkMode ? 'bg-white/10' : 'bg-gray-200/50'}`}>{colOrders.length}</span>
             </div>
 
-            {/* List */}
             <div className="flex-1 overflow-y-auto p-3 space-y-3">
               {colOrders.map(order => (
                 <OrderCard key={order.id} order={order} onClick={() => onSelectOrder(order)} isDarkMode={isDarkMode} />
@@ -223,12 +220,13 @@ function ListView({ orders, onSelectOrder, isDarkMode }) {
         <div className="w-32 text-[10px] uppercase font-black opacity-40">Estado</div>
         <div className="w-32 text-right text-[10px] uppercase font-black opacity-40">Monto</div>
         <div className="w-32 text-right text-[10px] uppercase font-black opacity-40">Saldo</div>
+        <div className="w-10"></div>
       </div>
       <div className="flex-1 overflow-y-auto">
         {orders.map(order => {
           const balance = (order.total_amount || 0) - (order.deposit_amount || 0)
           return (
-            <div key={order.id} onClick={() => onSelectOrder(order)} className={`flex items-center px-6 py-4 border-b cursor-pointer transition-colors ${isDarkMode ? 'border-white/5 hover:bg-white/5' : 'border-gray-100 hover:bg-gray-50'}`}>
+            <div key={order.id} onClick={() => onSelectOrder(order)} className={`flex items-center px-6 py-4 border-b cursor-pointer transition-colors group ${isDarkMode ? 'border-white/5 hover:bg-white/5' : 'border-gray-100 hover:bg-gray-50'}`}>
               <div className="flex-1">
                 <div className="font-bold text-sm mb-0.5">{order.description || 'Sin descripción'}</div>
                 <div className="text-xs opacity-60 flex items-center gap-2">
@@ -242,14 +240,19 @@ function ListView({ orders, onSelectOrder, isDarkMode }) {
                   {order.status}
                 </span>
               </div>
-              <div className="w-32 text-right font-mono font-bold text-sm">
-                ${order.total_amount?.toLocaleString()}
+              <div className="w-32 text-right font-mono font-bold text-sm opacity-60">
+                ${order.total_amount?.toLocaleString('es-CL')}
               </div>
               <div className="w-32 text-right">
                 {balance <= 0
                   ? <span className="text-[10px] font-bold text-green-500 bg-green-500/10 px-2 py-1 rounded-md">PAGADO</span>
-                  : <span className="text-[10px] font-bold text-red-500 bg-red-500/10 px-2 py-1 rounded-md">-${balance.toLocaleString()}</span>
+                  : <span className="text-[10px] font-bold text-red-500 bg-red-500/10 px-2 py-1 rounded-md">-${balance.toLocaleString('es-CL')}</span>
                 }
+              </div>
+              <div className="w-10 flex justify-end">
+                <button className="p-2 rounded-lg hover:bg-gray-200/50 dark:hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <MoreHorizontal size={16} />
+                </button>
               </div>
             </div>
           )
@@ -266,7 +269,9 @@ function OrderCard({ order, onClick, isDarkMode }) {
     <div onClick={onClick} className={`p-4 rounded-2xl border shadow-sm cursor-pointer group hover:-translate-y-1 transition-all duration-200 ${isDarkMode ? 'bg-[#18181b] border-white/5 hover:border-[#E96A51]/50' : 'bg-white border-gray-100 hover:border-[#E96A51]/30 hover:shadow-md'}`}>
       <div className="flex justify-between items-start mb-2">
         <span className="text-[10px] font-mono opacity-40">#{order.id.slice(0, 4)}</span>
-        {order.status === 'URGENTE' && <span className="text-[9px] font-bold bg-amber-500/10 text-amber-500 px-1.5 rounded">URG</span>}
+        <span className={`px-2 py-0.5 rounded text-[9px] font-black ${getStatusColor(order.status).replace('bg-', 'bg-opacity-20 text-').replace('text-[#', 'text-gray-')}`}>
+          {order.status}
+        </span>
       </div>
       <h4 className={`text-sm font-bold leading-tight mb-3 line-clamp-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>{order.description || 'Sin descripción'}</h4>
       <div className="flex justify-between items-end">
@@ -278,7 +283,7 @@ function OrderCard({ order, onClick, isDarkMode }) {
         </div>
         <div className="text-right">
           <div className={`text-[10px] font-bold ${isPaid ? 'text-green-500' : 'text-red-500'}`}>
-            {isPaid ? 'PAGADO' : `Faltan $${balance.toLocaleString()}`}
+            {isPaid ? 'PAGADO' : `Faltan $${balance.toLocaleString('es-CL')}`}
           </div>
         </div>
       </div>
@@ -287,6 +292,8 @@ function OrderCard({ order, onClick, isDarkMode }) {
 }
 
 function ReportsView({ orders, isDarkMode }) {
+  const [dateRange, setDateRange] = useState('month') // today, week, month
+
   // KPI Calculations
   const totalSales = orders.reduce((acc, o) => acc + (o.total_amount || 0), 0)
   const activeOrders = orders.filter(o => ['DISEÑO', 'PRODUCCIÓN'].includes(o.status)).length
@@ -300,13 +307,31 @@ function ReportsView({ orders, isDarkMode }) {
     { name: 'Listo', value: orders.filter(o => o.status === 'LISTO').length, color: '#34C759' },
   ].filter(d => d.value > 0)
 
+  // Dummy Line Chart Data based on Orders
+  const salesByDate = orders.reduce((acc, o) => {
+    const date = new Date(o.created_at).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' });
+    acc[date] = (acc[date] || 0) + (o.total_amount || 0);
+    return acc;
+  }, {});
+
+  const lineChartData = Object.keys(salesByDate).map(d => ({ date: d, ventas: salesByDate[d] })).slice(-7).reverse();
+
   return (
     <div className="h-full overflow-y-auto animate-in fade-in zoom-in duration-300 pb-20">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-lg font-black tracking-tight">Reporte General</h2>
+        <div className={`p-1 rounded-xl flex ${isDarkMode ? 'bg-white/5' : 'bg-gray-100'}`}>
+          {['Hoy', 'Semana', 'Mes'].map(r => (
+            <button key={r} onClick={() => setDateRange(r)} className={`px-4 py-1 text-[10px] font-bold uppercase rounded-lg transition-all ${dateRange === r ? (isDarkMode ? 'bg-[#27272a] shadow text-white' : 'bg-white shadow text-black') : 'opacity-40'}`}>{r}</button>
+          ))}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <KpiCard title="Ventas Totales" value={`$${totalSales.toLocaleString()}`} icon={<DollarSign size={20} />} isDarkMode={isDarkMode} />
+        <KpiCard title="Ventas Totales" value={`$${totalSales.toLocaleString('es-CL')}`} icon={<DollarSign size={20} />} isDarkMode={isDarkMode} />
         <KpiCard title="En Proceso" value={activeOrders} icon={<Clock size={20} />} isDarkMode={isDarkMode} />
         <KpiCard title="Completadas" value={completedOrders} icon={<CheckCircle2 size={20} />} isDarkMode={isDarkMode} />
-        <KpiCard title="Ticket Promedio" value={`$${Math.round(avgTicket).toLocaleString()}`} icon={<BarChart2 size={20} />} isDarkMode={isDarkMode} />
+        <KpiCard title="Ticket Promedio" value={`$${Math.round(avgTicket).toLocaleString('es-CL')}`} icon={<BarChart2 size={20} />} isDarkMode={isDarkMode} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-96">
@@ -315,7 +340,7 @@ function ReportsView({ orders, isDarkMode }) {
           <div className="flex-1">
             <ResponsiveContainer width="100%" height="100%">
               <RePieChart>
-                <Pie data={statusData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                <Pie data={statusData} innerRadius={80} outerRadius={100} paddingAngle={5} dataKey="value">
                   {statusData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
                   ))}
@@ -327,9 +352,22 @@ function ReportsView({ orders, isDarkMode }) {
           </div>
         </div>
 
-        <div className={`p-6 rounded-3xl border shadow-sm flex flex-col items-center justify-center text-center space-y-4 ${isDarkMode ? 'bg-[#121214] border-white/5' : 'bg-white border-gray-100'}`}>
-          <div className={`p-4 rounded-full ${isDarkMode ? 'bg-white/5' : 'bg-gray-100'}`}><BarChart2 size={32} className="opacity-40" /></div>
-          <p className="text-sm font-bold opacity-40">Gráfico de Ventas Mensuales<br />(Próximamente con más datos)</p>
+        <div className={`p-6 rounded-3xl border shadow-sm flex flex-col ${isDarkMode ? 'bg-[#121214] border-white/5' : 'bg-white border-gray-100'}`}>
+          <h3 className="text-sm font-bold opacity-60 uppercase mb-4">Tendencia de Ventas</h3>
+          <div className="flex-1">
+            {lineChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={lineChartData}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.1} vertical={false} />
+                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#888' }} dy={10} />
+                  <Line type="monotone" dataKey="ventas" stroke="#E96A51" strokeWidth={3} dot={{ r: 4, fill: '#E96A51' }} activeDot={{ r: 6 }} />
+                  <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', backgroundColor: isDarkMode ? '#27272a' : '#fff' }} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full opacity-30 text-xs font-bold uppercase">Sin datos suficientes</div>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -358,11 +396,11 @@ function getStatusColor(status) {
   return colors[status] || 'bg-gray-500'
 }
 
-// Stub components...
 function OrderDrawer({ order, onClose, isDarkMode, updateOrderLocal }) {
   const [formData, setFormData] = useState({ ...order })
   const [saving, setSaving] = useState(false)
 
+  // Auto-save logic...
   useEffect(() => {
     const timer = setTimeout(async () => {
       if (JSON.stringify(formData) !== JSON.stringify(order)) {
@@ -411,21 +449,18 @@ function OrderDrawer({ order, onClose, isDarkMode, updateOrderLocal }) {
               </div>
             </div>
           </div>
+          {/* Tech Specs (Reusable) */}
           <div className="space-y-4">
             <h3 className="text-xs font-black uppercase opacity-40 flex items-center gap-2"><ClipboardList size={14} /> Especificaciones Técnicas</h3>
             <div className={`rounded-3xl p-6 border grid grid-cols-2 gap-6 ${isDarkMode ? 'bg-[#18181b] border-white/5' : 'bg-white border-gray-100'}`}>
               <div className="col-span-2">
                 <label className="text-[11px] font-bold opacity-60 mb-1.5 block">Material / Papel</label>
-                <select value={formData.material || ''} onChange={(e) => handleChange('material', e.target.value)} className={`w-full p-3 rounded-xl outline-none font-medium text-sm transition-all ${isDarkMode ? 'bg-black/20 border border-white/10 focus:border-[#E96A51]' : 'bg-gray-50 border border-gray-200 focus:border-[#E96A51]'}`}>
+                <select value={formData.material || ''} onChange={(e) => handleChange('material', e.target.value)} className={`w-full p-3 rounded-xl outline-none font-medium text-sm transition-all ${isDarkMode ? 'bg-black/20 border border-white/10' : 'bg-gray-50 border border-gray-200'}`}>
                   <option value="">Seleccionar Material...</option>
-                  <option value="Couché 300g">Couché 300g (Tarjetas/Flyers Gruesos)</option>
-                  <option value="Couché 170g">Couché 170g (Flyers Standard)</option>
-                  <option value="Couché 130g">Couché 130g (Volantes Económicos)</option>
-                  <option value="Bond 80g">Bond 80g (Documentos/Planos)</option>
-                  <option value="Adhesivo PVC">Adhesivo PVC (Stickers/Etiquetas)</option>
-                  <option value="Adhesivo Papel">Adhesivo Papel</option>
-                  <option value="Tela PVC">Tela PVC (Pendones)</option>
-                  <option value="Sintético">Sintético (Trovi)</option>
+                  <option value="Couché 300g">Couché 300g</option>
+                  <option value="Couché 170g">Couché 170g</option>
+                  <option value="Bond 80g">Bond 80g</option>
+                  <option value="Adhesivo PVC">Adhesivo PVC</option>
                 </select>
               </div>
               <div>
@@ -436,35 +471,15 @@ function OrderDrawer({ order, onClose, isDarkMode, updateOrderLocal }) {
                 <label className="text-[11px] font-bold opacity-60 mb-1.5 block">Cantidad</label>
                 <input type="number" value={formData.quantity || ''} onChange={(e) => handleChange('quantity', parseInt(e.target.value))} className={`w-full p-3 rounded-xl outline-none font-medium text-sm ${isDarkMode ? 'bg-black/20 border border-white/10' : 'bg-gray-50 border border-gray-200'}`} />
               </div>
-              <div className="flex items-center gap-3 p-3 rounded-xl border border-dashed border-gray-200 dark:border-white/10">
-                <span className="text-[10px] font-bold opacity-60 uppercase">Color</span>
-                <button onClick={() => handleChange('is_color', !formData.is_color)} className={`relative w-10 h-5 rounded-full transition-colors ${formData.is_color ? 'bg-indigo-500' : 'bg-gray-400'}`}>
-                  <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${formData.is_color ? 'left-5.5' : 'left-0.5'}`} />
-                </button>
-              </div>
-              <div className="flex items-center gap-3 p-3 rounded-xl border border-dashed border-gray-200 dark:border-white/10">
-                <span className="text-[10px] font-bold opacity-60 uppercase">Caras</span>
-                <select className="bg-transparent text-xs font-bold outline-none" value={formData.print_sides || '1 Tiro'} onChange={(e) => handleChange('print_sides', e.target.value)}>
-                  <option value="1 Tiro">1 Tiro</option>
-                  <option value="2 T/R">2 T/R</option>
-                </select>
-              </div>
-              <div className="col-span-2">
-                <label className="text-[11px] font-bold opacity-60 mb-1.5 block">Terminaciones</label>
-                <div className="flex flex-wrap gap-2">
-                  {['Corte', 'Troquelado', 'Polilaminado Mate', 'Polilaminado Brillante', 'Plegado', 'Ojetillos'].map(term => {
-                    const active = formData.finishings?.includes(term)
-                    return <button key={term} onClick={() => { const current = formData.finishings || []; handleChange('finishings', active ? current.filter(t => t !== term) : [...current, term]) }} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${active ? 'bg-indigo-500 text-white border-indigo-500' : (isDarkMode ? 'border-white/10 hover:border-white/30' : 'border-gray-200 hover:border-gray-300')}`}>{term}</button>
-                  })}
-                </div>
-              </div>
             </div>
           </div>
+
+          {/* Financials with Registration Button */}
           <div className="space-y-4">
             <h3 className="text-xs font-black uppercase opacity-40 flex items-center gap-2"><DollarSign size={14} /> Finanzas</h3>
             <div className={`rounded-3xl p-6 border grid grid-cols-2 gap-6 relative overflow-hidden ${isDarkMode ? 'bg-[#18181b] border-white/5' : 'bg-white border-gray-100'}`}>
               <div className="col-span-2 md:col-span-1">
-                <label className="text-[11px] font-bold opacity-60 mb-1.5 block">Precio Total (IVA Inc)</label>
+                <label className="text-[11px] font-bold opacity-60 mb-1.5 block">Total (IVA Inc)</label>
                 <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm opacity-50">$</span><input type="number" value={formData.total_amount || 0} onChange={(e) => handleChange('total_amount', parseInt(e.target.value))} className={`w-full pl-6 pr-3 py-2 rounded-xl font-black text-lg outline-none ${isDarkMode ? 'bg-black/20' : 'bg-gray-50'}`} /></div>
               </div>
               <div className="col-span-2 md:col-span-1">
@@ -472,33 +487,55 @@ function OrderDrawer({ order, onClose, isDarkMode, updateOrderLocal }) {
                 <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm opacity-50">$</span><input type="number" value={formData.deposit_amount || 0} onChange={(e) => handleChange('deposit_amount', parseInt(e.target.value))} className={`w-full pl-6 pr-3 py-2 rounded-xl font-black text-lg outline-none ${isDarkMode ? 'bg-black/20' : 'bg-gray-50'}`} /></div>
               </div>
               <div className="col-span-2 pt-4 border-t border-dashed border-gray-200 dark:border-white/10 flex justify-between items-center">
-                <div className="text-xs opacity-60 space-y-1"><div>Neto: ${neto.toLocaleString()}</div><div>IVA (19%): ${iva.toLocaleString()}</div></div>
-                <div className={`text-right px-4 py-2 rounded-xl border ${balance <= 0 ? 'bg-green-500/10 border-green-500/20 text-green-500' : 'bg-red-500/10 border-red-500/20 text-red-500'}`}><div className="text-[9px] font-black uppercase">Saldo Pendiente</div><div className="text-xl font-black tracking-tight">${balance.toLocaleString()}</div></div>
+                <div className="text-xs opacity-60 space-y-1"><div>Neto: ${neto.toLocaleString('es-CL')}</div><div>IVA: ${iva.toLocaleString('es-CL')}</div></div>
+                <div className="flex items-center gap-3">
+                  {balance > 0 && (<button onClick={() => handleChange('deposit_amount', formData.total_amount)} className="text-[10px] font-bold uppercase text-green-500 hover:bg-green-500/10 px-3 py-2 rounded-lg transition-colors">+ Registrar Pago</button>)}
+                  <div className={`text-right px-4 py-2 rounded-xl border ${balance <= 0 ? 'bg-green-500/10 border-green-500/20 text-green-500' : 'bg-red-500/10 border-red-500/20 text-red-500'}`}><div className="text-[9px] font-black uppercase">Saldo</div><div className="text-xl font-black tracking-tight">${balance.toLocaleString('es-CL')}</div></div>
+                </div>
               </div>
             </div>
           </div>
+
+          {/* File & Delivery */}
           <div className="space-y-4 pb-20">
             <h3 className="text-xs font-black uppercase opacity-40 flex items-center gap-2"><Send size={14} /> Entrega & Archivos</h3>
             <div className={`p-4 rounded-3xl border flex items-center gap-4 ${isDarkMode ? 'bg-[#18181b] border-white/5' : 'bg-white border-gray-100'}`}>
               <div className="w-12 h-12 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center"><FileText size={24} /></div>
-              <div className="flex-1"><p className="text-xs font-bold opacity-60">Archivo de Impresión</p>{order.file_url ? (<a href={order.file_url} target="_blank" className="font-bold underline hover:text-[#E96A51] truncate block max-w-[200px]">Ver PDF Adjunto</a>) : (<span className="text-sm font-bold opacity-40 italic">No hay archivo adjunto</span>)}</div>
+              <div className="flex-1">
+                <p className="text-xs font-bold opacity-60">Archivo de Impresión</p>
+                {order.file_url ? (
+                  <div className="group relative">
+                    <a href={order.file_url} target="_blank" className="font-bold underline hover:text-[#E96A51] truncate block max-w-[200px]">Ver PDF Adjunto</a>
+                    {order.file_url.endsWith('.pdf') && <span className="text-[9px] px-1.5 py-0.5 bg-gray-200 rounded text-gray-500 ml-2">PDF</span>}
+                  </div>
+                ) : <span className="text-sm font-bold opacity-40 italic">No hay archivo</span>}
+              </div>
             </div>
           </div>
         </div>
-        <div className={`p-6 border-t ${isDarkMode ? 'border-white/5 bg-[#09090b]' : 'border-gray-100 bg-white'}`}>
-          <button onClick={() => alert('Función de WhatsApp Template en desarrollo')} className="w-full py-4 rounded-xl bg-[#25D366] hover:bg-[#1ebd59] text-white font-bold flex items-center justify-center gap-2 transition-all"><Send size={18} /> Enviar Aviso por WhatsApp</button>
+        <div className={`p-6 border-t grid grid-cols-2 gap-4 ${isDarkMode ? 'border-white/5 bg-[#09090b]' : 'border-gray-100 bg-white'}`}>
+          <button onClick={onClose} className={`py-4 rounded-xl font-bold text-xs uppercase tracking-widest ${isDarkMode ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-gray-100 hover:bg-gray-200 text-black'}`}>Cerrar</button>
+          <button onClick={() => alert('WhatsApp')} className="py-4 rounded-xl bg-[#25D366] hover:bg-[#1ebd59] text-white font-bold flex items-center justify-center gap-2 transition-all"><Send size={16} /> WhatsApp</button>
         </div>
       </div>
     </div>
   )
 }
 
-function LeadsView({ leads, onEdit, isDarkMode, openCreate }) {
+function LeadsView({ leads, orders, leadSearch, setLeadSearch, onEdit, isDarkMode, openCreate }) {
+  const filteredLeads = leads.filter(l => l.name?.toLowerCase().includes(leadSearch?.toLowerCase() || ''))
+
   return (
     <div className="h-full overflow-y-auto animate-in fade-in zoom-in duration-300">
-      <div className="flex justify-between items-end mb-6">
-        <div><h1 className="text-2xl font-black tracking-tight mb-1">Mis Clientes</h1><p className="font-medium opacity-60 text-sm">Directorio de contactos ({leads.length}).</p></div>
-        <button onClick={openCreate} className="bg-[#E96A51] text-white h-10 px-4 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg hover:shadow-[#E96A51]/20 active:scale-95 transition-all"><UserPlus size={16} /> Nuevo Cliente</button>
+      <div className="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
+        <div><h1 className="text-2xl font-black tracking-tight mb-1">Mis Clientes</h1><p className="font-medium opacity-60 text-sm">Directorio de contactos.</p></div>
+        <div className="flex gap-4 w-full md:w-auto">
+          <div className="relative flex-1 md:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" size={16} />
+            <input type="text" placeholder="Buscar cliente..." value={leadSearch} onChange={e => setLeadSearch(e.target.value)} className={`w-full pl-10 pr-4 py-2.5 rounded-xl text-sm font-bold outline-none ${isDarkMode ? 'bg-white/5' : 'bg-gray-100'}`} />
+          </div>
+          <button onClick={openCreate} className="bg-[#E96A51] text-white h-10 px-4 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg hover:shadow-[#E96A51]/20 active:scale-95 transition-all"><UserPlus size={16} /> Nuevo</button>
+        </div>
       </div>
       <div className={`rounded-3xl border overflow-hidden ${isDarkMode ? 'bg-[#121214] border-white/5' : 'bg-white border-gray-100'}`}>
         <table className="w-full text-left">
@@ -506,24 +543,32 @@ function LeadsView({ leads, onEdit, isDarkMode, openCreate }) {
             <tr>
               <th className="px-6 py-4 text-[10px] uppercase font-black opacity-40">Cliente</th>
               <th className="px-6 py-4 text-[10px] uppercase font-black opacity-40">Contacto</th>
+              <th className="px-6 py-4 text-[10px] uppercase font-black opacity-40">Métricas</th>
               <th className="px-6 py-4 text-[10px] uppercase font-black opacity-40 text-right">Acciones</th>
             </tr>
           </thead>
           <tbody className={`divide-y ${isDarkMode ? 'divide-white/5' : 'divide-gray-100'}`}>
-            {leads.map(lead => (
-              <tr key={lead.id} className={`group hover:bg-gray-50 ${isDarkMode ? 'hover:bg-white/5' : ''}`}>
-                <td className="px-6 py-4">
-                  <div className="font-bold text-sm">{lead.name}</div>
-                  <div className="text-xs opacity-60">ID: {lead.id.slice(0, 4)}</div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2 text-xs font-medium"><Phone size={12} /> {lead.phone_number}</div>
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <button onClick={() => onEdit(lead)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors"><Edit2 size={14} /></button>
-                </td>
-              </tr>
-            ))}
+            {filteredLeads.map(lead => {
+              const clientOrders = (orders || []).filter(o => o.lead_id === lead.id);
+              return (
+                <tr key={lead.id} className={`group hover:bg-gray-50 ${isDarkMode ? 'hover:bg-white/5' : ''}`}>
+                  <td className="px-6 py-4">
+                    <div className="font-bold text-sm">{lead.name}</div>
+                    <div className="text-xs opacity-60">ID: {lead.id.slice(0, 4)}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2 text-xs font-medium"><Phone size={12} /> {lead.phone_number}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-xs font-bold">{clientOrders.length} Pedidos</div>
+                    {clientOrders.length > 0 && <div className="text-[10px] opacity-50">Último: {new Date(clientOrders[0].created_at).toLocaleDateString()}</div>}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <button onClick={() => onEdit(lead)} className="p-3 hover:bg-gray-200 rounded-xl transition-colors"><Edit2 size={16} /></button>
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
