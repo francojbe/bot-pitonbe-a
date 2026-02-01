@@ -637,7 +637,10 @@ function OrderDrawer({ order, onClose, updateOrderLocal }) {
 
     // 2. Call Backend to Notify
     try {
-      const response = await fetch('http://localhost:8000/orders/update_status', {
+      // URL de Producción (EasyPanel)
+      const BACKEND_URL = "https://recuperadora-agente-pb.nojauc.easypanel.host";
+
+      const response = await fetch(`${BACKEND_URL}/orders/update_status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ order_id: order.id, new_status: newStatus })
