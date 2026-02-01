@@ -42,6 +42,7 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [viewMode, setViewMode] = useState(() => localStorage.getItem('dashboard_view_mode') || 'kanban')
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') === 'dark')
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
 
   // Drawer & Modals
   const [selectedOrder, setSelectedOrder] = useState(null)
@@ -125,7 +126,7 @@ function App() {
       <Toaster position="top-center" richColors theme={isDarkMode ? 'dark' : 'light'} />
 
       {/* LEFT SIDEBAR (Horizon Style) */}
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} collapsed={isSidebarCollapsed} setCollapsed={setIsSidebarCollapsed} />
 
       {/* CENTER PANEL */}
       <div className="flex-1 flex flex-col h-full relative overflow-hidden">
@@ -203,7 +204,7 @@ function App() {
 
 // --- SUB-VIEWS ---
 
-function Sidebar({ activeTab, setActiveTab }) {
+function Sidebar({ activeTab, setActiveTab, collapsed, setCollapsed }) {
   const menuItems = [
     { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
     { id: 'clientes', icon: <Users size={20} />, label: 'Clientes' },
@@ -211,10 +212,18 @@ function Sidebar({ activeTab, setActiveTab }) {
   ]
 
   return (
-    <aside className="w-72 bg-[var(--bg-card)] hidden md:flex flex-col h-full p-6 border-r border-transparent dark:border-white/5 transition-colors duration-300">
-      <div className="flex items-center gap-3 px-2 mb-10">
-        <div className="bg-gradient-to-br from-[#4318FF] to-[#868CFF] w-8 h-8 rounded-lg flex items-center justify-center text-white"><LayoutDashboard size={18} /></div>
-        <div className="text-[var(--text-primary)] font-black text-xl tracking-tighter uppercase">PITRÓN BEÑA</div>
+    <aside className={`${collapsed ? 'w-20' : 'w-72'} bg-[var(--bg-card)] hidden md:flex flex-col h-full p-4 border-r border-transparent dark:border-white/5 transition-all duration-300 relative`}>
+      {/* Retract Button */}
+      <button
+        onClick={() => setCollapsed(!collapsed)}
+        className="absolute -right-3 top-8 w-6 h-6 bg-white dark:bg-[#111C44] text-[var(--brand-primary)] rounded-full shadow-md border border-gray-100 dark:border-white/10 z-50 hover:scale-110 transition-transform flex items-center justify-center cursor-pointer"
+      >
+        {collapsed ? <ChevronRight size={14} /> : <div className="text-xs font-bold">{'<'}</div>}
+      </button>
+
+      <div className={`flex items-center gap-3 px-2 mb-10 ${collapsed ? 'justify-center' : ''}`}>
+        <div className="bg-gradient-to-br from-[#4318FF] to-[#868CFF] min-w-[32px] w-8 h-8 rounded-lg flex items-center justify-center text-white"><LayoutDashboard size={18} /></div>
+        {!collapsed && <div className="text-[var(--text-primary)] font-black text-xl tracking-tighter uppercase whitespace-nowrap overflow-hidden">PITRÓN</div>}
       </div>
 
       <div className="space-y-2 flex-1">
@@ -224,11 +233,12 @@ function Sidebar({ activeTab, setActiveTab }) {
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all relative ${isActive ? 'font-bold text-[var(--text-primary)]' : 'text-[var(--text-secondary)] font-medium hover:text-[var(--text-primary)]'}`}
+              title={collapsed ? item.label : ''}
+              className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all relative group ${isActive ? 'font-bold text-[var(--text-primary)]' : 'text-[var(--text-secondary)] font-medium hover:text-[var(--text-primary)]'} ${collapsed ? 'justify-center' : ''}`}
             >
-              {isActive && <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[var(--brand-primary)] rounded-l-lg"></div>}
-              <span className={isActive ? 'text-[var(--brand-primary)]' : ''}>{item.icon}</span>
-              {item.label}
+              {isActive && !collapsed && <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[var(--brand-primary)] rounded-l-lg"></div>}
+              <span className={`${isActive ? 'text-[var(--brand-primary)]' : ''} transition-colors group-hover:scale-110 duration-200`}>{item.icon}</span>
+              {!collapsed && <span className="whitespace-nowrap overflow-hidden">{item.label}</span>}
             </button>
           )
         })}
@@ -324,7 +334,7 @@ function KanbanBoard({ orders, onSelectOrder }) {
   const columns = ['NUEVO', 'DISEÑO', 'PRODUCCIÓN', 'LISTO', 'ENTREGADO']
 
   return (
-    <div className="flex gap-6 overflow-x-auto pb-6 h-full items-start">
+    <div className="flex gap-4 overflow-x-auto pb-6 h-full items-start w-full">
       {columns.map(col => {
         const items = orders.filter(o => o.status === col)
         return (
@@ -333,10 +343,10 @@ function KanbanBoard({ orders, onSelectOrder }) {
               <div
                 ref={provided.innerRef}
                 {...provided.droppableProps}
-                className={`min-w-[300px] w-[300px] flex flex-col rounded-2xl transition-colors ${snapshot.isDraggingOver ? 'bg-[var(--brand-primary)]/5 ring-2 ring-[var(--brand-primary)]/10' : ''}`}
+                className={`flex-1 min-w-[260px] flex flex-col rounded-2xl transition-colors ${snapshot.isDraggingOver ? 'bg-[var(--brand-primary)]/5 ring-2 ring-[var(--brand-primary)]/10' : ''}`}
               >
                 <div className="flex items-center justify-between mb-4 px-2">
-                  <h3 className="text-sm font-bold text-[var(--text-primary)] tracking-tight">{col}</h3>
+                  <h3 className="text-sm font-bold text-[var(--text-primary)] tracking-tight whitespace-nowrap">{col}</h3>
                   <span className="bg-[var(--bg-card)] text-[var(--brand-primary)] text-xs font-bold px-3 py-1 rounded-full shadow-sm">{items.length}</span>
                 </div>
                 <div className="space-y-4 min-h-[150px]">
