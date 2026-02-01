@@ -514,110 +514,178 @@ function OrderDrawer({ order, onClose, updateOrderLocal }) {
                 </div>
               </div>
             </div>
-          </div>
+            {/* Details Section Structured */}
+            <div>
+              <label className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-3 block">Especificaciones del Pedido</label>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Material</label>
+                  <select
+                    value={form.material || ''}
+                    onChange={e => setForm({ ...form, material: e.target.value })}
+                    className="w-full p-3 rounded-xl bg-[#F4F7FE] dark:bg-white/5 border-none outline-none text-[var(--text-primary)] font-bold text-sm cursor-pointer"
+                  >
+                    <option value="">Seleccionar...</option>
+                    <option value="Couché 300g">Couché 300g</option>
+                    <option value="Couché 170g">Couché 170g</option>
+                    <option value="Bond 80g">Bond 80g</option>
+                    <option value="Adhesivo Papel">Adhesivo Papel</option>
+                    <option value="Adhesivo PVC">Adhesivo PVC</option>
+                    <option value="Opalina">Opalina</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Medidas</label>
+                  <div className="relative">
+                    <select
+                      className="w-full p-3 rounded-xl bg-[#F4F7FE] dark:bg-white/5 border-none outline-none text-[var(--text-primary)] font-bold text-sm cursor-pointer"
+                      onChange={e => setForm({ ...form, dimensions: e.target.value })}
+                      value={['9x5 cm', '10x15 cm', 'A4', 'A3', 'Carta', 'Oficio'].includes(form.dimensions) ? form.dimensions : 'custom'}
+                    >
+                      <option value="">Seleccionar...</option>
+                      <option value="9x5 cm">9x5 cm (Tarjeta)</option>
+                      <option value="10x15 cm">10x15 cm</option>
+                      <option value="Carta">Carta</option>
+                      <option value="Oficio">Oficio</option>
+                      <option value="A4">A4</option>
+                      <option value="A3">A3</option>
+                      <option value="custom">Personalizado...</option>
+                    </select>
+                    {!['9x5 cm', '10x15 cm', 'A4', 'A3', 'Carta', 'Oficio', ''].includes(form.dimensions) && (
+                      <input
+                        type="text"
+                        placeholder="Ej: 50x50 cm"
+                        value={form.dimensions || ''}
+                        onChange={e => setForm({ ...form, dimensions: e.target.value })}
+                        className="mt-2 w-full p-2 rounded-lg bg-[#F4F7FE] dark:bg-white/5 border-none text-sm font-bold"
+                      />
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Cantidad</label>
+                  <input
+                    type="number"
+                    value={form.quantity || ''}
+                    onChange={e => setForm({ ...form, quantity: e.target.value })}
+                    className="w-full p-3 rounded-xl bg-[#F4F7FE] dark:bg-white/5 border-none outline-none text-[var(--text-primary)] font-bold text-sm"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Lados de Impresión</label>
+                  <select
+                    value={form.print_sides || '1 Tiro'}
+                    onChange={e => setForm({ ...form, print_sides: e.target.value })}
+                    className="w-full p-3 rounded-xl bg-[#F4F7FE] dark:bg-white/5 border-none outline-none text-[var(--text-primary)] font-bold text-sm cursor-pointer"
+                  >
+                    <option value="1 Tiro">1 Tiro (Solo Frente)</option>
+                    <option value="2 Tiros">2 Tiros (Frente y Dorso)</option>
+                  </select>
+                </div>
+              </div>
 
-          {/* Details Section */}
-          <div>
-            <label className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-3 block">Detalles del Trabajo</label>
-            <textarea
-              rows={6}
-              value={form.description}
-              onChange={e => setForm({ ...form, description: e.target.value })}
-              className="w-full p-4 rounded-xl bg-[#F4F7FE] dark:bg-white/5 border-none outline-none text-[var(--text-primary)] font-medium resize-none focus:ring-2 focus:ring-[var(--brand-primary)]/20 transition-all leading-relaxed"
-            ></textarea>
-          </div>
-
-          {/* Files Section */}
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <label className="text-xs font-bold text-[var(--text-secondary)] uppercase">Archivos Adjuntos</label>
-              {/* Allow upload trigger here later */}
+              <label className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-2 block">Notas Adicionales / Descripción</label>
+              <textarea
+                rows={3}
+                value={form.description}
+                onChange={e => setForm({ ...form, description: e.target.value })}
+                className="w-full p-4 rounded-xl bg-[#F4F7FE] dark:bg-white/5 border-none outline-none text-[var(--text-primary)] font-medium resize-none focus:ring-2 focus:ring-[var(--brand-primary)]/20 transition-all leading-relaxed mb-6"
+                placeholder="Detalles extra..."
+              ></textarea>
             </div>
-            {order.files_url && order.files_url.length > 0 ? (
-              <div className="grid grid-cols-2 gap-4">
-                {order.files_url.map((file, i) => (
-                  <a key={i} href={file} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-white/5 hover:bg-[#F4F7FE] dark:hover:bg-white/5 transition-colors group">
-                    <div className="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
-                      {file.match(/\.(jpg|jpeg|png|gif)$/i) ? <Image size={18} /> : <FileText size={18} />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold truncate">Archivo {i + 1}</p>
-                      <p className="text-xs text-[var(--text-secondary)] uppercase">{file.split('.').pop()}</p>
-                    </div>
-                    <ExternalLink size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </a>
-                ))}
+
+            {/* Files Section */}
+            <div>
+              <div className="flex justify-between items-center mb-4">
+                <label className="text-xs font-bold text-[var(--text-secondary)] uppercase">Archivos Adjuntos</label>
+                {/* Allow upload trigger here later */}
               </div>
-            ) : (
-              <div className="p-8 border-2 border-dashed border-gray-200 dark:border-white/10 rounded-xl flex flex-col items-center justify-center text-[var(--text-secondary)] gap-2">
-                <FileText size={32} className="opacity-20" />
-                <p className="text-sm font-medium">No hay archivos adjuntos</p>
-              </div>
+              {order.files_url && order.files_url.length > 0 ? (
+                <div className="grid grid-cols-2 gap-4">
+                  {order.files_url.map((file, i) => (
+                    <a key={i} href={file} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-white/5 hover:bg-[#F4F7FE] dark:hover:bg-white/5 transition-colors group">
+                      <div className="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                        {file.match(/\.(jpg|jpeg|png|gif)$/i) ? <Image size={18} /> : <FileText size={18} />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold truncate">Archivo {i + 1}</p>
+                        <p className="text-xs text-[var(--text-secondary)] uppercase">{file.split('.').pop()}</p>
+                      </div>
+                      <ExternalLink size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-8 border-2 border-dashed border-gray-200 dark:border-white/10 rounded-xl flex flex-col items-center justify-center text-[var(--text-secondary)] gap-2">
+                  <FileText size={32} className="opacity-20" />
+                  <p className="text-sm font-medium">No hay archivos adjuntos</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Footer Actions */}
+          <div className="p-6 border-t border-gray-100 dark:border-white/5 bg-[var(--bg-card)] flex gap-4">
+            <button onClick={sendWhatsApp} className="flex-1 py-3 bg-[var(--brand-primary)] text-white rounded-xl font-bold shadow-lg shadow-[#4318FF]/20 hover:scale-[1.02] transition-transform flex items-center justify-center gap-2">
+              <MessageCircle size={18} /> Enviar WhatsApp
+            </button>
+            {!isPaid && (
+              <button onClick={() => setForm({ ...form, deposit_amount: form.total_amount })} className="px-6 py-3 bg-green-500/10 text-green-600 rounded-xl font-bold hover:bg-green-500/20 transition-colors flex items-center gap-2">
+                <CheckCircle2 size={18} /> Registrar Pago Total
+              </button>
             )}
           </div>
         </div>
-
-        {/* Footer Actions */}
-        <div className="p-6 border-t border-gray-100 dark:border-white/5 bg-[var(--bg-card)] flex gap-4">
-          <button onClick={sendWhatsApp} className="flex-1 py-3 bg-[var(--brand-primary)] text-white rounded-xl font-bold shadow-lg shadow-[#4318FF]/20 hover:scale-[1.02] transition-transform flex items-center justify-center gap-2">
-            <MessageCircle size={18} /> Enviar WhatsApp
-          </button>
-          {!isPaid && (
-            <button onClick={() => setForm({ ...form, deposit_amount: form.total_amount })} className="px-6 py-3 bg-green-500/10 text-green-600 rounded-xl font-bold hover:bg-green-500/20 transition-colors flex items-center gap-2">
-              <CheckCircle2 size={18} /> Registrar Pago Total
-            </button>
-          )}
-        </div>
       </div>
-    </div>
-  )
+      )
 }
 
-function LeadsView({ leads, search, setSearch, onEdit, onCreate }) {
+      function LeadsView({leads, search, setSearch, onEdit, onCreate}) {
   // Lead View kept simple as requested, just styled
   return (
-    // ... (Same as before, assumed ok) ...
-    <div className="dashboard-card h-full flex flex-col">
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-xl font-bold text-[var(--text-primary)]">Directorio de Clientes</h3>
-        <button onClick={onCreate} className="px-4 py-2 bg-[var(--brand-primary)] text-white rounded-full font-bold shadow-lg shadow-[#4318FF]/20">Nuevo Cliente</button>
+      // ... (Same as before, assumed ok) ...
+      <div className="dashboard-card h-full flex flex-col">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-bold text-[var(--text-primary)]">Directorio de Clientes</h3>
+          <button onClick={onCreate} className="px-4 py-2 bg-[var(--brand-primary)] text-white rounded-full font-bold shadow-lg shadow-[#4318FF]/20">Nuevo Cliente</button>
+        </div>
+        <div className="flex-1 overflow-auto">
+          <table className="w-full text-left">
+            <thead className="bg-[#F9FAFC] dark:bg-white/5">
+              <tr><th className="px-6 py-3 text-xs font-bold text-[var(--text-secondary)]">NOMBRE</th><th className="px-6 py-3 text-xs font-bold text-[var(--text-secondary)]">CONTACTO</th><th className="px-6 py-3"></th></tr>
+            </thead>
+            <tbody>
+              {leads.filter(l => l.name?.toLowerCase().includes(search.toLowerCase())).map(l => (
+                <tr key={l.id} className="border-b border-gray-50 dark:border-white/5 hover:bg-[#F4F7FE] dark:hover:bg-white/5">
+                  <td className="px-6 py-4 font-bold text-[var(--text-primary)]">{l.name}</td>
+                  <td className="px-6 py-4 text-sm text-[var(--text-secondary)]">{l.phone_number}</td>
+                  <td className="px-6 py-4 text-right"><button onClick={() => onEdit(l)} className="text-[var(--brand-primary)] font-bold text-xs">EDITAR</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div className="flex-1 overflow-auto">
-        <table className="w-full text-left">
-          <thead className="bg-[#F9FAFC] dark:bg-white/5">
-            <tr><th className="px-6 py-3 text-xs font-bold text-[var(--text-secondary)]">NOMBRE</th><th className="px-6 py-3 text-xs font-bold text-[var(--text-secondary)]">CONTACTO</th><th className="px-6 py-3"></th></tr>
-          </thead>
-          <tbody>
-            {leads.filter(l => l.name?.toLowerCase().includes(search.toLowerCase())).map(l => (
-              <tr key={l.id} className="border-b border-gray-50 dark:border-white/5 hover:bg-[#F4F7FE] dark:hover:bg-white/5">
-                <td className="px-6 py-4 font-bold text-[var(--text-primary)]">{l.name}</td>
-                <td className="px-6 py-4 text-sm text-[var(--text-secondary)]">{l.phone_number}</td>
-                <td className="px-6 py-4 text-right"><button onClick={() => onEdit(l)} className="text-[var(--brand-primary)] font-bold text-xs">EDITAR</button></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  )
+      )
 }
 
-function LeadModal({ isOpen, isCreating, form, setForm, onClose, onSubmit }) {
+      function LeadModal({isOpen, isCreating, form, setForm, onClose, onSubmit}) {
   if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[#0B1437]/50 backdrop-blur-sm" onClick={onClose}></div>
-      <div className="dashboard-card w-full max-w-md relative animate-in zoom-in duration-200">
-        <h2 className="text-xl font-bold mb-6 text-[var(--text-primary)]">{isCreating ? 'Crear Cliente' : 'Editar Cliente'}</h2>
-        <input className="dashboard-input mb-4" placeholder="Nombre Completo" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
-        <input className="dashboard-input mb-4" placeholder="Teléfono" value={form.phone_number} onChange={e => setForm({ ...form, phone_number: e.target.value })} />
-        <button onClick={onSubmit} className="w-full py-3 bg-[var(--brand-primary)] text-white rounded-xl font-bold shadow-lg shadow-[#4318FF]/20 mt-4">Guardar Cambios</button>
+      return (
+      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-[#0B1437]/50 backdrop-blur-sm" onClick={onClose}></div>
+        <div className="dashboard-card w-full max-w-md relative animate-in zoom-in duration-200">
+          <h2 className="text-xl font-bold mb-6 text-[var(--text-primary)]">{isCreating ? 'Crear Cliente' : 'Editar Cliente'}</h2>
+          <input className="dashboard-input mb-4" placeholder="Nombre Completo" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+          <input className="dashboard-input mb-4" placeholder="Teléfono" value={form.phone_number} onChange={e => setForm({ ...form, phone_number: e.target.value })} />
+          <button onClick={onSubmit} className="w-full py-3 bg-[var(--brand-primary)] text-white rounded-xl font-bold shadow-lg shadow-[#4318FF]/20 mt-4">Guardar Cambios</button>
+        </div>
       </div>
-    </div>
-  )
+      )
 }
 
-// Icon for MessageCircle was missing in imports
-import { MessageCircle } from 'lucide-react'
+      // Icon for MessageCircle was missing in imports
+      import {MessageCircle} from 'lucide-react'
 
-export default App
+      export default App
