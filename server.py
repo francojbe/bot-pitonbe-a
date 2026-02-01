@@ -444,7 +444,14 @@ Pide RUT, Nombre, Dirección y Email para la orden. 📋
 """
 
         
-        messages_to_ai = [SystemMessage(content=system_prompt)] + historial + [HumanMessage(content=texto_completo)]
+        # --- LIMPIEZA DE HISTORIAL PREVENTIVA ---
+        historial_limpio = []
+        for msg in historial:
+            if hasattr(msg, 'content') and isinstance(msg.content, str):
+                msg.content = msg.content.replace("**", "*")
+            historial_limpio.append(msg)
+
+        messages_to_ai = [SystemMessage(content=system_prompt)] + historial_limpio + [HumanMessage(content=texto_completo)]
         
         # --- BIND TOOLS ---
         llm_with_tools = llm.bind_tools([calculate_quote, register_order])
@@ -507,6 +514,10 @@ Pide RUT, Nombre, Dirección y Email para la orden. 📋
                  usage = final_response.response_metadata.get('token_usage', {})
                  total_tokens += usage.get('total_tokens', 0)
         
+        # --- LIMPIEZA FINAL DE SALIDA (Asegurar formato WhatsApp) ---
+        if resp_content:
+            resp_content = resp_content.replace("**", "*")
+
         # Guardar y Enviar
         meta_envio = {}
         if resp_content: 
@@ -553,8 +564,6 @@ def enviar_whatsapp(numero: str, texto: str) -> dict:
         
         payload = {
             "number": numero, 
-            "options": {"delay": 1000, "presence": "composing"},
-            "textMessage": {"text": texto}, 
             "text": texto
         }
         
