@@ -915,7 +915,11 @@ function LeadsView({ leads, search, setSearch, onEdit, onCreate }) {
           </thead>
           <tbody>
             {leads.filter(l => l.name?.toLowerCase().includes(search.toLowerCase())).map(l => (
-              <tr key={l.id} className="border-b border-gray-50 dark:border-white/5 hover:bg-[#F4F7FE] dark:hover:bg-white/5">
+              <tr
+                key={l.id}
+                className="border-b border-gray-50 dark:border-white/5 hover:bg-[#F4F7FE] dark:hover:bg-white/5 cursor-pointer transition-colors"
+                onClick={() => onEdit(l)}
+              >
                 <td className="px-6 py-4 font-bold text-[var(--text-primary)]">{l.name}</td>
                 <td className="px-6 py-4 text-sm text-[var(--text-secondary)]">{formatPhone(l.phone_number)}</td>
                 <td className="px-6 py-4 text-right"><button onClick={() => onEdit(l)} className="text-[var(--brand-primary)] font-bold text-xs">EDITAR</button></td>
@@ -932,12 +936,51 @@ function LeadModal({ isOpen, isCreating, form, setForm, onClose, onSubmit }) {
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[#0B1437]/50 backdrop-blur-sm" onClick={onClose}></div>
-      <div className="dashboard-card w-full max-w-md relative animate-in zoom-in duration-200">
-        <h2 className="text-xl font-bold mb-6 text-[var(--text-primary)]">{isCreating ? 'Crear Cliente' : 'Editar Cliente'}</h2>
-        <input className="dashboard-input mb-4" placeholder="Nombre Completo" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
-        <input className="dashboard-input mb-4" placeholder="Teléfono" value={form.phone_number} onChange={e => setForm({ ...form, phone_number: e.target.value })} />
-        <button onClick={onSubmit} className="w-full py-3 bg-[var(--brand-primary)] text-white rounded-xl font-bold shadow-lg shadow-[#4318FF]/20 mt-4">Guardar Cambios</button>
+      <div className="absolute inset-0 bg-[#0B1437]/50 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
+      <div className="dashboard-card w-full max-w-2xl relative animate-in zoom-in duration-200 p-8 max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-[var(--text-primary)]">{isCreating ? 'Nuevo Cliente' : 'Ficha de Cliente'}</h2>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-full text-[var(--text-secondary)]"><X size={24} /></button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Col 1 */}
+          <div className="space-y-4">
+            <div>
+              <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Nombre Completo</label>
+              <input className="dashboard-input w-full" placeholder="Ej: Juan Pérez" value={form.name || ''} onChange={e => setForm({ ...form, name: e.target.value })} />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">RUT / DNI</label>
+              <input className="dashboard-input w-full" placeholder="Ej: 12.345.678-9" value={form.rut || ''} onChange={e => setForm({ ...form, rut: e.target.value })} />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Teléfono (WhatsApp)</label>
+              <input className="dashboard-input w-full" placeholder="Ej: 56912345678" value={form.phone_number || ''} onChange={e => setForm({ ...form, phone_number: e.target.value })} />
+            </div>
+          </div>
+
+          {/* Col 2 */}
+          <div className="space-y-4">
+            <div>
+              <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Email</label>
+              <input className="dashboard-input w-full" placeholder="cliente@email.com" value={form.email || ''} onChange={e => setForm({ ...form, email: e.target.value })} />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Nombre Empresa / Fantasía</label>
+              <input className="dashboard-input w-full" placeholder="Ej: Distribuidora XP" value={form.business_name || ''} onChange={e => setForm({ ...form, business_name: e.target.value })} />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Dirección / Comuna</label>
+              <input className="dashboard-input w-full" placeholder="Ej: Av. Providencia 1234" value={form.address || ''} onChange={e => setForm({ ...form, address: e.target.value })} />
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-gray-100 dark:border-white/5 flex justify-end gap-3">
+          <button onClick={onClose} className="px-6 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 font-bold text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">Cancelar</button>
+          <button onClick={onSubmit} className="px-8 py-2.5 bg-[var(--brand-primary)] text-white rounded-xl font-bold shadow-lg shadow-[#4318FF]/20 hover:scale-105 transition-transform">Guardar Datos</button>
+        </div>
       </div>
     </div>
   )
