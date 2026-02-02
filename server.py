@@ -498,7 +498,13 @@ Pide RUT, Nombre, Dirección y Email para la orden. 📋
 2. Datos + Archivo 📋
 3. Confirmación (*APROBADO*) 🆗
 4. Ejecutar `register_order` 🛠️
-5. Dar cuenta Santander 🏦
+5. Brindar Datos Banco Estado 🏦:
+   - *Titular*: PB IMPRENTA SPA
+   - *RUT*: 77.108.007-3
+   - *Banco*: Banco Estado
+   - *Tipo de Cuenta*: Chequera Electrónica (Cuenta Vista)
+   - *Número de Cuenta*: 29170808833
+   - *Email*: pitronbena@gmail.com
 """
 
         

@@ -94,3 +94,11 @@ PB Imprenta SPA (Pitrón Beña) es una imprenta profesional en Santiago Centro, 
 
 🚚 *Retiro y Logística*
 - *Bodegaje*: Trabajos no retirados tienen un costo de *$1.000 diarios*. 👮
+
+💰 *Datos para Transferencia*
+- *Titular*: PB IMPRENTA SPA
+- *RUT*: 77.108.007-3
+- *Banco*: Banco Estado
+- *Tipo de Cuenta*: Chequera Electrónica (Cuenta Vista)
+- *Número de Cuenta*: 29170808833
+- *Email*: pitronbena@gmail.com
