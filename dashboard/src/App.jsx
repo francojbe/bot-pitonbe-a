@@ -162,12 +162,26 @@ function App() {
     // Optimistic UI Update
     setOrders(prev => prev.map(o => o.id === draggableId ? { ...o, status: newStatus } : o));
 
-    // DB Sync
+    // Call Backend (Notify) instead of direct DB update
     try {
-      await supabase.from('orders').update({ status: newStatus }).eq('id', draggableId);
+      const BACKEND_URL = "https://recuperadora-agente-pb.nojauc.easypanel.host";
+
+      const response = await fetch(`${BACKEND_URL}/orders/update_status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: draggableId, new_status: newStatus })
+      });
+
+      const data = await response.json();
+      if (data.status !== 'success') {
+        toast.error("Error notificando cambio de estado");
+      } else if (data.notified) {
+        toast.success("Cliente notificado del cambio de estado");
+      }
+
     } catch (error) {
       console.error('Error updating status:', error);
-      toast.error('Error al mover la tarjeta');
+      toast.error('Error de conexión');
       fetchOrders(); // Revert on error
     }
   }
