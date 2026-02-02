@@ -974,19 +974,19 @@ function LeadsView({ leads, search, setSearch, onEdit, onCreate, selectedIds, se
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto">
-        <table className="w-full text-left">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden">
+        <table className="w-full text-left table-fixed">
           <thead className="sticky top-0 bg-[#F9FAFC] dark:bg-white/5 border-b border-gray-100 dark:border-white/5 z-20">
             <tr>
-              <th className="px-6 py-4 w-12">
+              <th className="px-6 py-4 w-14">
                 <div onClick={toggleAll} className={`w-5 h-5 rounded border flex items-center justify-center cursor-pointer transition-colors ${selectedIds.size === filtered.length && filtered.length > 0 ? 'bg-[var(--brand-primary)] border-[var(--brand-primary)] text-white' : 'border-gray-300'}`}>
                   {selectedIds.size === filtered.length && filtered.length > 0 && <CheckSquare size={14} />}
                 </div>
               </th>
-              <th className="px-6 py-4 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Nombre</th>
-              <th className="px-6 py-4 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Contacto</th>
+              <th className="px-6 py-4 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider w-[30%]">Nombre</th>
+              <th className="px-6 py-4 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider w-[25%]">Contacto</th>
               <th className="px-6 py-4 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Empresa</th>
-              <th className="px-6 py-4"></th>
+              <th className="px-6 py-4 w-20"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-white/5">
@@ -994,8 +994,8 @@ function LeadsView({ leads, search, setSearch, onEdit, onCreate, selectedIds, se
               <tr
                 key={l.id}
                 className={`group transition-all duration-300 cursor-pointer relative
-                  ${selectedIds.has(l.id) ? 'bg-[#F4F7FE]' : 'bg-white hover:bg-[#F4F7FE]'}
-                  hover:scale-[1.01] hover:shadow-[0px_20px_40px_rgba(112,144,176,0.15)] hover:z-10
+                  ${selectedIds.has(l.id) ? 'bg-[#F4F7FE]' : 'bg-white hover:bg-[#F4F7FE] dark:hover:bg-white/5'}
+                  hover:shadow-[0px_10px_30px_rgba(112,144,176,0.12)] hover:z-10
                 `}
                 onClick={() => onEdit(l)}
               >
@@ -1005,21 +1005,21 @@ function LeadsView({ leads, search, setSearch, onEdit, onCreate, selectedIds, se
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs">
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex-shrink-0 flex items-center justify-center font-bold text-xs">
                       {l.name?.charAt(0) || '?'}
                     </div>
-                    <span className="font-bold text-[var(--text-primary)]">{l.name}</span>
+                    <span className="font-bold text-[var(--text-primary)] truncate" title={l.name}>{l.name}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="flex flex-col">
-                    <span className="text-sm font-bold text-[var(--text-primary)]">{formatPhone(l.phone_number)}</span>
-                    <span className="text-xs text-[var(--text-secondary)]">{l.email || 'Sin email'}</span>
+                  <div className="flex flex-col overflow-hidden">
+                    <span className="text-sm font-bold text-[var(--text-primary)] whitespace-nowrap">{formatPhone(l.phone_number)}</span>
+                    <span className="text-xs text-[var(--text-secondary)] truncate" title={l.email}>{l.email || 'Sin email'}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <span className="text-sm font-medium text-[var(--text-secondary)]">{l.business_name || '-'}</span>
+                  <p className="text-sm font-medium text-[var(--text-secondary)] truncate" title={l.business_name}>{l.business_name || '-'}</p>
                 </td>
                 <td className="px-6 py-4 text-right">
                   <button
