@@ -53,6 +53,8 @@ function App() {
   const [selectedLead, setSelectedLead] = useState(null)
   const [leadForm, setLeadForm] = useState({ name: '', phone_number: '', rut: '', address: '', email: '' })
   const [leadSearch, setLeadSearch] = useState('')
+  const [selectedLeadIds, setSelectedLeadIds] = useState(new Set())
+  const [deleteContext, setDeleteContext] = useState('orders') // 'orders' or 'leads'
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1)
@@ -91,22 +93,44 @@ function App() {
   async function deleteOrders(ids) {
     if (!ids.length) return
     const skipConfirm = localStorage.getItem('skip_delete_confirmation') === 'true'
+    setDeleteContext('orders')
 
     if (skipConfirm) {
-      performDelete(ids)
+      performDelete(ids, 'orders')
     } else {
       setDeleteConfirmation({ isOpen: true, ids, dontAskAgain: false })
     }
   }
 
-  async function performDelete(ids) {
-    const { error } = await supabase.from('orders').delete().in('id', ids)
+  async function deleteLeads(ids) {
+    if (!ids.length) return
+    const skipConfirm = localStorage.getItem('skip_delete_confirmation') === 'true'
+    setDeleteContext('leads')
+
+    if (skipConfirm) {
+      performDelete(ids, 'leads')
+    } else {
+      setDeleteConfirmation({ isOpen: true, ids, dontAskAgain: false })
+    }
+  }
+
+  async function performDelete(ids, context = deleteContext) {
+    const table = context === 'orders' ? 'orders' : 'leads'
+    const { error } = await supabase.from(table).delete().in('id', ids)
     if (!error) {
-      setOrders(prev => prev.filter(o => !ids.includes(o.id)))
-      setSelectedIds(new Set())
-      toast.success(`${ids.length} orden(es) eliminada(s)`)
+      if (context === 'orders') {
+        setOrders(prev => prev.filter(o => !ids.includes(o.id)))
+        setSelectedIds(new Set())
+        toast.success(`${ids.length} orden(es) eliminada(s)`)
+      } else {
+        setLeads(prev => prev.filter(l => !ids.includes(l.id)))
+        setSelectedLeadIds(new Set())
+        toast.success(`${ids.length} cliente(s) eliminado(s)`)
+      }
       setDeleteConfirmation({ isOpen: false, ids: [], dontAskAgain: false })
-    } else toast.error('Error al eliminar')
+    } else {
+      toast.error('Error al eliminar: ' + (error.message || 'Desconocido'))
+    }
   }
 
   function confirmDelete() {
@@ -204,6 +228,9 @@ function App() {
               setSearch={setLeadSearch}
               onEdit={(l) => { setSelectedLead(l); setLeadForm(l); setIsEditingLead(true) }}
               onCreate={() => { setLeadForm({}); setIsCreatingLead(true) }}
+              selectedIds={selectedLeadIds}
+              setSelectedIds={setSelectedLeadIds}
+              onDelete={deleteLeads}
             />
           )}
           {activeTab === 'reportes' && <ReportsView orders={orders} />}
@@ -239,8 +266,8 @@ function App() {
               <div className="w-12 h-12 bg-red-100/50 text-red-600 rounded-full flex items-center justify-center mb-4">
                 <Trash2 size={24} />
               </div>
-              <h3 className="text-lg font-bold text-[#2B3674] mb-2">¿Eliminar {deleteConfirmation.ids.length} orden(es)?</h3>
-              <p className="text-sm text-[#A3AED0] mb-6">Esta acción no se puede deshacer. Las órdenes se borrarán permanentemente.</p>
+              <h3 className="text-lg font-bold text-[#2B3674] mb-2">¿Eliminar {deleteConfirmation.ids.length} {deleteContext === 'orders' ? 'orden(es)' : 'cliente(s)'}?</h3>
+              <p className="text-sm text-[#A3AED0] mb-6">Esta acción no se puede deshacer. Los datos se borrarán permanentemente.</p>
 
               <div className="flex items-center gap-2 mb-6 cursor-pointer" onClick={() => setDeleteConfirmation(prev => ({ ...prev, dontAskAgain: !prev.dontAskAgain }))}>
                 <div className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${deleteConfirmation.dontAskAgain ? 'bg-[var(--brand-primary)] border-[var(--brand-primary)] text-white' : 'border-gray-300'}`}>
@@ -901,32 +928,109 @@ function OrderDrawer({ order, onClose, updateOrderLocal }) {
   )
 }
 
-function LeadsView({ leads, search, setSearch, onEdit, onCreate }) {
+function LeadsView({ leads, search, setSearch, onEdit, onCreate, selectedIds, setSelectedIds, onDelete }) {
+  const filtered = leads.filter(l => l.name?.toLowerCase().includes(search.toLowerCase()))
+
+  const toggleAll = () => {
+    if (selectedIds.size === filtered.length) setSelectedIds(new Set())
+    else setSelectedIds(new Set(filtered.map(l => l.id)))
+  }
+
+  const toggleOne = (id) => {
+    const next = new Set(selectedIds)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    setSelectedIds(next)
+  }
+
   return (
     <div className="dashboard-card h-full flex flex-col">
       <div className="flex justify-between items-center mb-6">
-        <h3 className="text-xl font-bold text-[var(--text-primary)]">Directorio de Clientes</h3>
-        <button onClick={onCreate} className="px-4 py-2 bg-[var(--brand-primary)] text-white rounded-full font-bold shadow-lg shadow-[#4318FF]/20">Nuevo Cliente</button>
+        <div>
+          <h3 className="text-xl font-bold text-[var(--text-primary)]">Directorio de Clientes</h3>
+          <p className="text-sm text-[var(--text-secondary)] font-medium">Total: {leads.length} clientes registrados</p>
+        </div>
+        <div className="flex gap-3">
+          {selectedIds.size > 0 && (
+            <button
+              onClick={() => onDelete(Array.from(selectedIds))}
+              className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-full font-bold text-sm hover:bg-red-100 transition-all animate-in fade-in zoom-in duration-200"
+            >
+              <Trash2 size={16} /> Eliminar ({selectedIds.size})
+            </button>
+          )}
+          <button onClick={onCreate} className="px-4 py-2 bg-[var(--brand-primary)] text-white rounded-full font-bold shadow-lg shadow-[#4318FF]/20 flex items-center gap-2">
+            <Plus size={18} /> Nuevo Cliente
+          </button>
+        </div>
       </div>
+
       <div className="flex-1 overflow-auto">
-        <table className="w-full text-left">
-          <thead className="bg-[#F9FAFC] dark:bg-white/5">
-            <tr><th className="px-6 py-3 text-xs font-bold text-[var(--text-secondary)]">NOMBRE</th><th className="px-6 py-3 text-xs font-bold text-[var(--text-secondary)]">CONTACTO</th><th className="px-6 py-3"></th></tr>
+        <table className="w-full text-left border-separate border-spacing-y-3">
+          <thead className="sticky top-0 bg-[var(--bg-card)] z-20">
+            <tr>
+              <th className="px-6 py-3 w-10">
+                <div onClick={toggleAll} className={`w-5 h-5 rounded border flex items-center justify-center cursor-pointer transition-colors ${selectedIds.size === filtered.length && filtered.length > 0 ? 'bg-[var(--brand-primary)] border-[var(--brand-primary)] text-white' : 'border-gray-300'}`}>
+                  {selectedIds.size === filtered.length && filtered.length > 0 && <CheckSquare size={14} />}
+                </div>
+              </th>
+              <th className="px-6 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase">Nombre</th>
+              <th className="px-6 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase">Contacto</th>
+              <th className="px-6 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase">Empresa</th>
+              <th className="px-6 py-3"></th>
+            </tr>
           </thead>
           <tbody>
-            {leads.filter(l => l.name?.toLowerCase().includes(search.toLowerCase())).map(l => (
+            {filtered.map(l => (
               <tr
                 key={l.id}
-                className="border-b border-gray-50 dark:border-white/5 hover:bg-[#F4F7FE] dark:hover:bg-white/5 cursor-pointer transition-colors"
+                className={`group transition-all duration-300 cursor-pointer relative
+                  ${selectedIds.has(l.id) ? 'bg-[#F4F7FE]' : 'bg-white hover:bg-[#F4F7FE]'}
+                  hover:scale-[1.01] hover:shadow-[0px_20px_40px_rgba(112,144,176,0.15)] hover:z-10
+                `}
                 onClick={() => onEdit(l)}
               >
-                <td className="px-6 py-4 font-bold text-[var(--text-primary)]">{l.name}</td>
-                <td className="px-6 py-4 text-sm text-[var(--text-secondary)]">{formatPhone(l.phone_number)}</td>
-                <td className="px-6 py-4 text-right"><button onClick={() => onEdit(l)} className="text-[var(--brand-primary)] font-bold text-xs">EDITAR</button></td>
+                <td className="px-6 py-4 rounded-l-2xl border-y border-transparent group-hover:border-gray-100" onClick={(e) => { e.stopPropagation(); toggleOne(l.id); }}>
+                  <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${selectedIds.has(l.id) ? 'bg-[var(--brand-primary)] border-[var(--brand-primary)] text-white shadow-md' : 'border-gray-300 group-hover:border-[var(--brand-primary)]'}`}>
+                    {selectedIds.has(l.id) && <CheckSquare size={14} />}
+                  </div>
+                </td>
+                <td className="px-6 py-4 border-y border-transparent group-hover:border-gray-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm shadow-sm">
+                      {l.name?.charAt(0) || '?'}
+                    </div>
+                    <span className="font-bold text-[var(--text-primary)]">{l.name}</span>
+                  </div>
+                </td>
+                <td className="px-6 py-4 border-y border-transparent group-hover:border-gray-100">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-[var(--text-primary)]">{formatPhone(l.phone_number)}</span>
+                    <span className="text-xs text-[var(--text-secondary)]">{l.email || 'Sin email'}</span>
+                  </div>
+                </td>
+                <td className="px-6 py-4 border-y border-transparent group-hover:border-gray-100">
+                  <span className="text-sm font-medium text-[var(--text-secondary)]">{l.business_name || '-'}</span>
+                </td>
+                <td className="px-6 py-4 text-right rounded-r-2xl border-y border-transparent group-hover:border-gray-100">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onEdit(l); }}
+                    className="p-2 rounded-xl text-[var(--brand-primary)] opacity-0 group-hover:opacity-100 hover:bg-white transition-all shadow-sm"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
+
+        {filtered.length === 0 && (
+          <div className="py-20 text-center">
+            <Users size={48} className="mx-auto text-[var(--text-secondary)] opacity-10 mb-4" />
+            <p className="text-[var(--text-secondary)] font-medium">No se encontraron clientes</p>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -957,6 +1061,7 @@ function LeadModal({ isOpen, isCreating, form, setForm, onClose, onSubmit }) {
             <div>
               <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Teléfono (WhatsApp)</label>
               <input className="dashboard-input w-full" placeholder="Ej: 56912345678" value={form.phone_number || ''} onChange={e => setForm({ ...form, phone_number: e.target.value })} />
+              <p className="text-[10px] text-[var(--text-secondary)] mt-1 ml-1 opacity-70">Formato: 569 + 8 dígitos (sin espacios ni (+))</p>
             </div>
           </div>
 
