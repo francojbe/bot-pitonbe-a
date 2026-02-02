@@ -398,7 +398,14 @@ function DashboardView({ orders, viewMode, setViewMode, onSelectOrder, selectedI
                   const balance = (order.total_amount || 0) - (order.deposit_amount || 0)
                   const isSel = selectedIds.has(order.id)
                   return (
-                    <tr key={order.id} onClick={() => onSelectOrder(order)} className={`group hover:bg-[#F4F7FE] dark:hover:bg-white/5 cursor-pointer transition-colors ${isSel ? 'bg-[#F4F7FE] dark:bg-white/5' : ''}`}>
+                    <tr
+                      key={order.id}
+                      onClick={() => onSelectOrder(order)}
+                      className={`group transition-all duration-300 cursor-pointer relative
+                        ${isSel ? 'bg-[#F4F7FE] dark:bg-white/5' : 'bg-white hover:bg-[#F4F7FE] dark:hover:bg-white/5'}
+                        hover:scale-[1.01] hover:shadow-[0px_20px_40px_rgba(112,144,176,0.15)] hover:z-10
+                      `}
+                    >
                       <td className="px-6 py-4" onClick={(e) => { e.stopPropagation(); const n = new Set(selectedIds); n.has(order.id) ? n.delete(order.id) : n.add(order.id); setSelectedIds(n) }}>
                         <div className={`w-5 h-5 rounded flex items-center justify-center border transition-all ${isSel ? 'bg-[#4318FF] border-[#4318FF] text-white' : 'border-gray-300'}`}>
                           {isSel && <CheckSquare size={14} />}
@@ -487,7 +494,9 @@ function KanbanBoard({ orders, onSelectOrder }) {
                           {...provided.dragHandleProps}
                           onClick={() => onSelectOrder(order)}
                           style={{ ...provided.draggableProps.style }}
-                          className={`dashboard-card cursor-grab active:cursor-grabbing group hover:-translate-y-1 hover:shadow-lg hover:shadow-[#4318FF]/10 ${snapshot.isDragging ? 'rotate-2 scale-105 shadow-2xl z-50 ring-2 ring-[var(--brand-primary)]' : ''}`}
+                          className={`dashboard-card cursor-grab active:cursor-grabbing group transition-all duration-300
+                            hover:-translate-y-2 hover:shadow-[0px_20px_50px_rgba(112,144,176,0.2)] hover:z-20
+                            ${snapshot.isDragging ? 'rotate-2 scale-105 shadow-2xl z-50 ring-2 ring-[var(--brand-primary)]' : ''}`}
                         >
                           <div className="flex justify-between items-start mb-3">
                             <StatusBadge status={order.status} mini />
