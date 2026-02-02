@@ -695,6 +695,40 @@ function OrderDrawer({ order, onClose, updateOrderLocal }) {
     }
   };
 
+  // Handle Payment Update with Notification
+  const handlePaymentUpdate = async (newDeposit, newTotal) => {
+    try {
+      const BACKEND_URL = "https://recuperadora-agente-pb.nojauc.easypanel.host";
+      const actualDeposit = newDeposit !== undefined ? newDeposit : form.deposit_amount;
+      const actualTotal = newTotal !== undefined ? newTotal : form.total_amount;
+
+      // Optimistic Update
+      setForm({ ...form, deposit_amount: actualDeposit, total_amount: actualTotal });
+
+      const response = await fetch(`${BACKEND_URL}/orders/update_payment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          order_id: order.id,
+          deposit_amount: Number(actualDeposit),
+          total_amount: Number(actualTotal)
+        })
+      });
+
+      const data = await response.json();
+      if (data.status === 'success') {
+        updateOrderLocal({ ...form, deposit_amount: actualDeposit, total_amount: actualTotal });
+        if (data.notified) toast.success("Pago registrado y cliente notificado. ✅");
+        else toast.success("Pago guardado.");
+      } else {
+        toast.error("Error al registrar pago en el servidor.");
+      }
+    } catch (e) {
+      console.error("Error updating payment:", e);
+      toast.error("Error de conexión al registrar pago.");
+    }
+  };
+
   // Send WhatsApp with Quote Logic
   const sendWhatsApp = async () => {
     const phone = order.leads?.phone_number;
@@ -779,6 +813,11 @@ function OrderDrawer({ order, onClose, updateOrderLocal }) {
                         const val = e.target.value.replace(/\D/g, '');
                         setForm({ ...form, total_amount: val ? Number(val) : 0 })
                       }}
+                      onBlur={() => {
+                        if (form.total_amount !== order.total_amount) {
+                          handlePaymentUpdate(undefined, form.total_amount);
+                        }
+                      }}
                       className="text-right font-bold w-32 bg-transparent outline-none border-b border-gray-200 dark:border-white/10 focus:border-[var(--brand-primary)] transition-colors text-[#A3AED0] pl-4"
                       placeholder="0"
                     />
@@ -794,6 +833,11 @@ function OrderDrawer({ order, onClose, updateOrderLocal }) {
                       onChange={e => {
                         const val = e.target.value.replace(/\D/g, '');
                         setForm({ ...form, deposit_amount: val ? Number(val) : 0 })
+                      }}
+                      onBlur={() => {
+                        if (form.deposit_amount !== order.deposit_amount) {
+                          handlePaymentUpdate(form.deposit_amount, undefined);
+                        }
                       }}
                       className="text-right font-bold w-32 bg-transparent outline-none border-b border-gray-200 dark:border-white/10 focus:border-[var(--brand-primary)] transition-colors text-[#A3AED0] pl-4"
                       placeholder="0"
@@ -926,7 +970,10 @@ function OrderDrawer({ order, onClose, updateOrderLocal }) {
               <MessageCircle size={18} /> Enviar WhatsApp
             </button>
             {!isPaid && (
-              <button onClick={() => setForm({ ...form, deposit_amount: form.total_amount })} className="px-6 py-3 bg-green-500/10 text-green-600 rounded-xl font-bold hover:bg-green-500/20 transition-colors flex items-center gap-2">
+              <button
+                onClick={() => handlePaymentUpdate(form.total_amount, undefined)}
+                className="px-6 py-3 bg-green-500/10 text-green-600 rounded-xl font-bold hover:bg-green-500/20 transition-colors flex items-center gap-2"
+              >
                 <CheckCircle2 size={18} /> Registrar Pago Total
               </button>
             )}

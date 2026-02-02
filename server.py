@@ -1048,7 +1048,7 @@ async def update_order_status(payload: OrderStatusUpdate):
     """Actualiza estado de orden y notifica al cliente por WhatsApp"""
     try:
         # 1. Obtener datos de la orden + lead
-        order_res = supabase.table("orders").select("*, leads(phone_number, name)").eq("id", payload.order_id).execute()
+        order_res = supabase.table("orders").select("*, leads(phone_number, name, id)").eq("id", payload.order_id).execute()
         if not order_res.data:
             return {"status": "error", "message": "Orden no encontrada"}
         
@@ -1082,16 +1082,73 @@ async def update_order_status(payload: OrderStatusUpdate):
             elif payload.new_status == "ENTREGADO":
                 msg += "¡Que lo disfrutes! Gracias por confiar en Pitrón Beña. ⭐"
             
-            enviar_whatsapp(phone, msg)
+            status_wa = enviar_whatsapp(phone, msg)
             
             # Guardar log del mensaje
             if lead.get("id"):
-                save_message_pro(lead.get("id"), phone, "assistant", msg, intent="STATUS_UPDATE")
+                save_message_pro(lead.get("id"), phone, "assistant", msg, intent="STATUS_UPDATE", metadata={"whatsapp_delivery": status_wa})
 
         return {"status": "success", "notified": bool(phone)}
 
     except Exception as e:
         logger.error(f"Error actualizando estado: {e}")
+        return {"status": "error", "message": str(e)}
+
+class PaymentUpdate(BaseModel):
+    order_id: str
+    deposit_amount: int
+    total_amount: int = None
+
+@app.post("/orders/update_payment")
+async def update_order_payment(payload: PaymentUpdate):
+    """Registra pago/abono y notifica al cliente"""
+    try:
+        # 1. Obtener datos actuales
+        order_res = supabase.table("orders").select("*, leads(phone_number, name, id)").eq("id", payload.order_id).execute()
+        if not order_res.data:
+            return {"status": "error", "message": "Orden no encontrada"}
+        
+        order = order_res.data[0]
+        lead = order.get("leads") or {}
+        old_deposit = order.get("deposit_amount") or 0
+        total_price = payload.total_amount if payload.total_amount is not None else (order.get("total_amount") or 0)
+        
+        # 2. Actualizar en BD
+        upd = {"deposit_amount": payload.deposit_amount}
+        if payload.total_amount is not None:
+            upd["total_amount"] = payload.total_amount
+        
+        supabase.table("orders").update(upd).eq("id", payload.order_id).execute()
+        
+        # 3. Determinar incremento (abono actual)
+        abono_ahora = payload.deposit_amount - old_deposit
+        balance = total_price - payload.deposit_amount
+        
+        # 4. Notificar (Solo si el abono es positivo)
+        phone = lead.get("phone_number")
+        name = lead.get("name") or "Cliente"
+        
+        if phone and abono_ahora > 0:
+            msg = f"Hola {name.split(' ')[0]}! 👋\nHemos registrado un pago por tu pedido *#{payload.order_id[:5]}*:\n\n"
+            msg += f"✅ Monto recibido: *${abono_ahora:,}*\n"
+            
+            if balance <= 0:
+                msg += "💰 *PEDIDO PAGADO TOTALMENTE* 🎊\nMuchas gracias por tu pago. Seguiremos con el proceso de tu orden."
+            else:
+                msg += f"📉 Saldo pendiente: *${balance:,}*\n\n¡Gracias por tu abono! 😊"
+            
+            status_wa = enviar_whatsapp(phone, msg)
+            
+            # Log
+            if lead.get("id"):
+                save_message_pro(lead.get("id"), phone, "assistant", msg, intent="PAYMENT_UPDATE", metadata={"whatsapp_delivery": status_wa})
+
+            return {"status": "success", "notified": True}
+        
+        return {"status": "success", "notified": False}
+
+    except Exception as e:
+        logger.error(f"Error actualizando pago: {e}")
         return {"status": "error", "message": str(e)}
 
 if __name__ == "__main__":
