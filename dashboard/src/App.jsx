@@ -975,21 +975,21 @@ function LeadsView({ leads, search, setSearch, onEdit, onCreate, selectedIds, se
       </div>
 
       <div className="flex-1 overflow-auto">
-        <table className="w-full text-left border-separate border-spacing-y-3">
-          <thead className="sticky top-0 bg-[var(--bg-card)] z-20">
+        <table className="w-full text-left">
+          <thead className="sticky top-0 bg-[#F9FAFC] dark:bg-white/5 border-b border-gray-100 dark:border-white/5 z-20">
             <tr>
-              <th className="px-6 py-3 w-10">
+              <th className="px-6 py-4 w-12">
                 <div onClick={toggleAll} className={`w-5 h-5 rounded border flex items-center justify-center cursor-pointer transition-colors ${selectedIds.size === filtered.length && filtered.length > 0 ? 'bg-[var(--brand-primary)] border-[var(--brand-primary)] text-white' : 'border-gray-300'}`}>
                   {selectedIds.size === filtered.length && filtered.length > 0 && <CheckSquare size={14} />}
                 </div>
               </th>
-              <th className="px-6 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase">Nombre</th>
-              <th className="px-6 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase">Contacto</th>
-              <th className="px-6 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase">Empresa</th>
-              <th className="px-6 py-3"></th>
+              <th className="px-6 py-4 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Nombre</th>
+              <th className="px-6 py-4 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Contacto</th>
+              <th className="px-6 py-4 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Empresa</th>
+              <th className="px-6 py-4"></th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-gray-100 dark:divide-white/5">
             {filtered.map(l => (
               <tr
                 key={l.id}
@@ -999,32 +999,32 @@ function LeadsView({ leads, search, setSearch, onEdit, onCreate, selectedIds, se
                 `}
                 onClick={() => onEdit(l)}
               >
-                <td className="px-6 py-4 rounded-l-2xl border-y border-transparent group-hover:border-gray-100" onClick={(e) => { e.stopPropagation(); toggleOne(l.id); }}>
-                  <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${selectedIds.has(l.id) ? 'bg-[var(--brand-primary)] border-[var(--brand-primary)] text-white shadow-md' : 'border-gray-300 group-hover:border-[var(--brand-primary)]'}`}>
+                <td className="px-6 py-4" onClick={(e) => { e.stopPropagation(); toggleOne(l.id); }}>
+                  <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${selectedIds.has(l.id) ? 'bg-[var(--brand-primary)] border-[var(--brand-primary)] text-white' : 'border-gray-300'}`}>
                     {selectedIds.has(l.id) && <CheckSquare size={14} />}
                   </div>
                 </td>
-                <td className="px-6 py-4 border-y border-transparent group-hover:border-gray-100">
+                <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm shadow-sm">
+                    <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs">
                       {l.name?.charAt(0) || '?'}
                     </div>
                     <span className="font-bold text-[var(--text-primary)]">{l.name}</span>
                   </div>
                 </td>
-                <td className="px-6 py-4 border-y border-transparent group-hover:border-gray-100">
+                <td className="px-6 py-4">
                   <div className="flex flex-col">
                     <span className="text-sm font-bold text-[var(--text-primary)]">{formatPhone(l.phone_number)}</span>
                     <span className="text-xs text-[var(--text-secondary)]">{l.email || 'Sin email'}</span>
                   </div>
                 </td>
-                <td className="px-6 py-4 border-y border-transparent group-hover:border-gray-100">
+                <td className="px-6 py-4">
                   <span className="text-sm font-medium text-[var(--text-secondary)]">{l.business_name || '-'}</span>
                 </td>
-                <td className="px-6 py-4 text-right rounded-r-2xl border-y border-transparent group-hover:border-gray-100">
+                <td className="px-6 py-4 text-right">
                   <button
                     onClick={(e) => { e.stopPropagation(); onEdit(l); }}
-                    className="p-2 rounded-xl text-[var(--brand-primary)] opacity-0 group-hover:opacity-100 hover:bg-white transition-all shadow-sm"
+                    className="p-2 rounded-xl text-[var(--brand-primary)] opacity-0 group-hover:opacity-100 transition-all hover:bg-gray-50 dark:hover:bg-white/5"
                   >
                     <ChevronRight size={18} />
                   </button>
