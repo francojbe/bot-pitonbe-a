@@ -66,6 +66,7 @@ function App() {
 
   // --- EFFECTS ---
   useEffect(() => {
+    console.log('App mounted. Dark Mode:', isDarkMode)
     if (isDarkMode) document.documentElement.classList.add('dark')
     else document.documentElement.classList.remove('dark')
     localStorage.setItem('theme', isDarkMode ? 'dark' : 'light')
