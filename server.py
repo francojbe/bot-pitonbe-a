@@ -1177,6 +1177,44 @@ async def update_order_payment(payload: PaymentUpdate):
         logger.error(f"Error actualizando pago: {e}")
         return {"status": "error", "message": str(e)}
 
+# --- ENDPOINTS PARA MEJORA CONTINUA (Self-Improvement) ---
+
+@app.get("/learnings")
+async def get_learnings():
+    """Obtiene las lecciones aprendidas (errores y propuestas)."""
+    try:
+        res = supabase.table("agent_learnings").select("*").order("created_at", desc=True).limit(50).execute()
+        return res.data
+    except Exception as e:
+        logger.error(f"Error fetching learnings: {e}")
+        return []
+
+class LearningAction(BaseModel):
+    id: str
+
+@app.post("/learnings/approve")
+async def approve_learning(action: LearningAction):
+    """Aprueba una regla propuesta."""
+    try:
+        supabase.table("agent_learnings").update({
+            "status": "approved",
+            "applied_at": datetime.now().isoformat()
+        }).eq("id", action.id).execute()
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.post("/learnings/reject")
+async def reject_learning(action: LearningAction):
+    """Rechaza una regla propuesta."""
+    try:
+        supabase.table("agent_learnings").update({
+            "status": "rejected"
+        }).eq("id", action.id).execute()
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
