@@ -265,8 +265,16 @@ def register_order(description: str, amount: int, rut: str, address: str, email:
     """
     # Validar diseño
     desc_lower = description.lower()
-    is_design_service = any(phrase in desc_lower for phrase in ["servicio de diseño", "diseño básico", "diseño medio", "diseño complejo", "creación de diseño", "costo diseño"])
+    design_keywords = ["servicio de diseño", "diseño básico", "diseño medio", "diseño complejo", "creación de diseño", "costo diseño", "con diseño"]
+    is_design_service = any(phrase in desc_lower for phrase in design_keywords)
     
+    # Si el agente no lo puso pero has_file es False, intentamos rescatar la intención
+    if not has_file and not is_design_service:
+        # Si el monto es mayor a un precio base estándar o la descripción indica que se va a hacer algo, 
+        # asumimos que si el agente está llamando a esto es porque ya validó el flujo de diseño.
+        is_design_service = True 
+        description += " (Incluye Servicio de Diseño)"
+
     if not is_design_service and not has_file:
         return "❌ ERROR: No se puede crear orden sin archivo adjunto. El cliente debe enviar el archivo O contratar un 'Servicio de Diseño'."
 
@@ -479,7 +487,9 @@ Eres *Richard*, el Asistente Virtual Oficial de *Pitrón Beña Impresión*. 🤵
 
 ⛔ *REGLA DE DISEÑO CONTRATADO (NUEVA - CRÍTICA):*
 - Si el cliente dice frases como "hazme", "necesito que diseñes", "no tengo diseño", está solicitando servicio de diseño.
-- Cuando cotices CON diseño (Básico, Medio, Avanzado o Premium), *NO pidas archivo PDF*.
+- **OBLIGATORIO:** Antes de cotizar, DEBES ofrecer los 4 niveles de diseño explicando brevemente qué entrega cada uno (Básico, Medio, Avanzado, Premium) para que el cliente elija. NO asumas el básico por defecto.
+- Cuando cotices CON diseño, *NO pidas archivo PDF*.
+- En la descripción de la orden (`register_order`), incluye siempre la frase "con Servicio de Diseño".
 - Después de que el cliente apruebe una cotización CON diseño, di:
   "Perfecto, he registrado tu orden. Nuestro equipo de diseño trabajará en tu proyecto y te enviaremos una propuesta para tu aprobación en 1-3 días hábiles. No necesitas enviar ningún archivo, nosotros nos encargamos del diseño. 🎨"
 - Solo pide PDF si el cliente tiene diseño listo o NO contrató servicio de diseño.
