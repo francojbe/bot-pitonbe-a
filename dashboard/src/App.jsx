@@ -1,4 +1,5 @@
 import LearningsView from './LearningsView'
+import { Toaster, toast } from 'sonner' // Restored deleted import
 import {
   LayoutDashboard, Users, PieChart, Settings,
   Search, Bell, Moon, Sun, Plus, MoreHorizontal,
