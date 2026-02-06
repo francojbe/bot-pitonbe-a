@@ -1215,6 +1215,36 @@ async def reject_learning(action: LearningAction):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+# --- SCHEDULER: EJECUCIÓN AUTOMÁTICA DEL AUDITOR ---
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
+from audit_now import main as run_audit
+import pytz
+
+scheduler = AsyncIOScheduler()
+
+async def run_audit_job():
+    """Ejecuta el auditor nocturno."""
+    logger.info("🕒 [CRON] Iniciando Auditoría Nocturna...")
+    try:
+        # Ejecutar en un thread aparte para no bloquear el loop principal
+        import asyncio
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, run_audit)
+        logger.info("✅ [CRON] Auditoría finalizada exitosamente.")
+    except Exception as e:
+        logger.error(f"❌ [CRON] Error en auditoría: {e}")
+
+@app.on_event("startup")
+def start_scheduler():
+    # Programar para las 03:00 AM hora local (Chile)
+    chile_tz = pytz.timezone('America/Santiago')
+    trigger = CronTrigger(hour=3, minute=0, timezone=chile_tz)
+    
+    scheduler.add_job(run_audit_job, trigger)
+    scheduler.start()
+    logger.info("⏰ Scheduler iniciado: Auditoría programada para las 03:00 AM (Chile).")
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
