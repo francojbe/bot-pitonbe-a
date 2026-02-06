@@ -259,24 +259,15 @@ def calculate_quote(product_type: str, quantity: int, sides: int = 1, finish: st
 def register_order(description: str, amount: int, rut: str, address: str, email: str, has_file: bool, name: str = None, address_custom: str = None, files: List[str] = None, lead_id: str = "inject_me", phone: str = None, quantity: int = None, material: str = None, dimensions: str = None, print_sides: str = "1 Tiro") -> str:
     """
     Registra la orden y actualiza datos del cliente (RUT, Nombre, Email, Dirección).
-    
-    CRITICAL:
-    - amount: DEBE SER EL PRECIO TOTAL EN DINERO (CLP). (Ej: 16560). NO LA CANTIDAD DE PRODUCTOS.
     """
     # Validar diseño
     desc_lower = description.lower()
     design_keywords = ["servicio de diseño", "diseño básico", "diseño medio", "diseño complejo", "creación de diseño", "costo diseño", "con diseño"]
     is_design_service = any(phrase in desc_lower for phrase in design_keywords)
     
-    # Si el agente no lo puso pero has_file es False, intentamos rescatar la intención
+    # VALIDACIÓN ESTRICTA: Evita confusiones
     if not has_file and not is_design_service:
-        # Si el monto es mayor a un precio base estándar o la descripción indica que se va a hacer algo, 
-        # asumimos que si el agente está llamando a esto es porque ya validó el flujo de diseño.
-        is_design_service = True 
-        description += " (Incluye Servicio de Diseño)"
-
-    if not is_design_service and not has_file:
-        return "❌ ERROR: No se puede crear orden sin archivo adjunto. El cliente debe enviar el archivo O contratar un 'Servicio de Diseño'."
+        return "❌ ERROR BLOQUEANTE: No se puede crear la orden. Razón: El sistema detectó que 'has_file' es Falso (no hay archivo). Para proceder sin archivo, DEBES incluir explícitamente la frase 'Servicio de Diseño' en el parámetro 'description' de esta herramienta. Por favor, corrige tu llamada a la herramienta."
 
     try:
         # Logs para depuración
