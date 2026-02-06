@@ -1,5 +1,8 @@
+import { useState, useEffect, useRef } from 'react'
+import React from 'react'
+import { supabase } from './supabase'
+import { Toaster, toast } from 'sonner'
 import LearningsView from './LearningsView'
-import { Toaster, toast } from 'sonner' // Restored deleted import
 import {
   LayoutDashboard, Users, PieChart, Settings,
   Search, Bell, Moon, Sun, Plus, MoreHorizontal,
@@ -8,17 +11,181 @@ import {
   ArrowUpRight, Clock, CheckCircle2, DollarSign,
   BarChart2, MoreVertical, LogOut, Menu,
   User, MapPin, Mail, Phone, ExternalLink, Image, MessageCircle,
-  ChevronLeft, ChevronDown, Brain // New Icon
+  ChevronLeft, ChevronDown, Brain
 } from 'lucide-react'
+import {
+  BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip,
+  ResponsiveContainer, Cell, PieChart as RePieChart, Pie, Legend, AreaChart, Area, CartesianGrid
+} from 'recharts'
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 
-// ... (rest of imports)
+// --- HELPER FUNCTIONS ---
+const formatPhone = (phone) => {
+  if (!phone) return 'Sin Teléfono'
+  const cleaned = phone.replace(/\D/g, '')
+  if (cleaned.startsWith('569') && cleaned.length === 11) {
+    return `+56 9 ${cleaned.slice(3, 7)} ${cleaned.slice(7)}`
+  }
+  if (cleaned.length === 8) {
+    return `+56 9 ${cleaned.slice(0, 4)} ${cleaned.slice(4)}`
+  }
+  return phone
+}
+
+const formatCurrency = (val) => {
+  if (val === undefined || val === null || isNaN(val)) return '$0'
+  return '$' + Number(val).toLocaleString('es-CL')
+}
 
 function App() {
-  // ... (rest of state)
+  // --- STATE CORE ---
+  const [orders, setOrders] = useState([])
+  const [leads, setLeads] = useState([])
+  const [selectedIds, setSelectedIds] = useState(new Set())
+  const [activeTab, setActiveTab] = useState('dashboard')
+  const [viewMode, setViewMode] = useState(() => localStorage.getItem('dashboard_view_mode') || 'kanban')
+  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') === 'dark')
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem('sidebar_collapsed') === 'true')
 
-  // ... (rest of effects)
+  // Drawer & Modals
+  const [selectedOrder, setSelectedOrder] = useState(null)
+  const [isEditingLead, setIsEditingLead] = useState(false)
+  const [isCreatingLead, setIsCreatingLead] = useState(false)
+  const [selectedLead, setSelectedLead] = useState(null)
+  const [leadForm, setLeadForm] = useState({ name: '', phone_number: '', rut: '', address: '', email: '' })
+  const [leadSearch, setLeadSearch] = useState('')
+  const [selectedLeadIds, setSelectedLeadIds] = useState(new Set())
+  const [deleteContext, setDeleteContext] = useState('orders') // 'orders' or 'leads'
 
-  // ... (rest of logic)
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1)
+  const ITEMS_PER_PAGE = 10
+
+  // Delete Confirmation State
+  const [deleteConfirmation, setDeleteConfirmation] = useState({ isOpen: false, ids: [], dontAskAgain: false })
+
+  // --- EFFECTS ---
+  useEffect(() => {
+    if (isDarkMode) document.documentElement.classList.add('dark')
+    else document.documentElement.classList.remove('dark')
+    localStorage.setItem('theme', isDarkMode ? 'dark' : 'light')
+  }, [isDarkMode])
+
+  useEffect(() => { localStorage.setItem('dashboard_view_mode', viewMode) }, [viewMode])
+  useEffect(() => { localStorage.setItem('sidebar_collapsed', isSidebarCollapsed) }, [isSidebarCollapsed])
+
+  useEffect(() => {
+    fetchOrders()
+    fetchLeads()
+    const chLeads = supabase.channel('realtime leads').on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, fetchLeads).subscribe()
+    const chOrders = supabase.channel('realtime orders').on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, fetchOrders).subscribe()
+    return () => { supabase.removeChannel(chLeads); supabase.removeChannel(chOrders) }
+  }, [])
+
+  // --- LOGIC ---
+  async function fetchOrders() {
+    const { data } = await supabase.from('orders').select('*, leads(name, phone_number, rut, address, email)').order('created_at', { ascending: false })
+    setOrders(data || [])
+  }
+  async function fetchLeads() {
+    const { data } = await supabase.from('leads').select('*').order('name', { ascending: true })
+    setLeads(data || [])
+  }
+  async function deleteOrders(ids) {
+    if (!ids.length) return
+    const skipConfirm = localStorage.getItem('skip_delete_confirmation') === 'true'
+    setDeleteContext('orders')
+
+    if (skipConfirm) {
+      performDelete(ids, 'orders')
+    } else {
+      setDeleteConfirmation({ isOpen: true, ids, dontAskAgain: false })
+    }
+  }
+
+  async function deleteLeads(ids) {
+    if (!ids.length) return
+    const skipConfirm = localStorage.getItem('skip_delete_confirmation') === 'true'
+    setDeleteContext('leads')
+
+    if (skipConfirm) {
+      performDelete(ids, 'leads')
+    } else {
+      setDeleteConfirmation({ isOpen: true, ids, dontAskAgain: false })
+    }
+  }
+
+  async function performDelete(ids, context = deleteContext) {
+    const table = context === 'orders' ? 'orders' : 'leads'
+    const { error } = await supabase.from(table).delete().in('id', ids)
+    if (!error) {
+      if (context === 'orders') {
+        setOrders(prev => prev.filter(o => !ids.includes(o.id)))
+        setSelectedIds(new Set())
+        toast.success(`${ids.length} orden(es) eliminada(s)`)
+      } else {
+        setLeads(prev => prev.filter(l => !ids.includes(l.id)))
+        setSelectedLeadIds(new Set())
+        toast.success(`${ids.length} cliente(s) eliminado(s)`)
+      }
+      setDeleteConfirmation({ isOpen: false, ids: [], dontAskAgain: false })
+    } else {
+      toast.error('Error al eliminar: ' + (error.message || 'Desconocido'))
+    }
+  }
+
+  function confirmDelete() {
+    if (deleteConfirmation.dontAskAgain) {
+      localStorage.setItem('skip_delete_confirmation', 'true')
+    }
+    performDelete(deleteConfirmation.ids)
+  }
+  async function handleSaveLead() {
+    try {
+      const payload = { ...leadForm }; delete payload.id; delete payload.created_at
+      const query = isCreatingLead ? supabase.from('leads').insert([payload]) : supabase.from('leads').update(payload).eq('id', selectedLead.id)
+      const { error } = await query
+      if (error) throw error
+      toast.success('Cliente guardado')
+      fetchLeads(); setIsCreatingLead(false); setIsEditingLead(false)
+    } catch (e) { toast.error('Error guardando cliente') }
+  }
+
+  // --- DND LOGIC ---
+  async function handleDragEnd(result) {
+    if (!result.destination) return;
+    const { source, destination, draggableId } = result;
+
+    if (source.droppableId === destination.droppableId) return;
+
+    const newStatus = destination.droppableId;
+
+    // Optimistic UI Update
+    setOrders(prev => prev.map(o => o.id === draggableId ? { ...o, status: newStatus } : o));
+
+    // Call Backend (Notify) instead of direct DB update
+    try {
+      const BACKEND_URL = "https://recuperadora-agente-pb.nojauc.easypanel.host";
+
+      const response = await fetch(`${BACKEND_URL}/orders/update_status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: draggableId, new_status: newStatus })
+      });
+
+      const data = await response.json();
+      if (data.status !== 'success') {
+        toast.error("Error notificando cambio de estado");
+      } else if (data.notified) {
+        toast.success("Cliente notificado del cambio de estado");
+      }
+
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast.error('Error de conexión');
+      fetchOrders(); // Revert on error
+    }
+  }
 
   // --- UI RENDER ---
   return (
