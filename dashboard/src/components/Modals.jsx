@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { X, User, Phone, Mail, DollarSign, Image, FileText, ExternalLink, MessageCircle, CheckCircle2 } from 'lucide-react'
+import { X, User, Phone, Mail, DollarSign, Image, FileText, ExternalLink, MessageCircle, CheckCircle2, MapPin, CreditCard, ChevronRight, AlertCircle, Save } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '../supabase'
 import { StatusSelect } from './StatusSelect'
+import { validateRut, formatRut, validatePhone, formatPhone as formatPhoneValidation } from '../utils/validation'
 
 // Helper
 const formatPhone = (phone) => {
@@ -353,57 +354,151 @@ export function OrderDrawer({ order, onClose, updateOrderLocal }) {
     )
 }
 
-export function LeadModal({ isOpen, isCreating, form, setForm, onClose, onSubmit }) {
-    if (!isOpen) return null;
+export function LeadModal({ isOpen, isCreating, form: initialForm, onClose, onSubmit }) {
+    const [formData, setFormData] = useState(initialForm || {})
+    const [errors, setErrors] = useState({})
+
+    useEffect(() => {
+        setFormData(initialForm || {})
+        setErrors({})
+    }, [initialForm, isOpen])
+
+    if (!isOpen) return null
+
+    const handleChange = (field, value) => {
+        let finalValue = value
+        let newErrors = { ...errors }
+
+        if (field === 'rut') {
+            finalValue = formatRut(value)
+            // Validar RUT
+            if (!validateRut(finalValue)) {
+                newErrors.rut = 'RUT inválido'
+            } else {
+                delete newErrors.rut
+            }
+        }
+
+        if (field === 'phone_number') {
+            // Solo permitir números y +
+            finalValue = value
+            if (value.replace(/\D/g, '').length < 8) {
+                newErrors.phone_number = 'Teléfono incompleto'
+            } else {
+                delete newErrors.phone_number
+            }
+        }
+
+        setFormData(prev => ({ ...prev, [field]: finalValue }))
+        setErrors(newErrors)
+    }
+
+    const handleSubmit = (e) => {
+        e.preventDefault() // Prevenir recarga
+
+        // Validación Final al Guardar
+        const newErrors = {}
+        if (!formData.name) newErrors.name = 'El nombre es obligatorio'
+        if (formData.rut && !validateRut(formData.rut)) newErrors.rut = 'RUT inválido'
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors)
+            toast.error("Por favor corrige los errores antes de guardar")
+            return
+        }
+
+        onSubmit(formData)
+    }
+
     return (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-[#0B1437]/50 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
-            <div className="dashboard-card w-full max-w-2xl relative animate-in zoom-in duration-200 p-8 max-h-[90vh] overflow-y-auto">
-                <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold text-[var(--text-primary)]">{isCreating ? 'Nuevo Cliente' : 'Ficha de Cliente'}</h2>
+            <div className="dashboard-card w-full max-w-2xl relative animate-in zoom-in duration-200 p-0 max-h-[90vh] flex flex-col">
+                <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-white/5">
+                    <h2 className="text-xl font-bold text-[var(--text-primary)]">{isCreating ? 'Nuevo Cliente' : 'Ficha de Cliente'}</h2>
                     <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-full text-[var(--text-secondary)]"><X size={24} /></button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Col 1 */}
-                    <div className="space-y-4">
-                        <div>
-                            <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Nombre Completo</label>
-                            <input className="dashboard-input w-full" placeholder="Ej: Juan Pérez" value={form.name || ''} onChange={e => setForm({ ...form, name: e.target.value })} />
+                <div className="p-8 overflow-y-auto custom-scrollbar">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Col 1 */}
+                        <div className="space-y-4">
+                            <div>
+                                <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Nombre Completo *</label>
+                                <div className="relative">
+                                    <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                    <input
+                                        className={`dashboard-input w-full pl-9 ${errors.name ? 'border-red-500 bg-red-50/10' : ''}`}
+                                        placeholder="Ej: Juan Pérez"
+                                        value={formData.name || ''}
+                                        onChange={e => handleChange('name', e.target.value)}
+                                    />
+                                </div>
+                                {errors.name && <p className="text-[10px] text-red-500 mt-1 font-bold flex items-center gap-1"><AlertCircle size={10} /> {errors.name}</p>}
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">RUT / DNI</label>
+                                <div className="relative">
+                                    <CreditCard size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                    <input
+                                        className={`dashboard-input w-full pl-9 ${errors.rut ? 'border-red-500 bg-red-50/10' : ''}`}
+                                        placeholder="Ej: 12.345.678-K"
+                                        value={formData.rut || ''}
+                                        onChange={e => handleChange('rut', e.target.value)}
+                                        maxLength={12}
+                                    />
+                                </div>
+                                {errors.rut && <p className="text-[10px] text-red-500 mt-1 font-bold flex items-center gap-1"><AlertCircle size={10} /> {errors.rut}</p>}
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Teléfono (WhatsApp)</label>
+                                <div className="relative">
+                                    <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                    <input
+                                        className={`dashboard-input w-full pl-9 ${errors.phone_number ? 'border-red-500 bg-red-50/10' : ''}`}
+                                        placeholder="Ej: +56912345678"
+                                        value={formData.phone_number || ''}
+                                        onChange={e => handleChange('phone_number', e.target.value)}
+                                    />
+                                </div>
+                                <p className="text-[10px] text-[var(--text-secondary)] mt-1 ml-1 opacity-70">Formato: +569...</p>
+                                {errors.phone_number && <p className="text-[10px] text-red-500 mt-1 font-bold flex items-center gap-1"><AlertCircle size={10} /> {errors.phone_number}</p>}
+                            </div>
                         </div>
-                        <div>
-                            <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">RUT / DNI</label>
-                            <input className="dashboard-input w-full" placeholder="Ej: 12.345.678-9" value={form.rut || ''} onChange={e => setForm({ ...form, rut: e.target.value })} />
-                        </div>
-                        <div>
-                            <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Teléfono (WhatsApp)</label>
-                            <input className="dashboard-input w-full" placeholder="Ej: 56912345678" value={form.phone_number || ''} onChange={e => setForm({ ...form, phone_number: e.target.value })} />
-                            <p className="text-[10px] text-[var(--text-secondary)] mt-1 ml-1 opacity-70">Formato: 569 + 8 dígitos (sin espacios ni (+))</p>
-                        </div>
-                    </div>
 
-                    {/* Col 2 */}
-                    <div className="space-y-4">
-                        <div>
-                            <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Email</label>
-                            <input className="dashboard-input w-full" placeholder="cliente@email.com" value={form.email || ''} onChange={e => setForm({ ...form, email: e.target.value })} />
-                        </div>
-                        <div>
-                            <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Nombre Empresa / Fantasía</label>
-                            <input className="dashboard-input w-full" placeholder="Ej: Distribuidora XP" value={form.business_name || ''} onChange={e => setForm({ ...form, business_name: e.target.value })} />
-                        </div>
-                        <div>
-                            <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Dirección / Comuna</label>
-                            <input className="dashboard-input w-full" placeholder="Ej: Av. Providencia 1234" value={form.address || ''} onChange={e => setForm({ ...form, address: e.target.value })} />
+                        {/* Col 2 */}
+                        <div className="space-y-4">
+                            <div>
+                                <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Email</label>
+                                <div className="relative">
+                                    <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                    <input className="dashboard-input w-full pl-9" placeholder="cliente@email.com" value={formData.email || ''} onChange={e => handleChange('email', e.target.value)} />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Nombre Empresa / Fantasía</label>
+                                <input className="dashboard-input w-full" placeholder="Ej: Distribuidora XP" value={formData.business_name || ''} onChange={e => handleChange('business_name', e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Dirección / Comuna</label>
+                                <div className="relative">
+                                    <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                    <input className="dashboard-input w-full pl-9" placeholder="Ej: Av. Providencia 1234" value={formData.address || ''} onChange={e => handleChange('address', e.target.value)} />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="mt-8 pt-6 border-t border-gray-100 dark:border-white/5 flex justify-end gap-3">
+                <div className="p-6 border-t border-gray-100 dark:border-white/5 flex justify-end gap-3 mt-auto bg-[var(--bg-card)] rounded-b-2xl">
                     <button onClick={onClose} className="px-6 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 font-bold text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">Cancelar</button>
-                    <button onClick={onSubmit} className="px-8 py-2.5 bg-[var(--brand-primary)] text-white rounded-xl font-bold shadow-lg shadow-[#4318FF]/20 hover:scale-105 transition-transform">Guardar Datos</button>
+                    <button onClick={handleSubmit} className="px-8 py-2.5 bg-[var(--brand-primary)] text-white rounded-xl font-bold shadow-lg shadow-[#4318FF]/20 hover:scale-105 transition-transform flex items-center gap-2">
+                        <Save size={18} />
+                        Guardar Datos
+                    </button>
                 </div>
             </div>
         </div>
     )
 }
+```
