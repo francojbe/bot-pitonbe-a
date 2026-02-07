@@ -22,7 +22,7 @@ function App() {
   const { orders, setOrders, loading: loadingOrders } = useOrders()
   const { leads, setLeads, loading: loadingLeads } = useLeads()
   const [selectedIds, setSelectedIds] = useState(new Set())
-  const [activeTab, setActiveTab] = useState('dashboard')
+  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('active_tab') || 'dashboard')
   const [globalSearch, setGlobalSearch] = useState('')
   const [viewMode, setViewMode] = useState(() => localStorage.getItem('dashboard_view_mode') || 'kanban')
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') === 'dark')
@@ -55,6 +55,7 @@ function App() {
   }, [isDarkMode])
 
   useEffect(() => { localStorage.setItem('dashboard_view_mode', viewMode) }, [viewMode])
+  useEffect(() => { localStorage.setItem('active_tab', activeTab) }, [activeTab])
   useEffect(() => { localStorage.setItem('sidebar_collapsed', isSidebarCollapsed) }, [isSidebarCollapsed])
 
   useEffect(() => { localStorage.setItem('sidebar_collapsed', isSidebarCollapsed) }, [isSidebarCollapsed])
