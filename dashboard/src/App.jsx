@@ -168,7 +168,7 @@ function App() {
         {/* HEADER */}
         <header className="h-20 flex items-center justify-between px-6 pt-6 pb-2">
           <div>
-            <p className="text-sm font-medium text-[var(--text-secondary)]">Pages / {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</p>
+            <p className="text-sm font-medium text-[var(--text-secondary)]">Páginas / {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</p>
             <h1 className="text-2xl font-bold tracking-tight capitalize">{activeTab}</h1>
           </div>
           <div className="flex items-center gap-3 bg-[var(--bg-card)] p-3 rounded-full shadow-sm dark:shadow-none">
