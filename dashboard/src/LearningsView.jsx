@@ -11,7 +11,7 @@ export default function LearningsView() {
     // In App.jsx it seems hardcoded or relative? 
     // Let's assume production URL logic or relative path if proxied.
     // Actually, looking at App.jsx from previous turns, it used explicit full URL: "https://recuperadora-agente-pb.nojauc.easypanel.host"
-    const BACKEND_URL = "https://recuperadora-agente-pb.nojauc.easypanel.host";
+    const BACKEND_URL = import.meta.env.VITE_API_URL || "https://recuperadora-agente-pb.nojauc.easypanel.host";
 
     const fetchLearnings = async () => {
         setLoading(true);
