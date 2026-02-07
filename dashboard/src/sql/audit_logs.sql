@@ -2,7 +2,7 @@
 -- 1. Create audit_logs table
 CREATE TABLE IF NOT EXISTS audit_logs (
     id SERIAL PRIMARY KEY,
-    order_id TEXT REFERENCES orders(id) ON DELETE CASCADE,
+    order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
     old_status TEXT,
     new_status TEXT,
     old_amount NUMERIC(10,2),

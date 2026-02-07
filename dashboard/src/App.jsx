@@ -8,7 +8,7 @@ import { LeadsView } from './components/LeadsView'
 import { ReportsView } from './components/ReportsView'
 import { OrderDrawer, LeadModal } from './components/Modals'
 import {
-  Search, Moon, Sun, Trash2, CheckSquare
+  Search, Moon, Sun, Trash2, CheckSquare, Menu
 } from 'lucide-react'
 
 import { useOrders } from './hooks/useOrders'
@@ -26,7 +26,9 @@ function App() {
   const [globalSearch, setGlobalSearch] = useState('')
   const [viewMode, setViewMode] = useState(() => localStorage.getItem('dashboard_view_mode') || 'kanban')
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') === 'dark')
+
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem('sidebar_collapsed') === 'true')
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   // Drawer & Modals
   const [selectedOrder, setSelectedOrder] = useState(null)
@@ -161,15 +163,31 @@ function App() {
       <Toaster position="top-center" richColors theme={isDarkMode ? 'dark' : 'light'} />
 
       {/* LEFT SIDEBAR (Horizon Style) */}
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} collapsed={isSidebarCollapsed} setCollapsed={setIsSidebarCollapsed} />
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        collapsed={isSidebarCollapsed}
+        setCollapsed={setIsSidebarCollapsed}
+        mobileOpen={mobileMenuOpen}
+        setMobileOpen={setMobileMenuOpen}
+      />
 
       {/* CENTER PANEL */}
       <div className="flex-1 flex flex-col h-full relative overflow-hidden">
         {/* HEADER */}
         <header className="h-20 flex items-center justify-between px-6 pt-6 pb-2">
-          <div>
-            <p className="text-sm font-medium text-[var(--text-secondary)]">Páginas / {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</p>
-            <h1 className="text-2xl font-bold tracking-tight capitalize">{activeTab}</h1>
+
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="md:hidden p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            >
+              <Menu size={24} />
+            </button>
+            <div>
+              <p className="text-sm font-medium text-[var(--text-secondary)]">Páginas / {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</p>
+              <h1 className="text-2xl font-bold tracking-tight capitalize">{activeTab}</h1>
+            </div>
           </div>
           <div className="flex items-center gap-3 bg-[var(--bg-card)] p-3 rounded-full shadow-sm dark:shadow-none">
             <div className="relative">

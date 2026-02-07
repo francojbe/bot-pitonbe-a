@@ -35,7 +35,7 @@ export function LeadsView({ leads, search, onEdit, onCreate, selectedIds, setSel
 
     return (
         <div className="dashboard-card h-full flex flex-col">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                 <div>
                     <h3 className="text-xl font-bold text-[var(--text-primary)]">Directorio de Clientes</h3>
                     <p className="text-sm text-[var(--text-secondary)] font-medium">Total: {leads.length} clientes registrados</p>
@@ -55,8 +55,8 @@ export function LeadsView({ leads, search, onEdit, onCreate, selectedIds, setSel
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto overflow-x-hidden">
-                <table className="w-full text-left table-fixed">
+            <div className="flex-1 overflow-y-auto overflow-x-auto">
+                <table className="w-full text-left min-w-[600px]">
                     <thead className="sticky top-0 bg-[#F9FAFC] dark:bg-white/5 border-b border-gray-100 dark:border-white/5 z-20">
                         <tr>
                             <th className="px-6 py-4 w-14">

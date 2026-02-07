@@ -131,13 +131,13 @@ export function DashboardView({ orders, search, viewMode, setViewMode, onSelectO
         <div className="space-y-6 h-full flex flex-col">
             {/* Section Header & Filters */}
             <div className="flex flex-col gap-4 shrink-0">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                         <h2 className="text-lg font-bold text-[var(--text-primary)]">Ordenes Recientes</h2>
                         <p className="text-sm text-[var(--text-secondary)]">Mostrando {paginatedOrders.length} de {filteredOrders.length} órdenes</p>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
                         {/* Status Filter */}
                         <div className="relative group">
                             <button className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition-all ${statusFilter ? 'bg-[var(--brand-primary)] text-white border-[var(--brand-primary)]' : 'bg-white border-gray-200 text-[var(--text-secondary)] hover:bg-gray-50'}`}>
@@ -201,8 +201,8 @@ export function DashboardView({ orders, search, viewMode, setViewMode, onSelectO
                         <KanbanBoard orders={paginatedOrders} onSelectOrder={onSelectOrder} />
                     </DragDropContext>
                 ) : (
-                    <div className="dashboard-card overflow-hidden !p-0">
-                        <table className="w-full">
+                    <div className="dashboard-card overflow-x-auto !p-0">
+                        <table className="w-full min-w-[800px]">
                             <thead className="bg-[#F9FAFC] dark:bg-white/5 border-b border-transparent dark:border-white/5">
                                 <tr>
                                     <th className="px-6 py-4 w-12"><input type="checkbox" className="accent-[#4318FF] w-4 h-4 rounded cursor-pointer" onChange={(e) => setSelectedIds(e.target.checked ? new Set(paginatedOrders.map(o => o.id)) : new Set())} checked={selectedIds.size === paginatedOrders.length && paginatedOrders.length > 0} /></th>
