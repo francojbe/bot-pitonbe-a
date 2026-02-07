@@ -1,6 +1,7 @@
-import { MoreVertical, ArrowUpRight, CheckCircle2, Trash2, X, Users, CheckSquare, ChevronLeft, ChevronRight } from 'lucide-react'
+import { MoreVertical, ArrowUpRight, CheckCircle2, Trash2, X, Users, CheckSquare, ChevronLeft, ChevronRight, Filter, Calendar } from 'lucide-react'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 import { StatusBadge } from './StatusBadge'
+import { useState } from 'react'
 
 function KanbanBoard({ orders, onSelectOrder }) {
     const columns = ['NUEVO', 'DISEÑO', 'PRODUCCIÓN', 'LISTO', 'ENTREGADO']
@@ -68,16 +69,41 @@ function KanbanBoard({ orders, onSelectOrder }) {
 }
 
 export function DashboardView({ orders, search, viewMode, setViewMode, onSelectOrder, selectedIds, setSelectedIds, onDelete, onDragEnd, currentPage, setCurrentPage, itemsPerPage, loading }) {
+    // Advanced Filters State
+    const [statusFilter, setStatusFilter] = useState('')
+    const [dateFilter, setDateFilter] = useState('all') // 'all', 'today', 'week', 'month'
 
     // Filter Logic
     const filteredOrders = orders.filter(o => {
-        if (!search) return true
-        const term = search.toLowerCase()
-        return (
-            o.description?.toLowerCase().includes(term) ||
-            o.id?.toLowerCase().includes(term) ||
-            o.leads?.name?.toLowerCase().includes(term)
-        )
+        // 1. Search Term
+        if (search) {
+            const term = search.toLowerCase()
+            if (!o.description?.toLowerCase().includes(term) &&
+                !o.id?.toLowerCase().includes(term) &&
+                !o.leads?.name?.toLowerCase().includes(term)) {
+                return false
+            }
+        }
+
+        // 2. Status Filter
+        if (statusFilter && o.status !== statusFilter) return false
+
+        // 3. Date Filter
+        if (dateFilter !== 'all') {
+            const date = new Date(o.created_at)
+            const now = new Date()
+            if (dateFilter === 'today') {
+                if (date.toDateString() !== now.toDateString()) return false
+            } else if (dateFilter === 'week') {
+                const oneWeekAgo = new Date(now.setDate(now.getDate() - 7))
+                if (date < oneWeekAgo) return false
+            } else if (dateFilter === 'month') {
+                const oneMonthAgo = new Date(now.setMonth(now.getMonth() - 1))
+                if (date < oneMonthAgo) return false
+            }
+        }
+
+        return true
     })
 
     // Pagination Logic
@@ -102,18 +128,56 @@ export function DashboardView({ orders, search, viewMode, setViewMode, onSelectO
 
     return (
         <div className="space-y-6 h-full flex flex-col">
-            {/* Section Header */}
-            <div className="flex justify-between items-center shrink-0">
-                <div>
-                    <h2 className="text-lg font-bold text-[var(--text-primary)]">Ordenes Recientes</h2>
-                    <p className="text-sm text-[var(--text-secondary)]">Mostrando {paginatedOrders.length} de {filteredOrders.length} órdenes</p>
-                </div>
-                <div className="flex bg-[var(--bg-card)] p-1 rounded-xl shadow-sm">
-                    <button onClick={() => setViewMode('list')} className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-[var(--brand-main)] text-[var(--brand-primary)] bg-[#F4F7FE]' : 'text-[var(--text-secondary)]'}`}><MoreVertical size={18} className="rotate-90" /></button>
-                    <button onClick={() => setViewMode('kanban')} className={`p-2 rounded-lg transition-all ${viewMode === 'kanban' ? 'bg-[var(--brand-main)] text-[var(--brand-primary)] bg-[#F4F7FE]' : 'text-[var(--text-secondary)]'}`}><ArrowUpRight size={18} /></button>
+            {/* Section Header & Filters */}
+            <div className="flex flex-col gap-4 shrink-0">
+                <div className="flex justify-between items-center">
+                    <div>
+                        <h2 className="text-lg font-bold text-[var(--text-primary)]">Ordenes Recientes</h2>
+                        <p className="text-sm text-[var(--text-secondary)]">Mostrando {paginatedOrders.length} de {filteredOrders.length} órdenes</p>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        {/* Status Filter */}
+                        <div className="relative group">
+                            <button className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition-all ${statusFilter ? 'bg-[var(--brand-primary)] text-white border-[var(--brand-primary)]' : 'bg-white border-gray-200 text-[var(--text-secondary)] hover:bg-gray-50'}`}>
+                                <Filter size={14} />
+                                {statusFilter || 'Todos los Estados'}
+                                {statusFilter && <X size={12} className="ml-1 hover:text-red-200" onClick={(e) => { e.stopPropagation(); setStatusFilter('') }} />}
+                            </button>
+                            {/* Dropdown (Simplified for now, could use Radix UI or similar) */}
+                            <div className="absolute right-0 top-full mt-2 w-40 bg-white border border-gray-100 rounded-xl shadow-xl p-1 hidden group-hover:block z-50">
+                                {['NUEVO', 'DISEÑO', 'PRODUCCIÓN', 'LISTO', 'ENTREGADO'].map(s => (
+                                    <button key={s} onClick={() => setStatusFilter(s)} className="w-full text-left px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:bg-gray-50 rounded-lg">
+                                        {s}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Date Filter */}
+                        <div className="relative group">
+                            <button className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition-all ${dateFilter !== 'all' ? 'bg-[var(--brand-primary)] text-white border-[var(--brand-primary)]' : 'bg-white border-gray-200 text-[var(--text-secondary)] hover:bg-gray-50'}`}>
+                                <Calendar size={14} />
+                                {dateFilter === 'all' ? 'Cualquier Fecha' : dateFilter === 'today' ? 'Hoy' : dateFilter === 'week' ? 'Esta Semana' : 'Este Mes'}
+                                {dateFilter !== 'all' && <X size={12} className="ml-1 hover:text-red-200" onClick={(e) => { e.stopPropagation(); setDateFilter('all') }} />}
+                            </button>
+                            <div className="absolute right-0 top-full mt-2 w-40 bg-white border border-gray-100 rounded-xl shadow-xl p-1 hidden group-hover:block z-50">
+                                <button onClick={() => setDateFilter('all')} className="w-full text-left px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:bg-gray-50 rounded-lg">Cualquier Fecha</button>
+                                <button onClick={() => setDateFilter('today')} className="w-full text-left px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:bg-gray-50 rounded-lg">Hoy</button>
+                                <button onClick={() => setDateFilter('week')} className="w-full text-left px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:bg-gray-50 rounded-lg">Última Semana</button>
+                                <button onClick={() => setDateFilter('month')} className="w-full text-left px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:bg-gray-50 rounded-lg">Último Mes</button>
+                            </div>
+                        </div>
+
+                        <div className="h-6 w-px bg-gray-200 mx-1"></div>
+
+                        <div className="flex bg-[var(--bg-card)] p-1 rounded-xl shadow-sm">
+                            <button onClick={() => setViewMode('list')} className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-[var(--brand-main)] text-[var(--brand-primary)] bg-[#F4F7FE]' : 'text-[var(--text-secondary)]'}`}><MoreVertical size={18} className="rotate-90" /></button>
+                            <button onClick={() => setViewMode('kanban')} className={`p-2 rounded-lg transition-all ${viewMode === 'kanban' ? 'bg-[var(--brand-main)] text-[var(--brand-primary)] bg-[#F4F7FE]' : 'text-[var(--text-secondary)]'}`}><ArrowUpRight size={18} /></button>
+                        </div>
+                    </div>
                 </div>
             </div>
-
             {/* Batch Action Floater */}
             {selectedIds.size > 0 && (
                 <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-[#2B3674] text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-6 animate-in slide-in-from-bottom-4 zoom-in duration-300">
