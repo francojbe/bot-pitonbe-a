@@ -23,6 +23,7 @@ function App() {
   const { leads, setLeads, loading: loadingLeads } = useLeads()
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [activeTab, setActiveTab] = useState('dashboard')
+  const [globalSearch, setGlobalSearch] = useState('')
   const [viewMode, setViewMode] = useState(() => localStorage.getItem('dashboard_view_mode') || 'kanban')
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') === 'dark')
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem('sidebar_collapsed') === 'true')
@@ -173,7 +174,13 @@ function App() {
           <div className="flex items-center gap-3 bg-[var(--bg-card)] p-3 rounded-full shadow-sm dark:shadow-none">
             <div className="relative">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]" />
-              <input type="text" placeholder="Search..." className="pl-9 pr-4 py-1.5 rounded-full bg-[var(--bg-main)] text-sm outline-none w-40 focus:w-64 transition-all" />
+              <input
+                type="text"
+                placeholder="Buscar orden o cliente..."
+                value={globalSearch}
+                onChange={(e) => setGlobalSearch(e.target.value)}
+                className="pl-9 pr-4 py-1.5 rounded-full bg-[var(--bg-main)] text-sm outline-none w-40 focus:w-64 transition-all"
+              />
             </div>
             <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 text-[var(--text-secondary)] hover:text-[var(--brand-primary)] transition-colors">
               {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
@@ -189,6 +196,8 @@ function App() {
           {activeTab === 'dashboard' && (
             <DashboardView
               orders={orders}
+              loading={loadingOrders}
+              search={globalSearch}
               viewMode={viewMode}
               setViewMode={setViewMode}
               onSelectOrder={setSelectedOrder}
@@ -205,8 +214,8 @@ function App() {
             <LeadsView
               leads={leads}
               orders={orders}
-              search={leadSearch}
-              setSearch={setLeadSearch}
+              search={globalSearch}
+              setSearch={setGlobalSearch}
               onEdit={(l) => { setSelectedLead(l); setLeadForm(l); setIsEditingLead(true) }}
               onCreate={() => { setLeadForm({}); setIsCreatingLead(true) }}
               selectedIds={selectedLeadIds}

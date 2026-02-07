@@ -14,7 +14,12 @@ const formatPhone = (phone) => {
 }
 
 export function LeadsView({ leads, search, onEdit, onCreate, selectedIds, setSelectedIds, onDelete }) {
-    const filtered = leads.filter(l => l.name?.toLowerCase().includes(search.toLowerCase()))
+    const filtered = leads.filter(l =>
+        !search ||
+        l.name?.toLowerCase().includes(search.toLowerCase()) ||
+        l.phone_number?.includes(search) ||
+        l.rut?.includes(search)
+    )
 
     const toggleAll = () => {
         if (selectedIds.size === filtered.length) setSelectedIds(new Set())

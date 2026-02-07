@@ -67,11 +67,38 @@ function KanbanBoard({ orders, onSelectOrder }) {
     )
 }
 
-export function DashboardView({ orders, viewMode, setViewMode, onSelectOrder, selectedIds, setSelectedIds, onDelete, onDragEnd, currentPage, setCurrentPage, itemsPerPage }) {
+export function DashboardView({ orders, search, viewMode, setViewMode, onSelectOrder, selectedIds, setSelectedIds, onDelete, onDragEnd, currentPage, setCurrentPage, itemsPerPage, loading }) {
+
+    // Filter Logic
+    const filteredOrders = orders.filter(o => {
+        if (!search) return true
+        const term = search.toLowerCase()
+        return (
+            o.description?.toLowerCase().includes(term) ||
+            o.id?.toLowerCase().includes(term) ||
+            o.leads?.name?.toLowerCase().includes(term)
+        )
+    })
 
     // Pagination Logic
-    const totalPages = Math.ceil(orders.length / itemsPerPage)
-    const paginatedOrders = orders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+    const totalPages = Math.ceil(filteredOrders.length / itemsPerPage)
+    const paginatedOrders = filteredOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+
+    if (loading) {
+        return (
+            <div className="space-y-6 h-full flex flex-col p-6">
+                <div className="flex justify-between items-center mb-6">
+                    <div className="h-8 w-48 bg-gray-200 dark:bg-white/10 rounded animate-pulse"></div>
+                    <div className="h-10 w-24 bg-gray-200 dark:bg-white/10 rounded animate-pulse"></div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="h-40 bg-gray-100 dark:bg-white/5 rounded-xl animate-pulse"></div>
+                    ))}
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="space-y-6 h-full flex flex-col">
@@ -79,7 +106,7 @@ export function DashboardView({ orders, viewMode, setViewMode, onSelectOrder, se
             <div className="flex justify-between items-center shrink-0">
                 <div>
                     <h2 className="text-lg font-bold text-[var(--text-primary)]">Ordenes Recientes</h2>
-                    <p className="text-sm text-[var(--text-secondary)]">Mostrando {paginatedOrders.length} de {orders.length} órdenes</p>
+                    <p className="text-sm text-[var(--text-secondary)]">Mostrando {paginatedOrders.length} de {filteredOrders.length} órdenes</p>
                 </div>
                 <div className="flex bg-[var(--bg-card)] p-1 rounded-xl shadow-sm">
                     <button onClick={() => setViewMode('list')} className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-[var(--brand-main)] text-[var(--brand-primary)] bg-[#F4F7FE]' : 'text-[var(--text-secondary)]'}`}><MoreVertical size={18} className="rotate-90" /></button>
