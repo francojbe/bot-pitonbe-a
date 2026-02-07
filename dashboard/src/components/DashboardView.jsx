@@ -144,8 +144,10 @@ export function DashboardView({ orders, search, viewMode, setViewMode, onSelectO
                                 {statusFilter || 'Todos los Estados'}
                                 {statusFilter && <X size={12} className="ml-1 hover:text-red-200" onClick={(e) => { e.stopPropagation(); setStatusFilter('') }} />}
                             </button>
-                            {/* Dropdown (Simplified for now, could use Radix UI or similar) */}
-                            <div className="absolute right-0 top-full mt-2 w-40 bg-white border border-gray-100 rounded-xl shadow-xl p-1 hidden group-hover:block z-50">
+                            {/* Invisible Bridge */}
+                            <div className="absolute h-2 w-full top-full left-0 z-40"></div>
+                            {/* Dropdown */}
+                            <div className="absolute right-0 top-[calc(100%+8px)] mt-0 w-40 bg-white border border-gray-100 rounded-xl shadow-xl p-1 hidden group-hover:block z-50 animate-in fade-in zoom-in-95 duration-100">
                                 {['NUEVO', 'DISEÑO', 'PRODUCCIÓN', 'LISTO', 'ENTREGADO'].map(s => (
                                     <button key={s} onClick={() => setStatusFilter(s)} className="w-full text-left px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:bg-gray-50 rounded-lg">
                                         {s}
@@ -161,7 +163,10 @@ export function DashboardView({ orders, search, viewMode, setViewMode, onSelectO
                                 {dateFilter === 'all' ? 'Cualquier Fecha' : dateFilter === 'today' ? 'Hoy' : dateFilter === 'week' ? 'Esta Semana' : 'Este Mes'}
                                 {dateFilter !== 'all' && <X size={12} className="ml-1 hover:text-red-200" onClick={(e) => { e.stopPropagation(); setDateFilter('all') }} />}
                             </button>
-                            <div className="absolute right-0 top-full mt-2 w-40 bg-white border border-gray-100 rounded-xl shadow-xl p-1 hidden group-hover:block z-50">
+                            {/* Invisible Bridge */}
+                            <div className="absolute h-2 w-full top-full left-0 z-40"></div>
+                            {/* Dropdown */}
+                            <div className="absolute right-0 top-[calc(100%+8px)] mt-0 w-40 bg-white border border-gray-100 rounded-xl shadow-xl p-1 hidden group-hover:block z-50 animate-in fade-in zoom-in-95 duration-100">
                                 <button onClick={() => setDateFilter('all')} className="w-full text-left px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:bg-gray-50 rounded-lg">Cualquier Fecha</button>
                                 <button onClick={() => setDateFilter('today')} className="w-full text-left px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:bg-gray-50 rounded-lg">Hoy</button>
                                 <button onClick={() => setDateFilter('week')} className="w-full text-left px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:bg-gray-50 rounded-lg">Última Semana</button>
