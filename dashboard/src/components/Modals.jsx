@@ -19,8 +19,24 @@ const formatPhone = (phone) => {
     return phone
 }
 
+import { AuditService } from '../services/AuditService'
+
 export function OrderDrawer({ order, onClose, updateOrderLocal }) {
     const [form, setForm] = useState({ ...order })
+    const [activeTab, setActiveTab] = useState('specs') // 'specs' or 'history'
+    const [auditLogs, setAuditLogs] = useState([])
+    const [isLoadingLogs, setIsLoadingLogs] = useState(false)
+
+    // Load logs when activeTab becomes 'history'
+    useEffect(() => {
+        if (activeTab === 'history') {
+            setIsLoadingLogs(true)
+            AuditService.getLogs(order.id).then(logs => {
+                setAuditLogs(logs)
+                setIsLoadingLogs(false)
+            })
+        }
+    }, [activeTab, order.id])
 
     // Safe Calculations
     const total = Number(form.total_amount) || 0
@@ -55,6 +71,7 @@ export function OrderDrawer({ order, onClose, updateOrderLocal }) {
 
             const data = await response.json();
             if (data.status === 'success') {
+                AuditService.logStatusChange(order.id, form.status, newStatus)
                 if (data.notified) toast.success(`Estado actualizado a ${newStatus} y cliente notificado.`);
                 else toast.success(`Estado actualizado a ${newStatus} (Cliente sin teléfono).`);
             } else {
@@ -89,6 +106,11 @@ export function OrderDrawer({ order, onClose, updateOrderLocal }) {
             const data = await response.json();
             if (data.status === 'success') {
                 updateOrderLocal({ ...form, deposit_amount: actualDeposit, total_amount: actualTotal });
+                AuditService.logPaymentUpdate(order.id, form.deposit_amount, actualDeposit, 'DEPOSIT')
+                if (form.total_amount !== actualTotal) {
+                    AuditService.logPaymentUpdate(order.id, form.total_amount, actualTotal, 'TOTAL')
+                }
+
                 if (data.notified) toast.success("Pago registrado y cliente notificado. ✅");
                 else toast.success("Pago guardado.");
             } else {
@@ -225,8 +247,27 @@ export function OrderDrawer({ order, onClose, updateOrderLocal }) {
                             </div>
                         </div>
                         {/* Details Section Structured */}
+                    </div>
+
+                    {/* TABS HEADER */}
+                    <div className="flex border-b border-gray-100 dark:border-white/5 mb-4">
+                        <button
+                            onClick={() => setActiveTab('specs')}
+                            className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeTab === 'specs' ? 'border-[var(--brand-primary)] text-[var(--brand-primary)]' : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+                        >
+                            Especificaciones
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('history')}
+                            className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeTab === 'history' ? 'border-[var(--brand-primary)] text-[var(--brand-primary)]' : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+                        >
+                            Historial
+                        </button>
+                    </div>
+
+                    {/* SPECS TAB */}
+                    {activeTab === 'specs' && (
                         <div>
-                            <label className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-3 block">Especificaciones del Pedido</label>
                             <div className="grid grid-cols-2 gap-4 mb-4">
                                 <div>
                                     <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Material</label>
@@ -304,51 +345,84 @@ export function OrderDrawer({ order, onClose, updateOrderLocal }) {
                                 placeholder="Detalles extra..."
                             ></textarea>
                         </div>
+                    )}
 
-                        {/* Files Section */}
-                        <div>
-                            <div className="flex justify-between items-center mb-4">
-                                <label className="text-xs font-bold text-[var(--text-secondary)] uppercase">Archivos Adjuntos</label>
-                                {/* Allow upload trigger here later */}
-                            </div>
-                            {order.files_url && order.files_url.length > 0 ? (
-                                <div className="grid grid-cols-2 gap-4">
-                                    {order.files_url.map((file, i) => (
-                                        <a key={i} href={file} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-white/5 hover:bg-[#F4F7FE] dark:hover:bg-white/5 transition-colors group">
-                                            <div className="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
-                                                {file.match(/\.(jpg|jpeg|png|gif)$/i) ? <Image size={18} /> : <FileText size={18} />}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-bold truncate">Archivo {i + 1}</p>
-                                                <p className="text-xs text-[var(--text-secondary)] uppercase">{file.split('.').pop()}</p>
-                                            </div>
-                                            <ExternalLink size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        </a>
-                                    ))}
-                                </div>
+                    {/* HISTORY TAB */}
+                    {activeTab === 'history' && (
+                        <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                            {isLoadingLogs ? (
+                                <div className="text-center py-8 text-[var(--text-secondary)]">Cargando historial...</div>
+                            ) : auditLogs.length === 0 ? (
+                                <div className="text-center py-8 text-[var(--text-secondary)] italic">No hay historial registrado aún.</div>
                             ) : (
-                                <div className="p-8 border-2 border-dashed border-gray-200 dark:border-white/10 rounded-xl flex flex-col items-center justify-center text-[var(--text-secondary)] gap-2">
-                                    <FileText size={32} className="opacity-20" />
-                                    <p className="text-sm font-medium">No hay archivos adjuntos</p>
+                                <div className="relative border-l-2 border-gray-100 dark:border-white/10 ml-3 space-y-6 pb-2">
+                                    {auditLogs.map((log) => (
+                                        <div key={log.id} className="relative pl-6">
+                                            <div className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full border-2 border-white dark:border-[#111C44] ${log.change_type.includes('STATUS') ? 'bg-blue-500' :
+                                                log.change_type.includes('PAYMENT') ? 'bg-green-500' : 'bg-gray-400'
+                                                }`}></div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-0.5">
+                                                    {new Date(log.created_at).toLocaleString()}
+                                                </span>
+                                                <span className="text-sm font-bold text-[var(--text-primary)]">
+                                                    {log.change_type === 'STATUS_CHANGE' ? 'Cambio de Estado' :
+                                                        log.change_type.includes('PAYMENT') ? 'Actualización de Pago' : 'Evento'}
+                                                </span>
+                                                <p className="text-xs text-[var(--text-secondary)] mt-1 bg-[#F4F7FE] dark:bg-white/5 p-2 rounded-lg">
+                                                    {log.details}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             )}
                         </div>
-                    </div>
+                    )}
 
-                    {/* Footer Actions */}
-                    <div className="p-6 border-t border-gray-100 dark:border-white/5 bg-[var(--bg-card)] flex gap-4">
-                        <button onClick={sendWhatsApp} className="flex-1 btn-primary-soft flex items-center justify-center gap-2">
-                            <MessageCircle size={18} /> Enviar WhatsApp
-                        </button>
-                        {!isPaid && (
-                            <button
-                                onClick={() => handlePaymentUpdate(form.total_amount, undefined)}
-                                className="px-6 py-3 bg-green-500/10 text-green-600 rounded-xl font-bold hover:bg-green-500/20 transition-colors flex items-center gap-2"
-                            >
-                                <CheckCircle2 size={18} /> Registrar Pago Total
-                            </button>
+                    {/* Files Section */}
+                    <div>
+                        <div className="flex justify-between items-center mb-4">
+                            <label className="text-xs font-bold text-[var(--text-secondary)] uppercase">Archivos Adjuntos</label>
+                            {/* Allow upload trigger here later */}
+                        </div>
+                        {order.files_url && order.files_url.length > 0 ? (
+                            <div className="grid grid-cols-2 gap-4">
+                                {order.files_url.map((file, i) => (
+                                    <a key={i} href={file} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-white/5 hover:bg-[#F4F7FE] dark:hover:bg-white/5 transition-colors group">
+                                        <div className="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                                            {file.match(/\.(jpg|jpeg|png|gif)$/i) ? <Image size={18} /> : <FileText size={18} />}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-bold truncate">Archivo {i + 1}</p>
+                                            <p className="text-xs text-[var(--text-secondary)] uppercase">{file.split('.').pop()}</p>
+                                        </div>
+                                        <ExternalLink size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    </a>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="p-8 border-2 border-dashed border-gray-200 dark:border-white/10 rounded-xl flex flex-col items-center justify-center text-[var(--text-secondary)] gap-2">
+                                <FileText size={32} className="opacity-20" />
+                                <p className="text-sm font-medium">No hay archivos adjuntos</p>
+                            </div>
                         )}
                     </div>
+                </div>
+
+                {/* Footer Actions */}
+                <div className="p-6 border-t border-gray-100 dark:border-white/5 bg-[var(--bg-card)] flex gap-4">
+                    <button onClick={sendWhatsApp} className="flex-1 btn-primary-soft flex items-center justify-center gap-2">
+                        <MessageCircle size={18} /> Enviar WhatsApp
+                    </button>
+                    {!isPaid && (
+                        <button
+                            onClick={() => handlePaymentUpdate(form.total_amount, undefined)}
+                            className="px-6 py-3 bg-green-500/10 text-green-600 rounded-xl font-bold hover:bg-green-500/20 transition-colors flex items-center gap-2"
+                        >
+                            <CheckCircle2 size={18} /> Registrar Pago Total
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
