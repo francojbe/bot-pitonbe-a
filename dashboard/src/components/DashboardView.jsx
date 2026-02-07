@@ -2,9 +2,10 @@ import { MoreVertical, ArrowUpRight, CheckCircle2, Trash2, X, Users, CheckSquare
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 import { StatusBadge } from './StatusBadge'
 import { useState } from 'react'
+import { ORDER_STATUS_LIST } from '../constants'
 
 function KanbanBoard({ orders, onSelectOrder }) {
-    const columns = ['NUEVO', 'DISEÑO', 'PRODUCCIÓN', 'LISTO', 'ENTREGADO']
+    const columns = ORDER_STATUS_LIST
 
     return (
         <div className="flex gap-4 overflow-x-auto pb-6 h-full items-start w-full">
@@ -148,7 +149,7 @@ export function DashboardView({ orders, search, viewMode, setViewMode, onSelectO
                             <div className="absolute h-2 w-full top-full left-0 z-40"></div>
                             {/* Dropdown */}
                             <div className="absolute right-0 top-[calc(100%+8px)] mt-0 w-40 bg-white border border-gray-100 rounded-xl shadow-xl p-1 hidden group-hover:block z-50 animate-in fade-in zoom-in-95 duration-100">
-                                {['NUEVO', 'DISEÑO', 'PRODUCCIÓN', 'LISTO', 'ENTREGADO'].map(s => (
+                                {ORDER_STATUS_LIST.map(s => (
                                     <button key={s} onClick={() => setStatusFilter(s)} className="w-full text-left px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:bg-gray-50 rounded-lg">
                                         {s}
                                     </button>

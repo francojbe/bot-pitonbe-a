@@ -1,10 +1,12 @@
-export function StatusBadge({ status, mini }) {
+import { ORDER_STATUS } from '../constants'
+
+export function StatusBadge({ status, mini = false }) {
     const styles = {
-        'NUEVO': 'text-orange-500 bg-orange-500/10',
-        'DISEÑO': 'text-purple-500 bg-purple-500/10',
-        'PRODUCCIÓN': 'text-yellow-500 bg-yellow-500/10',
-        'LISTO': 'text-green-500 bg-green-500/10',
-        'ENTREGADO': 'text-gray-500 bg-gray-500/10',
+        [ORDER_STATUS.NEW]: 'bg-blue-100 text-blue-600',
+        [ORDER_STATUS.DESIGN]: 'bg-purple-100 text-purple-600',
+        [ORDER_STATUS.PRODUCTION]: 'bg-orange-100 text-orange-600',
+        [ORDER_STATUS.READY]: 'bg-indigo-100 text-indigo-600',
+        [ORDER_STATUS.DELIVERED]: 'bg-green-100 text-green-600',
     }
     const colorClass = styles[status] || 'text-gray-500 bg-gray-100'
     return (

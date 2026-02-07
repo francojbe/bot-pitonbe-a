@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { supabase } from '../supabase'
 import { StatusSelect } from './StatusSelect'
 import { validateRut, formatRut, validatePhone, formatPhone as formatPhoneValidation } from '../utils/validation'
+import { ORDER_STATUS_LIST } from '../constants'
 
 // Helper
 const formatPhone = (phone) => {
@@ -143,7 +144,7 @@ export function OrderDrawer({ order, onClose, updateOrderLocal }) {
                             <StatusSelect
                                 value={form.status}
                                 onChange={handleStatusChange}
-                                options={['NUEVO', 'DISEÑO', 'PRODUCCIÓN', 'LISTO', 'ENTREGADO']}
+                                options={ORDER_STATUS_LIST}
                             />
                         </div>
                     </div>
@@ -501,4 +502,3 @@ export function LeadModal({ isOpen, isCreating, form: initialForm, onClose, onSu
         </div>
     )
 }
-```
