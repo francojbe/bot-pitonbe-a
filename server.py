@@ -1215,6 +1215,12 @@ async def reject_learning(action: LearningAction):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+@app.post("/learnings/run_audit")
+async def manual_run_audit(background_tasks: BackgroundTasks):
+    """Ejecuta la auditoría manualmente ahora."""
+    background_tasks.add_task(run_audit_job)
+    return {"status": "success", "message": "Auditoría iniciada en segundo plano."}
+
 # --- SCHEDULER: EJECUCIÓN AUTOMÁTICA DEL AUDITOR ---
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger

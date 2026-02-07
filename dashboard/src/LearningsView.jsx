@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Brain, AlertTriangle } from 'lucide-react';
+import { CheckCircle, XCircle, Brain, AlertTriangle, Play, Loader2 } from 'lucide-react';
 
 export default function LearningsView() {
     const [learnings, setLearnings] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [auditing, setAuditing] = useState(false);
 
     // Use relative path for production (same domain) or localhost for dev if needed
     // Assuming the dashboard is served from the same domain or configured similarly to other components.
@@ -54,20 +55,49 @@ export default function LearningsView() {
         }
     };
 
+    const runAuditNow = async () => {
+        setAuditing(true);
+        try {
+            const res = await fetch(`${BACKEND_URL}/learnings/run_audit`, { method: 'POST' });
+            if (res.ok) {
+                alert("Auditoría iniciada. Los resultados aparecerán en unos momentos.");
+                // Retraso para dar tiempo al backend
+                setTimeout(fetchLearnings, 3000);
+            } else {
+                alert("Error al iniciar auditoría");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Error de conexión");
+        } finally {
+            setAuditing(false);
+        }
+    };
+
     const pending = learnings.filter(l => l.status === 'pending');
     const history = learnings.filter(l => l.status !== 'pending');
 
     return (
         <div className="p-6 bg-slate-50 min-h-screen">
-            <header className="mb-8">
-                <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-2">
-                    <Brain className="w-8 h-8 text-purple-600" />
-                    Centro de Mejora Continua
-                </h1>
-                <p className="text-slate-500 mt-2">
-                    Aquí revisas las lecciones que el Agente "Richard" ha aprendido de sus errores.
-                </p>
-            </header>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                <header>
+                    <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-2">
+                        <Brain className="w-8 h-8 text-purple-600" />
+                        Centro de Mejora Continua
+                    </h1>
+                    <p className="text-slate-500 mt-2">
+                        Aquí revisas las lecciones que el Agente "Richard" ha aprendido de sus errores.
+                    </p>
+                </header>
+                <button
+                    onClick={runAuditNow}
+                    disabled={auditing}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg flex items-center gap-2 hover:bg-purple-700 transition-all font-bold shadow-lg shadow-purple-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    {auditing ? <Loader2 className="animate-spin" size={18} /> : <Play size={18} />}
+                    {auditing ? 'Auditando...' : 'Ejecutar Auditoría Ahora'}
+                </button>
+            </div>
 
             {/* PENDING SECTION */}
             <section className="mb-10">
