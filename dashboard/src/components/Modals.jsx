@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, User, Phone, Mail, DollarSign, Image, FileText, ExternalLink, MessageCircle, CheckCircle2, MapPin, CreditCard, ChevronRight, AlertCircle, Save } from 'lucide-react'
+import { X, User, Phone, Mail, DollarSign, Image, FileText, ExternalLink, MessageCircle, CheckCircle2, MapPin, CreditCard, ChevronRight, AlertCircle, Save, MessageSquarePlus } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '../supabase'
 import { StatusSelect } from './StatusSelect'
@@ -142,6 +142,9 @@ export function OrderDrawer({ order, onClose, updateOrderLocal }) {
         window.open(`https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`, '_blank');
     }
 
+    // --- STATE PARA MODAL DE MENSAJE ---
+    const [isMsgModalOpen, setIsMsgModalOpen] = useState(false)
+
     return (
         <div className="fixed inset-0 z-[60] flex justify-end">
             <div className="absolute inset-0 bg-[#0B1437]/40 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
@@ -158,7 +161,6 @@ export function OrderDrawer({ order, onClose, updateOrderLocal }) {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-8 space-y-8">
-                    {/* Status Tracker */}
                     {/* Status Tracker */}
                     <div className="flex justify-between items-center bg-[var(--bg-subtle)] dark:bg-white/5 p-4 rounded-xl">
                         <div className="flex flex-col w-full">
@@ -246,7 +248,6 @@ export function OrderDrawer({ order, onClose, updateOrderLocal }) {
                                 </div>
                             </div>
                         </div>
-                        {/* Details Section Structured */}
                     </div>
 
                     {/* TABS HEADER */}
@@ -412,18 +413,43 @@ export function OrderDrawer({ order, onClose, updateOrderLocal }) {
 
                 {/* Footer Actions */}
                 <div className="p-6 border-t border-gray-100 dark:border-white/5 bg-white dark:bg-[#242424] flex gap-4">
-                    <button onClick={sendWhatsApp} className="flex-1 btn-primary-paper flex items-center justify-center gap-2">
-                        <MessageCircle size={18} /> Enviar WhatsApp
+                    {/* Botón WhatsApp Web (Existente) - Estilo Secundario */}
+                    {order.leads?.phone_number && (
+                        <button
+                            onClick={sendWhatsApp}
+                            title="Abrir WhatsApp Web"
+                            className="px-4 py-3 bg-gray-100 text-gray-600 dark:bg-white/5 dark:text-gray-300 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-white/10 transition-colors flex items-center justify-center gap-2"
+                        >
+                            <ExternalLink size={18} />
+                        </button>
+                    )}
+
+                    {/* NUEVO: Botón Mensaje Vía Agente (Principal) */}
+                    <button
+                        onClick={() => setIsMsgModalOpen(true)}
+                        className="flex-1 btn-primary-paper flex items-center justify-center gap-2"
+                    >
+                        <MessageSquarePlus size={18} /> Enviar Mensaje
                     </button>
+
                     {!isPaid && (
                         <button
                             onClick={() => handlePaymentUpdate(form.total_amount, undefined)}
                             className="px-6 py-3 bg-green-500/10 text-green-600 rounded-xl font-bold hover:bg-green-500/20 transition-colors flex items-center gap-2"
                         >
-                            <CheckCircle2 size={18} /> Registrar Pago Total
+                            <CheckCircle2 size={18} /> Pago Total
                         </button>
                     )}
                 </div>
+
+                {/* MODAL DE MENSAJE */}
+                <MessageModal
+                    isOpen={isMsgModalOpen}
+                    onClose={() => setIsMsgModalOpen(false)}
+                    customerName={order.leads?.name || 'Cliente'}
+                    phoneNumber={order.leads?.phone_number}
+                    leadId={order.leads?.id}
+                />
             </div>
         </div>
     )
@@ -570,6 +596,124 @@ export function LeadModal({ isOpen, isCreating, form: initialForm, onClose, onSu
                     <button onClick={handleSubmit} className="px-8 py-2.5 bg-[var(--color-primary)] text-[var(--text-main)] rounded-xl font-bold shadow-[var(--shadow-card)] hover:scale-105 transition-transform flex items-center gap-2">
                         <Save size={18} />
                         Guardar Datos
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+export function MessageModal({ isOpen, onClose, customerName, phoneNumber, leadId }) {
+    const [message, setMessage] = useState('')
+    const [isSending, setIsSending] = useState(false)
+
+    if (!isOpen) return null
+
+    const handleSend = async () => {
+        if (!message.trim()) return toast.error("El mensaje no puede estar vacío");
+
+        setIsSending(true);
+        try {
+            const BACKEND_URL = import.meta.env.VITE_API_URL || "https://recuperadora-agente-pb.nojauc.easypanel.host";
+
+            const response = await fetch(`${BACKEND_URL}/send_custom_message`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    phone_number: phoneNumber,
+                    message: message,
+                    lead_id: leadId
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                toast.success("Mensaje enviado y registrado correctamente 💬");
+                setMessage('');
+                onClose();
+            } else {
+                toast.error("Error al enviar mensaje: " + (data.message || "Error desconocido"));
+            }
+
+        } catch (error) {
+            console.error("Error sending message:", error);
+            toast.error("Error de conexión al enviar mensaje");
+        } finally {
+            setIsSending(false);
+        }
+    }
+
+    return (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-[#0B1437]/50 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
+            <div className="dashboard-card w-full max-w-md relative animate-in zoom-in duration-200 p-0 flex flex-col shadow-2xl">
+                {/* Header */}
+                <div className="flex justify-between items-center p-5 border-b border-gray-100 dark:border-white/5 bg-[var(--color-primary)] text-white rounded-t-2xl">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                            <MessageCircle size={20} className="text-white" />
+                        </div>
+                        <div>
+                            <h2 className="text-lg font-bold">Mensaje Vía Agente</h2>
+                            <p className="text-xs text-white/80">Para: {customerName}</p>
+                        </div>
+                    </div>
+                    <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full text-white transition-colors"><X size={20} /></button>
+                </div>
+
+                {/* Body */}
+                <div className="p-6 space-y-4 bg-white dark:bg-[#1B254B]">
+                    <div className="bg-blue-50 dark:bg-blue-500/10 p-3 rounded-xl border border-blue-100 dark:border-blue-500/20">
+                        <p className="text-xs text-blue-600 dark:text-blue-300 flex gap-2">
+                            <AlertCircle size={14} className="shrink-0 mt-0.5" />
+                            <span>
+                                <b>Nota:</b> Este mensaje se enviará a través del Agente y quedará registrado en el historial de la conversación.
+                            </span>
+                        </p>
+                    </div>
+
+                    <div>
+                        <textarea
+                            autoFocus
+                            rows={6}
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
+                            placeholder="Escribe tu mensaje aquí..."
+                            className="w-full p-4 rounded-xl bg-gray-50 dark:bg-[#111C44] border border-transparent focus:border-[var(--color-primary)] outline-none text-[var(--text-main)] resize-none transition-all placeholder:text-gray-400"
+                        ></textarea>
+                        <div className="flex justify-between mt-2">
+                            <span className="text-xs text-gray-400">Se usará formato WhatsApp (*negrita*, etc.)</span>
+                            <span className={`text-xs font-bold ${message.length > 500 ? 'text-red-500' : 'text-gray-400'}`}>{message.length} car.</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="p-5 border-t border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-[#111C44] rounded-b-2xl flex justify-end gap-3">
+                    <button
+                        onClick={onClose}
+                        disabled={isSending}
+                        className="px-5 py-2.5 rounded-xl font-bold text-gray-500 hover:bg-gray-200 dark:hover:bg-white/5 transition-colors"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        onClick={handleSend}
+                        disabled={isSending || !message.trim()}
+                        className="btn-primary-paper px-6 py-2.5 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isSending ? (
+                            <>
+                                <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+                                Enviando...
+                            </>
+                        ) : (
+                            <>
+                                <MessageCircle size={18} />
+                                Enviar Mensaje
+                            </>
+                        )}
                     </button>
                 </div>
             </div>

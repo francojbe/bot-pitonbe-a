@@ -1298,6 +1298,46 @@ def start_scheduler():
     scheduler.start()
     logger.info("⏰ Scheduler iniciado: Auditoría programada para las 03:00 AM (Chile).")
 
+class CustomMessage(BaseModel):
+    phone_number: str
+    message: str
+    lead_id: Optional[str] = None
+
+@app.post("/send_custom_message")
+async def send_custom_message_endpoint(payload: CustomMessage):
+    """
+    Envía un mensaje personalizado a un cliente a través del Agente.
+    El mensaje se registra en el historial como 'assistant' para mantener el contexto.
+    """
+    try:
+        phone = payload.phone_number.replace("+", "").replace(" ", "")
+        
+        # 1. Enviar por WhatsApp
+        res = enviar_whatsapp(phone, payload.message)
+        
+        # 2. Registrar en DB (CRÍTICO: role='assistant')
+        if res.get("status") == "success":
+            # Intentar obtener lead_id si no viene
+            final_lead_id = payload.lead_id
+            if not final_lead_id:
+                final_lead_id = get_or_create_lead(phone)
+            
+            save_message_pro(
+                lead_id=final_lead_id, 
+                phone=phone, 
+                role="assistant", 
+                content=payload.message, 
+                intent="MANUAL_MESSAGE", 
+                metadata={"source": "dashboard_manual", "whatsapp_delivery": res}
+            )
+            return {"status": "success", "message": "Mensaje enviado y registrado"}
+        else:
+            return {"status": "error", "message": "Fallo al enviar WhatsApp", "details": res}
+
+    except Exception as e:
+        logger.error(f"Error sending custom message: {e}")
+        return {"status": "error", "message": str(e)}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
