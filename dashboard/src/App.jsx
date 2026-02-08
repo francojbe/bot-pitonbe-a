@@ -268,39 +268,41 @@ function App() {
       )}
 
       {/* Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal */}
       {deleteConfirmation.isOpen && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm transition-colors" onClick={() => setDeleteConfirmation({ ...deleteConfirmation, isOpen: false })}></div>
-          <div className="relative bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full animate-in zoom-in duration-200 border border-[#E0E5F2]">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-12 h-12 bg-red-100/50 text-red-600 rounded-full flex items-center justify-center mb-4">
-                <Trash2 size={24} />
-              </div>
-              <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">¿Eliminar {deleteConfirmation.ids.length} {deleteContext === 'orders' ? 'orden(es)' : 'cliente(s)'}?</h3>
-              <p className="text-sm text-[#A3AED0] mb-6">Esta acción no se puede deshacer. Los datos se borrarán permanentemente.</p>
+          <div className="absolute inset-0 bg-[#0B1437]/50 backdrop-blur-sm transition-opacity" onClick={() => setDeleteConfirmation({ ...deleteConfirmation, isOpen: false })}></div>
+          <div className="relative bg-white dark:bg-[#1B254B] rounded-2xl shadow-2xl p-6 max-w-sm w-full animate-in zoom-in duration-200 border border-gray-100 dark:border-white/5 flex flex-col items-center text-center">
 
-              <div className="flex items-center gap-2 mb-6 cursor-pointer" onClick={() => setDeleteConfirmation(prev => ({ ...prev, dontAskAgain: !prev.dontAskAgain }))}>
-                <div className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${deleteConfirmation.dontAskAgain ? 'bg-[var(--color-primary)] border-[var(--color-primary)] text-white' : 'border-gray-300'}`}>
-                  {deleteConfirmation.dontAskAgain && <CheckSquare size={14} />}
-                </div>
-                <span className="text-xs font-medium text-[#A3AED0]">No volver a preguntar</span>
-              </div>
-
-              <div className="flex gap-3 w-full">
-                <button
-                  onClick={() => setDeleteConfirmation({ ...deleteConfirmation, isOpen: false })}
-                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-[#A3AED0] hover:bg-gray-50 hover:text-[var(--text-main)] transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={confirmDelete}
-                  className="flex-1 py-2.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 ring-1 ring-red-100 text-sm font-bold transition-all"
-                >
-                  Eliminar
-                </button>
-              </div>
+            <div className="w-12 h-12 bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mb-4">
+              <Trash2 size={24} />
             </div>
+
+            <h3 className="text-lg font-bold text-[var(--text-main)] mb-2">¿Eliminar {deleteConfirmation.ids.length} {deleteContext === 'orders' ? 'orden(es)' : 'cliente(s)'}?</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Esta acción no se puede deshacer. Los datos se borrarán permanentemente.</p>
+
+            <div className="flex items-center gap-2 mb-6 cursor-pointer group" onClick={() => setDeleteConfirmation(prev => ({ ...prev, dontAskAgain: !prev.dontAskAgain }))}>
+              <div className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${deleteConfirmation.dontAskAgain ? 'bg-[var(--color-primary)] border-[var(--color-primary)] text-white' : 'border-gray-300 dark:border-gray-600 group-hover:border-[var(--color-primary)]'}`}>
+                {deleteConfirmation.dontAskAgain && <CheckSquare size={14} />}
+              </div>
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 group-hover:text-[var(--text-main)] transition-colors">No volver a preguntar</span>
+            </div>
+
+            <div className="flex gap-3 w-full">
+              <button
+                onClick={() => setDeleteConfirmation({ ...deleteConfirmation, isOpen: false })}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-sm font-bold text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-[var(--text-main)] transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 py-2.5 rounded-xl bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 ring-1 ring-red-100 dark:ring-red-500/20 text-sm font-bold transition-all"
+              >
+                Eliminar
+              </button>
+            </div>
+
           </div>
         </div>
       )}

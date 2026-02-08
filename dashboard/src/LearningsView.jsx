@@ -1,17 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Brain, AlertTriangle, Play, Loader2 } from 'lucide-react';
 
+import { toast } from 'sonner';
+
 export default function LearningsView() {
     const [learnings, setLearnings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [auditing, setAuditing] = useState(false);
 
     // Use relative path for production (same domain) or localhost for dev if needed
-    // Assuming the dashboard is served from the same domain or configured similarly to other components.
-    // Based on App.jsx, I should check how the backend URL is handled. 
-    // In App.jsx it seems hardcoded or relative? 
-    // Let's assume production URL logic or relative path if proxied.
-    // Actually, looking at App.jsx from previous turns, it used explicit full URL: "https://recuperadora-agente-pb.nojauc.easypanel.host"
     const BACKEND_URL = import.meta.env.VITE_API_URL || "https://recuperadora-agente-pb.nojauc.easypanel.host";
 
     const fetchLearnings = async () => {
@@ -24,6 +21,7 @@ export default function LearningsView() {
             }
         } catch (error) {
             console.error("Error fetching learnings:", error);
+            toast.error("Error al cargar aprendizajes");
         } finally {
             setLoading(false);
         }
@@ -46,12 +44,13 @@ export default function LearningsView() {
                 setLearnings(learnings.map(l =>
                     l.id === id ? { ...l, status: action === 'approve' ? 'approved' : 'rejected' } : l
                 ));
+                toast.success(action === 'approve' ? "Aprendizaje aprobado" : "Aprendizaje rechazado");
             } else {
-                alert("Error al procesar la acción");
+                toast.error("Error al procesar la acción");
             }
         } catch (e) {
             console.error(e);
-            alert("Error de conexión");
+            toast.error("Error de conexión");
         }
     };
 
@@ -60,15 +59,15 @@ export default function LearningsView() {
         try {
             const res = await fetch(`${BACKEND_URL}/learnings/run_audit`, { method: 'POST' });
             if (res.ok) {
-                alert("Auditoría iniciada. Los resultados aparecerán en unos momentos.");
+                toast.success("Auditoría iniciada. Los resultados aparecerán pronto.");
                 // Retraso para dar tiempo al backend
                 setTimeout(fetchLearnings, 3000);
             } else {
-                alert("Error al iniciar auditoría");
+                toast.error("Error al iniciar auditoría");
             }
         } catch (e) {
             console.error(e);
-            alert("Error de conexión");
+            toast.error("Error de conexión");
         } finally {
             setAuditing(false);
         }

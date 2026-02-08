@@ -19,3 +19,4 @@
 ## 4. Funcionalidades Potenciales
 - [x] **Historial de Cambios (Audit Log):** Mostrar cronología de cambios de estado y pagos en el `OrderDrawer`.
 - [x] **Vista Móvil:** Adaptar el Kanban o forzar vista de lista en dispositivos móviles.
+- [x] **Mensajes Personalizados Vía Agente:** Enviar mensajes manuales desde el dashboard que se registran en la memoria del agente.
