@@ -16,6 +16,7 @@ from reportlab.lib.pagesizes import LETTER
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 from reportlab.lib.units import cm
+from datetime import datetime
 
 # Logging
 logging.basicConfig(level=logging.INFO)
@@ -126,6 +127,14 @@ def save_message_pro(lead_id: str, phone: str, role: str, content: str, intent: 
     except Exception as e: logger.error(f"Error save logs: {e}")
 
 # --- INTELIGENCIA ---
+def get_embedding(text: str) -> List[float]:
+    try:
+        text = text.replace("\n", " ")
+        return embeddings.embed_query(text)
+    except Exception as e:
+        logger.error(f"Error generating embedding: {e}")
+        return []
+
 def buscar_contexto(pregunta: str) -> str:
     try:
         vector = embeddings.embed_query(pregunta)
@@ -431,6 +440,26 @@ async def procesar_y_responder(phone: str, mensajes_acumulados: List[str], push_
 
         historial = get_chat_history_pro(lead_id)
         contexto = buscar_contexto(texto_completo)
+
+        # NUEVO: Recuperar reglas dinámicas (RAG de Aprendizaje)
+        reglas_aprendidas = ""
+        try:
+            # Usamos el último mensaje del usuario para buscar reglas relevantes
+            vector_usuario = get_embedding(texto_completo[-800:]) 
+            if vector_usuario:
+                 rpc_res = supabase.rpc("match_learnings", {
+                     "query_embedding": vector_usuario, 
+                     "match_threshold": 0.70, 
+                     "match_count": 3
+                 }).execute()
+                 
+                 if rpc_res.data:
+                     reglas_txt = "\n".join([f"- {r['proposed_rule']}" for r in rpc_res.data])
+                     reglas_aprendidas = f"\n🧠 *REGLAS APRENDIDAS (PRIORIDAD ALTA):*\n{reglas_txt}\n"
+                     logger.info(f"🧠 Reglas inyectadas: {len(rpc_res.data)}")
+        except Exception as e:
+            logger.error(f"Error recuperando reglas: {e}")
+
         system_prompt = f"""
 Eres *Richard*, el Asistente Virtual Oficial de *Pitrón Beña Impresión*. 🤵‍♂️✨
 
@@ -439,8 +468,9 @@ Eres *Richard*, el Asistente Virtual Oficial de *Pitrón Beña Impresión*. 🤵
 - Para poner texto en negrita, usa *ÚNICAMENTE* un asterisco simple: `*texto*`.
 - Si usas `**`, el mensaje se verá mal en WhatsApp. ¡Usa siempre solo uno!
 
-✨ *PRIMERA INTERACCIÓN (Saludo Obligatorio):*
 "¡Hola! 👋 Soy *Richard*, tu asistente en Pitrón Beña Impresión. ¡Es un gusto saludarte! 😊 ¿En qué puedo ayudarte hoy? ✨"
+
+{reglas_aprendidas}
 
 🚫 *REGLA ANTI-ALUCINACIÓN (CRÍTICA):*
 - Al usar `register_order`, NO inventes información.
@@ -1194,14 +1224,31 @@ class LearningAction(BaseModel):
 
 @app.post("/learnings/approve")
 async def approve_learning(action: LearningAction):
-    """Aprueba una regla propuesta."""
+    """Aprueba una regla propuesta y genera su embedding."""
     try:
-        supabase.table("agent_learnings").update({
+        # 1. Obtener el texto de la regla
+        res = supabase.table("agent_learnings").select("proposed_rule").eq("id", action.id).execute()
+        if not res.data:
+            return {"status": "error", "message": "Regla no encontrada"}
+        
+        rule_text = res.data[0]["proposed_rule"]
+        
+        # 2. Generar Embedding
+        vector = get_embedding(rule_text)
+        
+        # 3. Actualizar en DB
+        update_data = {
             "status": "approved",
             "applied_at": datetime.now().isoformat()
-        }).eq("id", action.id).execute()
+        }
+        if vector:
+            update_data["embedding"] = vector
+            
+        supabase.table("agent_learnings").update(update_data).eq("id", action.id).execute()
+        
         return {"status": "success"}
     except Exception as e:
+        logger.error(f"Error approving learning: {e}")
         return {"status": "error", "message": str(e)}
 
 @app.post("/learnings/reject")
