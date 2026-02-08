@@ -145,24 +145,24 @@ export function OrderDrawer({ order, onClose, updateOrderLocal }) {
     return (
         <div className="fixed inset-0 z-[60] flex justify-end">
             <div className="absolute inset-0 bg-[#0B1437]/40 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
-            <div className="relative w-full max-w-2xl h-full bg-[var(--bg-card)] shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+            <div className="relative w-full max-w-2xl h-full bg-white dark:bg-[#242424] shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
                 {/* Header */}
                 <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-white/5">
                     <div>
-                        <h2 className="text-2xl font-bold text-[var(--text-primary)]">Orden #{order.id.slice(0, 6)}</h2>
-                        <p className="text-sm text-[var(--text-secondary)]">Creada el {new Date(order.created_at).toLocaleDateString()}</p>
+                        <h2 className="text-2xl font-bold text-[var(--text-main)]">Orden #{order.id.slice(0, 6)}</h2>
+                        <p className="text-sm text-gray-500">Creada el {new Date(order.created_at).toLocaleDateString()}</p>
                     </div>
                     <div className="flex gap-2">
-                        <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-full text-[var(--text-secondary)]"><X size={24} /></button>
+                        <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-full text-gray-500"><X size={24} /></button>
                     </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-8 space-y-8">
                     {/* Status Tracker */}
                     {/* Status Tracker */}
-                    <div className="flex justify-between items-center bg-[#F4F7FE] dark:bg-white/5 p-4 rounded-xl">
+                    <div className="flex justify-between items-center bg-[var(--bg-subtle)] dark:bg-white/5 p-4 rounded-xl">
                         <div className="flex flex-col w-full">
-                            <span className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-2">Estado Actual</span>
+                            <span className="text-xs font-bold text-gray-500 uppercase mb-2">Estado Actual</span>
                             <StatusSelect
                                 value={form.status}
                                 onChange={handleStatusChange}
@@ -176,14 +176,14 @@ export function OrderDrawer({ order, onClose, updateOrderLocal }) {
                         <div className="dashboard-card !shadow-none border border-gray-100 dark:border-white/5">
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><User size={18} /></div>
-                                <h3 className="font-bold text-[var(--text-primary)]">Cliente</h3>
+                                <h3 className="font-bold text-[var(--text-main)]">Cliente</h3>
                             </div>
                             <div className="space-y-3">
                                 <p className="font-bold text-lg">{order.leads?.name || 'Cliente Desconocido'}</p>
-                                <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                                <div className="flex items-center gap-2 text-sm text-gray-500">
                                     <Phone size={14} /> <a href={`tel:${order.leads?.phone_number}`} className="hover:underline">{formatPhone(order.leads?.phone_number)}</a>
                                 </div>
-                                <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                                <div className="flex items-center gap-2 text-sm text-gray-500">
                                     <Mail size={14} /> <span>{order.leads?.email || 'Sin Email'}</span>
                                 </div>
                             </div>
@@ -192,7 +192,7 @@ export function OrderDrawer({ order, onClose, updateOrderLocal }) {
                         <div className="dashboard-card !shadow-none border border-gray-100 dark:border-white/5">
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="p-2 bg-green-50 text-green-600 rounded-lg"><DollarSign size={18} /></div>
-                                <h3 className="font-bold text-[var(--text-primary)]">Pagos</h3>
+                                <h3 className="font-bold text-[var(--text-main)]">Pagos</h3>
                             </div>
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center">
@@ -211,7 +211,7 @@ export function OrderDrawer({ order, onClose, updateOrderLocal }) {
                                                     handlePaymentUpdate(undefined, form.total_amount);
                                                 }
                                             }}
-                                            className="text-right font-bold w-32 bg-transparent outline-none border-b border-gray-200 dark:border-white/10 focus:border-[var(--brand-primary)] transition-colors text-[#A3AED0] pl-4"
+                                            className="text-right font-bold w-32 bg-transparent outline-none border-b border-gray-200 dark:border-white/10 focus:border-[var(--color-primary)] transition-colors text-[#A3AED0] pl-4"
                                             placeholder="0"
                                         />
                                     </div>
@@ -232,14 +232,14 @@ export function OrderDrawer({ order, onClose, updateOrderLocal }) {
                                                     handlePaymentUpdate(form.deposit_amount, undefined);
                                                 }
                                             }}
-                                            className="text-right font-bold w-32 bg-transparent outline-none border-b border-gray-200 dark:border-white/10 focus:border-[var(--brand-primary)] transition-colors text-[#A3AED0] pl-4"
+                                            className="text-right font-bold w-32 bg-transparent outline-none border-b border-gray-200 dark:border-white/10 focus:border-[var(--color-primary)] transition-colors text-[#A3AED0] pl-4"
                                             placeholder="0"
                                         />
                                     </div>
                                 </div>
                                 <div className="h-px bg-gray-100 dark:bg-white/10 my-2"></div>
                                 <div className="flex justify-between items-center">
-                                    <span className="font-bold text-[var(--text-primary)] text-lg">Saldo Pendiente</span>
+                                    <span className="font-bold text-[var(--text-main)] text-lg">Saldo Pendiente</span>
                                     <span className={`font-black text-2xl ${isPaid ? 'text-green-500' : 'text-red-500'}`}>
                                         {isPaid ? 'PAGADO' : `$${balance.toLocaleString('es-CL')}`}
                                     </span>
@@ -253,13 +253,13 @@ export function OrderDrawer({ order, onClose, updateOrderLocal }) {
                     <div className="flex border-b border-gray-100 dark:border-white/5 mb-4">
                         <button
                             onClick={() => setActiveTab('specs')}
-                            className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeTab === 'specs' ? 'border-[var(--brand-primary)] text-[var(--brand-primary)]' : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+                            className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeTab === 'specs' ? 'border-[var(--color-primary)] text-[var(--color-primary)]' : 'border-transparent text-gray-500 hover:text-[var(--text-main)]'}`}
                         >
                             Especificaciones
                         </button>
                         <button
                             onClick={() => setActiveTab('history')}
-                            className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeTab === 'history' ? 'border-[var(--brand-primary)] text-[var(--brand-primary)]' : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+                            className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeTab === 'history' ? 'border-[var(--color-primary)] text-[var(--color-primary)]' : 'border-transparent text-gray-500 hover:text-[var(--text-main)]'}`}
                         >
                             Historial
                         </button>
@@ -274,7 +274,7 @@ export function OrderDrawer({ order, onClose, updateOrderLocal }) {
                                     <select
                                         value={form.material || ''}
                                         onChange={e => setForm({ ...form, material: e.target.value })}
-                                        className="w-full p-3 rounded-xl bg-[#F4F7FE] dark:bg-white/5 border border-transparent focus:border-[var(--brand-primary)] outline-none text-[var(--text-primary)] font-bold text-sm cursor-pointer transition-all"
+                                        className="w-full p-3 rounded-xl bg-[var(--bg-subtle)] dark:bg-white/5 border border-transparent focus:border-[var(--color-primary)] outline-none text-[var(--text-main)] font-bold text-sm cursor-pointer transition-all"
                                     >
                                         <option value="">Seleccionar...</option>
                                         <option value="Couché 300g">Couché 300g</option>
@@ -289,7 +289,7 @@ export function OrderDrawer({ order, onClose, updateOrderLocal }) {
                                     <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Medidas</label>
                                     <div className="relative">
                                         <select
-                                            className="w-full p-3 rounded-xl bg-[#F4F7FE] dark:bg-white/5 border border-transparent focus:border-[var(--brand-primary)] outline-none text-[var(--text-primary)] font-bold text-sm cursor-pointer transition-all"
+                                            className="w-full p-3 rounded-xl bg-[var(--bg-subtle)] dark:bg-white/5 border border-transparent focus:border-[var(--color-primary)] outline-none text-[var(--text-main)] font-bold text-sm cursor-pointer transition-all"
                                             onChange={e => setForm({ ...form, dimensions: e.target.value })}
                                             value={['9x5 cm', '10x15 cm', 'A4', 'A3', 'Carta', 'Oficio'].includes(form.dimensions) ? form.dimensions : 'custom'}
                                         >
@@ -319,7 +319,7 @@ export function OrderDrawer({ order, onClose, updateOrderLocal }) {
                                         type="number"
                                         value={form.quantity || ''}
                                         onChange={e => setForm({ ...form, quantity: e.target.value })}
-                                        className="w-full p-3 rounded-xl bg-[#F4F7FE] dark:bg-white/5 border border-transparent focus:border-[var(--brand-primary)] outline-none text-[var(--text-primary)] font-bold text-sm transition-all"
+                                        className="w-full p-3 rounded-xl bg-[var(--bg-subtle)] dark:bg-white/5 border border-transparent focus:border-[var(--color-primary)] outline-none text-[var(--text-main)] font-bold text-sm transition-all"
                                         placeholder="0"
                                     />
                                 </div>
@@ -328,7 +328,7 @@ export function OrderDrawer({ order, onClose, updateOrderLocal }) {
                                     <select
                                         value={form.print_sides || '1 Tiro'}
                                         onChange={e => setForm({ ...form, print_sides: e.target.value })}
-                                        className="w-full p-3 rounded-xl bg-[#F4F7FE] dark:bg-white/5 border border-transparent focus:border-[var(--brand-primary)] outline-none text-[var(--text-primary)] font-bold text-sm cursor-pointer transition-all appearance-none"
+                                        className="w-full p-3 rounded-xl bg-[var(--bg-subtle)] dark:bg-white/5 border border-transparent focus:border-[var(--color-primary)] outline-none text-[var(--text-main)] font-bold text-sm cursor-pointer transition-all appearance-none"
                                     >
                                         <option value="1 Tiro">1 Tiro (Solo Frente)</option>
                                         <option value="2 Tiros">2 Tiros (Frente y Dorso)</option>
@@ -341,7 +341,7 @@ export function OrderDrawer({ order, onClose, updateOrderLocal }) {
                                 rows={3}
                                 value={form.description}
                                 onChange={e => setForm({ ...form, description: e.target.value })}
-                                className="w-full p-4 rounded-xl bg-[#F4F7FE] dark:bg-white/5 border-none outline-none text-[var(--text-primary)] font-medium resize-none focus:ring-2 focus:ring-[var(--brand-primary)]/20 transition-all leading-relaxed mb-6"
+                                className="w-full p-4 rounded-xl bg-[var(--bg-subtle)] dark:bg-white/5 border-none outline-none text-[var(--text-main)] font-medium resize-none focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all leading-relaxed mb-6"
                                 placeholder="Detalles extra..."
                             ></textarea>
                         </div>
@@ -411,8 +411,8 @@ export function OrderDrawer({ order, onClose, updateOrderLocal }) {
                 </div>
 
                 {/* Footer Actions */}
-                <div className="p-6 border-t border-gray-100 dark:border-white/5 bg-[var(--bg-card)] flex gap-4">
-                    <button onClick={sendWhatsApp} className="flex-1 btn-primary-soft flex items-center justify-center gap-2">
+                <div className="p-6 border-t border-gray-100 dark:border-white/5 bg-white dark:bg-[#242424] flex gap-4">
+                    <button onClick={sendWhatsApp} className="flex-1 btn-primary-paper flex items-center justify-center gap-2">
                         <MessageCircle size={18} /> Enviar WhatsApp
                     </button>
                     {!isPaid && (
@@ -565,9 +565,9 @@ export function LeadModal({ isOpen, isCreating, form: initialForm, onClose, onSu
                     </div>
                 </div>
 
-                <div className="p-6 border-t border-gray-100 dark:border-white/5 flex justify-end gap-3 mt-auto bg-[var(--bg-card)] rounded-b-2xl">
-                    <button onClick={onClose} className="px-6 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 font-bold text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">Cancelar</button>
-                    <button onClick={handleSubmit} className="px-8 py-2.5 bg-[var(--brand-primary)] text-white rounded-xl font-bold shadow-lg shadow-[#4318FF]/20 hover:scale-105 transition-transform flex items-center gap-2">
+                <div className="p-6 border-t border-gray-100 dark:border-white/5 flex justify-end gap-3 mt-auto bg-white dark:bg-[#242424] rounded-b-2xl">
+                    <button onClick={onClose} className="px-6 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 font-bold text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">Cancelar</button>
+                    <button onClick={handleSubmit} className="px-8 py-2.5 bg-[var(--color-primary)] text-[var(--text-main)] rounded-xl font-bold shadow-[var(--shadow-card)] hover:scale-105 transition-transform flex items-center gap-2">
                         <Save size={18} />
                         Guardar Datos
                     </button>

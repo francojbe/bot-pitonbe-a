@@ -1,113 +1,160 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Oswald:wght@500;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-    --bg-main: #F4F7FE;
-    --bg-card: #FFFFFF;
-    --text-primary: #2B3674;
-    --text-secondary: #A3AED0;
-    --brand-primary: #4318FF;
-    --brand-secondary: #6AD2FF;
+  /* Marca */
+  --color-primary: #8DC63F;
+  --color-secondary: #F7941D;
+  --color-accent: #4F6128;
+  
+  /* Textos y Fondos */
+  --text-main: #333333;
+  --text-light: #FFFFFF;
+  --bg-body: #FFFFFF;
+  --bg-subtle: #F4F6F0; /* Un gris verdoso muy suave para secciones alternas */
+  
+  /* Estilos */
+  --shadow-card: 4px 4px 0px rgba(79, 97, 40, 0.2); /* Sombra dura, no difusa */
+  --border-radius: 2px; /* Bordes casi rectos, estilo corte de papel */
 }
 
+/* Dark mode overrides if needed, but for now enforcing the Paper-Craft light vibrant look as primary */
 .dark {
-    --bg-main: #0B1437;
-    --bg-card: #111C44;
-    --text-primary: #FFFFFF;
-    --text-secondary: #A3AED0;
-    --brand-primary: #7551FF;
+    /* Adjusting specifically for dark mode while keeping the paper feel */
+    --bg-body: #1a1a1a;
+    --bg-subtle: #2d2d2d;
+    --text-main: #f0f0f0;
+    --text-light: #aaaaaa;
+    --bg-card: #242424;
+    --shadow-card: 4px 4px 0px rgba(0, 0, 0, 0.5);
 }
 
 body {
-    background-color: var(--bg-main);
-    color: var(--text-primary);
+    background-color: var(--bg-body);
+    color: var(--text-main);
     font-family: 'DM Sans', sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 /* Scrollbar Styles */
 ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-    background: transparent;
+    background: var(--bg-subtle);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #A3AED0;
-    border-radius: 3px;
+    background: var(--color-accent);
+    border-radius: 0px; /* Angular */
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #707EAE;
+    background: var(--color-primary);
 }
 
 /* Utilities */
 @layer components {
     .dashboard-card {
-        background-color: var(--bg-card);
-        border-radius: 20px;
-        box-shadow: 0px 18px 40px rgba(112, 144, 176, 0.12);
-        /* Soft colored shadow */
+        background-color: var(--bg-body);
+        border: 1px solid var(--color-accent); /* Explicit border for paper look */
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-card);
         padding: 24px;
-        transition: all 0.3s ease;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        position: relative;
+    }
+    
+    .dark .dashboard-card {
+        background-color: var(--bg-card);
+        border-color: #444;
     }
 
-    .dark .dashboard-card {
-        box-shadow: none;
-        border: 1px solid rgba(255, 255, 255, 0.05);
+    .dashboard-card:hover {
+        transform: translate(-2px, -2px);
+        box-shadow: 6px 6px 0px rgba(79, 97, 40, 0.3);
     }
 
     .dashboard-input {
         width: 100%;
         padding: 12px 16px;
-        border-radius: 16px;
-        border: 1px solid transparent;
-        background-color: #F4F7FE;
-        /* Light blue-grey background */
-        color: #2B3674;
+        border-radius: var(--border-radius);
+        border: 2px solid var(--bg-subtle);
+        background-color: #FFFFFF;
+        color: var(--text-main);
         font-weight: 500;
         outline: none;
         transition: all 0.2s;
+        box-shadow: inset 2px 2px 4px rgba(0,0,0,0.05); /* Slight inset for depth */
     }
 
     .dark .dashboard-input {
-        background-color: rgba(255, 255, 255, 0.05);
-        color: #FFF;
+        background-color: #2d2d2d;
+        border-color: #444;
+        color: white;
     }
 
     .dashboard-input:focus {
-        border-color: var(--brand-primary);
-        background-color: #FFF;
+        border-color: var(--color-primary);
+        box-shadow: 4px 4px 0px rgba(141, 198, 63, 0.2);
+        transform: translate(-1px, -1px);
     }
 
-    .dark .dashboard-input:focus {
-        background-color: rgba(255, 255, 255, 0.1);
-    }
-
-    /* Soft Buttons */
-    .btn-primary-soft {
-        background: linear-gradient(90deg, #4318FF 0%, #6648FF 100%);
-        color: white;
-        border-radius: 50px;
-        padding: 12px 24px;
+    /* Paper Buttons */
+    .btn-primary-paper {
+        background-color: var(--color-primary);
+        color: var(--text-main);
+        border: 2px solid var(--color-accent);
+        border-radius: var(--border-radius);
+        padding: 10px 24px;
+        font-family: 'Oswald', sans-serif;
         font-weight: 700;
-        border: none;
-        box-shadow: 0px 10px 20px -10px rgba(67, 24, 255, 0.6);
-        /* Soft directional shadow */
-        transition: all 0.3s ease;
+        text-transform: uppercase;
+        cursor: pointer;
+        box-shadow: 4px 4px 0px var(--color-accent);
+        transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    .btn-primary-soft:hover {
-        transform: translateY(-2px);
-        box-shadow: 0px 15px 25px -10px rgba(67, 24, 255, 0.7);
+    .btn-primary-paper:hover {
+        transform: translate(-2px, -2px);
+        box-shadow: 6px 6px 0px var(--color-accent);
+        background-color: #9bd64b; /* Slightly lighter */
     }
 
-    .btn-primary-soft:active {
-        transform: translateY(0px);
+    .btn-primary-paper:active {
+        transform: translate(2px, 2px);
+        box-shadow: 0px 0px 0px var(--color-accent);
+    }
+
+    .btn-secondary-paper {
+        background-color: var(--bg-card);
+        color: var(--color-accent);
+        border: 2px solid var(--color-accent);
+        border-radius: var(--border-radius);
+        padding: 10px 24px;
+        font-family: 'Oswald', sans-serif;
+        font-weight: 700;
+        text-transform: uppercase;
+        cursor: pointer;
+        box-shadow: 4px 4px 0px rgba(79, 97, 40, 0.1);
+        transition: all 0.15s;
+    }
+
+    .btn-secondary-paper:hover {
+        transform: translate(-2px, -2px);
+        box-shadow: 6px 6px 0px rgba(79, 97, 40, 0.2);
     }
 }

@@ -24,7 +24,7 @@ export function Sidebar({ activeTab, setActiveTab, collapsed, setCollapsed, mobi
             )}
 
             <aside className={`
-                fixed inset-y-0 left-0 z-50 h-full bg-[var(--bg-card)] border-r border-transparent dark:border-white/5 transition-transform duration-300 md:translate-x-0 md:static md:flex flex-col p-4
+                fixed inset-y-0 left-0 z-50 h-full bg-white dark:bg-[#242424] border-r border-transparent dark:border-white/5 transition-transform duration-300 md:translate-x-0 md:static md:flex flex-col p-4
                 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
                 ${collapsed ? 'md:w-20' : 'md:w-72 w-64'}
             `}>
@@ -44,10 +44,10 @@ export function Sidebar({ activeTab, setActiveTab, collapsed, setCollapsed, mobi
                                 key={item.id}
                                 onClick={() => handleItemClick(item.id)}
                                 title={collapsed ? item.label : ''}
-                                className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all relative group ${isActive ? 'font-bold text-[var(--text-primary)]' : 'text-[var(--text-secondary)] font-medium hover:text-[var(--text-primary)]'} ${collapsed ? 'justify-center' : ''}`}
+                                className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all relative group ${isActive ? 'font-bold text-[var(--text-main)]' : 'text-gray-500 font-medium hover:text-[var(--text-main)]'} ${collapsed ? 'justify-center' : ''}`}
                             >
-                                {isActive && !collapsed && <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[var(--brand-primary)] rounded-l-lg"></div>}
-                                <span className={`${isActive ? 'text-[var(--brand-primary)]' : ''} transition-colors group-hover:scale-110 duration-200`}>{item.icon}</span>
+                                {isActive && !collapsed && <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[var(--color-primary)] rounded-l-lg"></div>}
+                                <span className={`${isActive ? 'text-[var(--color-primary)]' : ''} transition-colors group-hover:scale-110 duration-200`}>{item.icon}</span>
                                 {!collapsed && <span className="whitespace-nowrap overflow-hidden">{item.label}</span>}
                             </button>
                         )
@@ -57,7 +57,7 @@ export function Sidebar({ activeTab, setActiveTab, collapsed, setCollapsed, mobi
                 {/* Aesthetic Bottom Toggle */}
                 <button
                     onClick={() => setCollapsed(!collapsed)}
-                    className={`hidden md:flex w-full items-center gap-4 px-4 py-3 rounded-xl text-[var(--text-secondary)] font-medium hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/5 transition-all mt-auto ${collapsed ? 'justify-center' : ''}`}
+                    className={`hidden md:flex w-full items-center gap-4 px-4 py-3 rounded-xl text-gray-500 font-medium hover:text-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 transition-all mt-auto ${collapsed ? 'justify-center' : ''}`}
                 >
                     {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
                     {!collapsed && <span className="whitespace-nowrap overflow-hidden">Contraer Menú</span>}

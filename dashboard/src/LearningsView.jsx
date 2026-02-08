@@ -78,21 +78,21 @@ export default function LearningsView() {
     const history = learnings.filter(l => l.status !== 'pending');
 
     return (
-        <div className="p-6 bg-slate-50 min-h-screen">
+        <div className="p-6 bg-[var(--bg-subtle)] min-h-screen">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <header>
-                    <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-2">
-                        <Brain className="w-8 h-8 text-purple-600" />
+                    <h1 className="text-3xl font-bold text-[var(--text-main)] flex items-center gap-2">
+                        <Brain className="w-8 h-8 text-[var(--color-primary)]" />
                         Centro de Mejora Continua
                     </h1>
-                    <p className="text-slate-500 mt-2">
+                    <p className="text-gray-500 mt-2">
                         Aquí revisas las lecciones que el Agente "Richard" ha aprendido de sus errores.
                     </p>
                 </header>
                 <button
                     onClick={runAuditNow}
                     disabled={auditing}
-                    className="px-4 py-2 bg-purple-600 text-white rounded-lg flex items-center gap-2 hover:bg-purple-700 transition-all font-bold shadow-lg shadow-purple-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 bg-[var(--color-primary)] text-[var(--text-main)] rounded-lg flex items-center gap-2 hover:bg-[#9bd64b] transition-all font-bold shadow-[var(--shadow-card)] border-2 border-[var(--color-accent)] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {auditing ? <Loader2 className="animate-spin" size={18} /> : <Play size={18} />}
                     {auditing ? 'Auditando...' : 'Ejecutar Auditoría Ahora'}
@@ -101,8 +101,8 @@ export default function LearningsView() {
 
             {/* PENDING SECTION */}
             <section className="mb-10">
-                <h2 className="text-xl font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                    <AlertTriangle className="w-5 h-5 text-amber-500" />
+                <h2 className="text-xl font-semibold text-[var(--text-main)] mb-4 flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-[var(--color-secondary)]" />
                     Propuestas Pendientes ({pending.length})
                 </h2>
 
@@ -115,22 +115,22 @@ export default function LearningsView() {
                 ) : (
                     <div className="grid gap-4">
                         {pending.map(item => (
-                            <div key={item.id} className="bg-white p-5 rounded-xl shadow-md border-l-4 border-l-purple-500 transition-all hover:shadow-lg">
+                            <div key={item.id} className="dashboard-card p-5 !rounded-xl !border-l-4 !border-l-[var(--color-primary)] transition-all hover:shadow-lg bg-white dark:bg-[#242424]">
                                 <div className="flex justify-between items-start">
                                     <div>
-                                        <span className="text-xs font-bold text-purple-600 uppercase tracking-wide">
+                                        <span className="text-xs font-bold text-[var(--color-primary)] uppercase tracking-wide">
                                             Error Detectado
                                         </span>
-                                        <h3 className="text-lg font-medium text-slate-800 mt-1 mb-2">
+                                        <h3 className="text-lg font-medium text-[var(--text-main)] mt-1 mb-2">
                                             {item.error_description}
                                         </h3>
-                                        <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                                            <span className="text-xs font-bold text-slate-500 uppercase">Nueva Regla Propuesta:</span>
-                                            <p className="text-slate-700 mt-1 font-mono text-sm leading-relaxed">
+                                        <div className="bg-[var(--bg-subtle)] p-3 rounded-lg border border-gray-200 dark:border-white/10">
+                                            <span className="text-xs font-bold text-gray-500 uppercase">Nueva Regla Propuesta:</span>
+                                            <p className="text-[var(--text-main)] mt-1 font-mono text-sm leading-relaxed">
                                                 "{item.proposed_rule}"
                                             </p>
                                         </div>
-                                        <div className="mt-3 flex items-center gap-4 text-xs text-slate-400">
+                                        <div className="mt-3 flex items-center gap-4 text-xs text-gray-400">
                                             <span>Cliente: {item.source_phone}</span>
                                             <span>Confianza: {(item.confidence_score * 100).toFixed(0)}%</span>
                                             <span>{new Date(item.created_at).toLocaleDateString()}</span>
@@ -140,7 +140,7 @@ export default function LearningsView() {
                                     <div className="flex flex-col gap-2 ml-4">
                                         <button
                                             onClick={() => handleAction(item.id, 'approve')}
-                                            className="px-4 py-2 bg-green-100 text-green-700 hover:bg-green-200 rounded-lg flex items-center gap-2 font-medium transition-colors"
+                                            className="px-4 py-2 bg-[#8DC63F]/20 text-[#4F6128] hover:bg-[#8DC63F]/30 rounded-lg flex items-center gap-2 font-medium transition-colors"
                                         >
                                             <CheckCircle size={18} /> Aprobar
                                         </button>
@@ -160,10 +160,10 @@ export default function LearningsView() {
 
             {/* HISTORY TABLE */}
             <section>
-                <h2 className="text-xl font-semibold text-slate-700 mb-4">Historial de Decisiones</h2>
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <h2 className="text-xl font-semibold text-[var(--text-main)] mb-4">Historial de Decisiones</h2>
+                <div className="bg-white dark:bg-[#242424] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden">
                     <table className="w-full text-left">
-                        <thead className="bg-slate-50 border-b border-slate-200">
+                        <thead className="bg-[var(--bg-subtle)] dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
                             <tr>
                                 <th className="p-4 text-xs font-bold text-slate-500 uppercase">Fecha</th>
                                 <th className="p-4 text-xs font-bold text-slate-500 uppercase">Error</th>
@@ -173,18 +173,18 @@ export default function LearningsView() {
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {history.map(item => (
-                                <tr key={item.id} className="hover:bg-slate-50">
-                                    <td className="p-4 text-sm text-slate-500">
+                                <tr key={item.id} className="hover:bg-[var(--bg-subtle)] dark:hover:bg-white/5">
+                                    <td className="p-4 text-sm text-gray-500">
                                         {new Date(item.created_at).toLocaleDateString()}
                                     </td>
-                                    <td className="p-4 text-sm text-slate-700 w-1/3">
+                                    <td className="p-4 text-sm text-[var(--text-main)] w-1/3">
                                         {item.error_description}
                                     </td>
-                                    <td className="p-4 text-sm text-slate-600 w-1/3 font-mono text-xs">
+                                    <td className="p-4 text-sm text-gray-600 dark:text-gray-400 w-1/3 font-mono text-xs">
                                         {item.proposed_rule}
                                     </td>
                                     <td className="p-4">
-                                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${item.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${item.status === 'approved' ? 'bg-[#8DC63F]/20 text-[#4F6128]' : 'bg-red-100 text-red-700'
                                             }`}>
                                             {item.status.toUpperCase()}
                                         </span>

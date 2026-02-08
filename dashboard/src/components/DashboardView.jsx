@@ -17,11 +17,11 @@ function KanbanBoard({ orders, onSelectOrder }) {
                             <div
                                 ref={provided.innerRef}
                                 {...provided.droppableProps}
-                                className={`flex-1 min-w-[260px] flex flex-col rounded-2xl transition-colors ${snapshot.isDraggingOver ? 'bg-[var(--brand-primary)]/5 ring-2 ring-[var(--brand-primary)]/10' : ''}`}
+                                className={`flex-1 min-w-[260px] flex flex-col rounded-2xl transition-colors ${snapshot.isDraggingOver ? 'bg-[var(--color-primary)]/5 ring-2 ring-[var(--color-primary)]/10' : ''}`}
                             >
                                 <div className="flex items-center justify-between mb-4 px-2">
-                                    <h3 className="text-sm font-bold text-[var(--text-primary)] tracking-tight whitespace-nowrap">{col}</h3>
-                                    <span className="bg-[var(--bg-card)] text-[var(--brand-primary)] text-xs font-bold px-3 py-1 rounded-full shadow-sm">{items.length}</span>
+                                    <h3 className="text-sm font-bold text-[var(--text-main)] tracking-tight whitespace-nowrap">{col}</h3>
+                                    <span className="bg-white dark:bg-[#242424] text-[var(--color-primary)] text-xs font-bold px-3 py-1 rounded-full shadow-sm">{items.length}</span>
                                 </div>
                                 <div className="space-y-4 min-h-[150px]">
                                     {items.map((order, index) => (
@@ -34,21 +34,21 @@ function KanbanBoard({ orders, onSelectOrder }) {
                                                     onClick={() => onSelectOrder(order)}
                                                     style={{ ...provided.draggableProps.style }}
                                                     className={`dashboard-card cursor-grab active:cursor-grabbing group transition-all duration-300
-                              hover:-translate-y-2 hover:shadow-[0px_20px_50px_rgba(112,144,176,0.2)] hover:z-20
-                              ${snapshot.isDragging ? 'rotate-2 scale-105 shadow-2xl z-50 ring-2 ring-[var(--brand-primary)]' : ''}`}
+                              hover:-translate-y-0.5 hover:shadow-[var(--shadow-card)] hover:z-20
+                              ${snapshot.isDragging ? 'rotate-2 scale-105 shadow-2xl z-50 ring-2 ring-[var(--color-primary)]' : ''}`}
                                                 >
                                                     <div className="flex justify-between items-start mb-3">
                                                         <StatusBadge status={order.status} mini />
                                                         <span className="text-[10px] font-bold text-[#A3AED0]">#{order.id.slice(0, 4)}</span>
                                                     </div>
-                                                    <p className="text-sm font-bold text-[#2B3674] mb-4 whitespace-normal break-words line-clamp-3 leading-snug">{order.description || 'Sin descripción'}</p>
+                                                    <p className="text-sm font-bold text-[var(--text-main)] mb-4 whitespace-normal break-words line-clamp-3 leading-snug">{order.description || 'Sin descripción'}</p>
 
                                                     <div className="flex items-center justify-between pt-4 border-t border-gray-50 dark:border-white/5">
                                                         <div className="flex -space-x-2">
                                                             <div className="w-6 h-6 rounded-full bg-indigo-500 text-white flex items-center justify-center text-[9px] font-bold border-2 border-white dark:border-[#111C44]">{order.leads?.name?.slice(0, 1)}</div>
                                                         </div>
                                                         <div className="flex flex-col text-right">
-                                                            <p className="text-xs font-bold text-[#4318FF]">${(order.total_amount || 0).toLocaleString('es-CL')}</p>
+                                                            <p className="text-xs font-bold text-[var(--color-primary)]">${(order.total_amount || 0).toLocaleString('es-CL')}</p>
                                                             {(order.total_amount - (order.deposit_amount || 0) > 0) && (
                                                                 <p className="text-[9px] font-bold text-red-500">Debe: ${(order.total_amount - (order.deposit_amount || 0)).toLocaleString('es-CL')}</p>
                                                             )}
@@ -133,14 +133,14 @@ export function DashboardView({ orders, search, viewMode, setViewMode, onSelectO
             <div className="flex flex-col gap-4 shrink-0">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                        <h2 className="text-lg font-bold text-[var(--text-primary)]">Ordenes Recientes</h2>
-                        <p className="text-sm text-[var(--text-secondary)]">Mostrando {paginatedOrders.length} de {filteredOrders.length} órdenes</p>
+                        <h2 className="text-lg font-bold text-[var(--text-main)]">Ordenes Recientes</h2>
+                        <p className="text-sm text-gray-500">Mostrando {paginatedOrders.length} de {filteredOrders.length} órdenes</p>
                     </div>
 
                     <div className="flex items-center gap-3 flex-wrap">
                         {/* Status Filter */}
                         <div className="relative group">
-                            <button className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition-all ${statusFilter ? 'bg-[var(--brand-primary)] text-white border-[var(--brand-primary)]' : 'bg-white border-gray-200 text-[var(--text-secondary)] hover:bg-gray-50'}`}>
+                            <button className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition-all ${statusFilter ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}>
                                 <Filter size={14} />
                                 {statusFilter || 'Todos los Estados'}
                                 {statusFilter && <X size={12} className="ml-1 hover:text-red-200" onClick={(e) => { e.stopPropagation(); setStatusFilter('') }} />}
@@ -159,7 +159,7 @@ export function DashboardView({ orders, search, viewMode, setViewMode, onSelectO
 
                         {/* Date Filter */}
                         <div className="relative group">
-                            <button className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition-all ${dateFilter !== 'all' ? 'bg-[var(--brand-primary)] text-white border-[var(--brand-primary)]' : 'bg-white border-gray-200 text-[var(--text-secondary)] hover:bg-gray-50'}`}>
+                            <button className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition-all ${dateFilter !== 'all' ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}>
                                 <Calendar size={14} />
                                 {dateFilter === 'all' ? 'Cualquier Fecha' : dateFilter === 'today' ? 'Hoy' : dateFilter === 'week' ? 'Esta Semana' : 'Este Mes'}
                                 {dateFilter !== 'all' && <X size={12} className="ml-1 hover:text-red-200" onClick={(e) => { e.stopPropagation(); setDateFilter('all') }} />}
@@ -177,9 +177,9 @@ export function DashboardView({ orders, search, viewMode, setViewMode, onSelectO
 
                         <div className="h-6 w-px bg-gray-200 mx-1"></div>
 
-                        <div className="flex bg-[var(--bg-card)] p-1 rounded-xl shadow-sm">
-                            <button onClick={() => setViewMode('list')} className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-[var(--brand-main)] text-[var(--brand-primary)] bg-[#F4F7FE]' : 'text-[var(--text-secondary)]'}`}><MoreVertical size={18} className="rotate-90" /></button>
-                            <button onClick={() => setViewMode('kanban')} className={`p-2 rounded-lg transition-all ${viewMode === 'kanban' ? 'bg-[var(--brand-main)] text-[var(--brand-primary)] bg-[#F4F7FE]' : 'text-[var(--text-secondary)]'}`}><ArrowUpRight size={18} /></button>
+                        <div className="flex bg-white dark:bg-[#242424] p-1 rounded-xl shadow-sm">
+                            <button onClick={() => setViewMode('list')} className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-[var(--bg-subtle)] text-[var(--color-primary)]' : 'text-gray-500'}`}><MoreVertical size={18} className="rotate-90" /></button>
+                            <button onClick={() => setViewMode('kanban')} className={`p-2 rounded-lg transition-all ${viewMode === 'kanban' ? 'bg-[var(--bg-subtle)] text-[var(--color-primary)]' : 'text-gray-500'}`}><ArrowUpRight size={18} /></button>
                         </div>
                     </div>
                 </div>
@@ -205,7 +205,7 @@ export function DashboardView({ orders, search, viewMode, setViewMode, onSelectO
                         <table className="w-full min-w-[800px]">
                             <thead className="bg-[#F9FAFC] dark:bg-white/5 border-b border-transparent dark:border-white/5">
                                 <tr>
-                                    <th className="px-6 py-4 w-12"><input type="checkbox" className="accent-[#4318FF] w-4 h-4 rounded cursor-pointer" onChange={(e) => setSelectedIds(e.target.checked ? new Set(paginatedOrders.map(o => o.id)) : new Set())} checked={selectedIds.size === paginatedOrders.length && paginatedOrders.length > 0} /></th>
+                                    <th className="px-6 py-4 w-12"><input type="checkbox" className="accent-[var(--color-primary)] w-4 h-4 rounded cursor-pointer" onChange={(e) => setSelectedIds(e.target.checked ? new Set(paginatedOrders.map(o => o.id)) : new Set())} checked={selectedIds.size === paginatedOrders.length && paginatedOrders.length > 0} /></th>
                                     <th className="px-6 py-4 text-left text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Descripción</th>
                                     <th className="px-6 py-4 text-left text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Estado</th>
                                     <th className="px-6 py-4 text-left text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Finanzas</th>
@@ -222,25 +222,25 @@ export function DashboardView({ orders, search, viewMode, setViewMode, onSelectO
                                             key={order.id}
                                             onClick={() => onSelectOrder(order)}
                                             className={`group transition-all duration-300 cursor-pointer relative
-                          ${isSel ? 'bg-[#F4F7FE] dark:bg-white/5' : 'bg-white hover:bg-[#F4F7FE] dark:hover:bg-white/5'}
-                          hover:scale-[1.01] hover:shadow-[0px_20px_40px_rgba(112,144,176,0.15)] hover:z-10
+                          ${isSel ? 'bg-[var(--bg-subtle)] dark:bg-white/10' : 'bg-white dark:bg-[#242424] hover:bg-[var(--bg-subtle)] dark:hover:bg-white/5'}
+                          hover:scale-[1.01] hover:shadow-[var(--shadow-card)] hover:z-10
                         `}
                                         >
                                             <td className="px-6 py-4" onClick={(e) => { e.stopPropagation(); const n = new Set(selectedIds); n.has(order.id) ? n.delete(order.id) : n.add(order.id); setSelectedIds(n) }}>
-                                                <div className={`w-5 h-5 rounded flex items-center justify-center border transition-all ${isSel ? 'bg-[#4318FF] border-[#4318FF] text-white' : 'border-gray-300'}`}>
+                                                <div className={`w-5 h-5 rounded flex items-center justify-center border transition-all ${isSel ? 'bg-[var(--color-primary)] border-[var(--color-primary)] text-white' : 'border-gray-300'}`}>
                                                     {isSel && <CheckSquare size={14} />}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <p className="text-sm font-bold text-[var(--text-primary)] mb-1">{order.description || 'Orden sin título'}</p>
-                                                <p className="text-xs text-[var(--text-secondary)] flex items-center gap-1"><Users size={12} /> {order.leads?.name || 'Cliente'}</p>
+                                                <p className="text-sm font-bold text-[var(--text-main)] mb-1">{order.description || 'Orden sin título'}</p>
+                                                <p className="text-xs text-gray-500 flex items-center gap-1"><Users size={12} /> {order.leads?.name || 'Cliente'}</p>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <StatusBadge status={order.status} />
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex flex-col">
-                                                    <span className="text-sm font-bold text-[var(--text-primary)]">${(order.total_amount || 0).toLocaleString('es-CL')}</span>
+                                                    <span className="text-sm font-bold text-[var(--text-main)]">${(order.total_amount || 0).toLocaleString('es-CL')}</span>
                                                     <span className={`text-[10px] font-bold ${balance <= 0 ? 'text-green-500' : 'text-red-500'}`}>{balance <= 0 ? 'PAGADO' : `Debe $${balance.toLocaleString('es-CL')}`}</span>
                                                 </div>
                                             </td>
@@ -267,14 +267,14 @@ export function DashboardView({ orders, search, viewMode, setViewMode, onSelectO
                         <button
                             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                             disabled={currentPage === 1}
-                            className="p-2 rounded-lg border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-[var(--text-primary)]"
+                            className="p-2 rounded-lg border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-[var(--text-main)]"
                         >
                             <ChevronLeft size={18} />
                         </button>
                         <button
                             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                             disabled={currentPage === totalPages}
-                            className="p-2 rounded-lg border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-[var(--text-primary)]"
+                            className="p-2 rounded-lg border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-[var(--text-main)]"
                         >
                             <ChevronRight size={18} />
                         </button>

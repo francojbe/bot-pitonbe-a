@@ -160,7 +160,7 @@ function App() {
 
   // --- UI RENDER ---
   return (
-    <div className="flex h-screen bg-[var(--bg-main)] text-[var(--text-primary)] font-sans overflow-hidden transition-colors duration-300">
+    <div className="flex h-screen bg-white dark:bg-[#1a1a1a] text-[var(--text-main)] font-sans overflow-hidden transition-colors duration-300">
       <Toaster position="top-center" richColors theme={isDarkMode ? 'dark' : 'light'} />
 
       {/* LEFT SIDEBAR (Horizon Style) */}
@@ -181,7 +181,7 @@ function App() {
           <div className="flex items-center gap-4">
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="md:hidden p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              className="md:hidden p-2 text-gray-500 hover:text-[var(--text-main)]"
             >
               <Menu size={24} />
             </button>
@@ -190,18 +190,18 @@ function App() {
               <h1 className="text-2xl font-bold tracking-tight capitalize">{activeTab}</h1>
             </div>
           </div>
-          <div className="flex items-center gap-3 bg-[var(--bg-card)] p-3 rounded-full shadow-sm dark:shadow-none">
+          <div className="flex items-center gap-3 bg-white dark:bg-[#242424] p-3 rounded-full shadow-sm dark:shadow-none">
             <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]" />
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <input
                 type="text"
                 placeholder="Buscar orden o cliente..."
                 value={globalSearch}
                 onChange={(e) => setGlobalSearch(e.target.value)}
-                className="pl-9 pr-4 py-1.5 rounded-full bg-[var(--bg-main)] text-sm outline-none w-40 focus:w-64 transition-all"
+                className="pl-9 pr-4 py-1.5 rounded-full bg-[var(--bg-subtle)] text-sm outline-none w-40 focus:w-64 transition-all"
               />
             </div>
-            <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 text-[var(--text-secondary)] hover:text-[var(--brand-primary)] transition-colors">
+            <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 text-gray-500 hover:text-[var(--color-primary)] transition-colors">
               {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
             </button>
             <div className="w-10 h-10 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold shadow-lg shadow-indigo-500/20">
@@ -276,11 +276,11 @@ function App() {
               <div className="w-12 h-12 bg-red-100/50 text-red-600 rounded-full flex items-center justify-center mb-4">
                 <Trash2 size={24} />
               </div>
-              <h3 className="text-lg font-bold text-[#2B3674] mb-2">¿Eliminar {deleteConfirmation.ids.length} {deleteContext === 'orders' ? 'orden(es)' : 'cliente(s)'}?</h3>
+              <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">¿Eliminar {deleteConfirmation.ids.length} {deleteContext === 'orders' ? 'orden(es)' : 'cliente(s)'}?</h3>
               <p className="text-sm text-[#A3AED0] mb-6">Esta acción no se puede deshacer. Los datos se borrarán permanentemente.</p>
 
               <div className="flex items-center gap-2 mb-6 cursor-pointer" onClick={() => setDeleteConfirmation(prev => ({ ...prev, dontAskAgain: !prev.dontAskAgain }))}>
-                <div className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${deleteConfirmation.dontAskAgain ? 'bg-[var(--brand-primary)] border-[var(--brand-primary)] text-white' : 'border-gray-300'}`}>
+                <div className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${deleteConfirmation.dontAskAgain ? 'bg-[var(--color-primary)] border-[var(--color-primary)] text-white' : 'border-gray-300'}`}>
                   {deleteConfirmation.dontAskAgain && <CheckSquare size={14} />}
                 </div>
                 <span className="text-xs font-medium text-[#A3AED0]">No volver a preguntar</span>
@@ -289,7 +289,7 @@ function App() {
               <div className="flex gap-3 w-full">
                 <button
                   onClick={() => setDeleteConfirmation({ ...deleteConfirmation, isOpen: false })}
-                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-[#A3AED0] hover:bg-gray-50 hover:text-[#2B3674] transition-colors"
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-[#A3AED0] hover:bg-gray-50 hover:text-[var(--text-main)] transition-colors"
                 >
                   Cancelar
                 </button>

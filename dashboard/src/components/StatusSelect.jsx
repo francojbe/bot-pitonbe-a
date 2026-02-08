@@ -34,18 +34,18 @@ export function StatusSelect({ value, onChange, options = ORDER_STATUS_LIST }) {
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full flex items-center justify-between bg-white border border-[#E0E5F2] rounded-2xl px-4 py-3 shadow-none hover:shadow-sm transition-all duration-200 outline-none"
+                className="w-full flex items-center justify-between bg-white dark:bg-[#242424] border border-[#E0E5F2] dark:border-white/10 rounded-2xl px-4 py-3 shadow-none hover:shadow-sm transition-all duration-200 outline-none"
             >
                 <div className="flex items-center gap-3">
-                    <span className={`w-2.5 h-2.5 rounded-full ${getStatusColor(value).split(' ')[0]} shadow-sm ring-1 ring-white`}></span>
-                    <span className="text-sm font-bold text-[#2B3674]">{value}</span>
+                    <span className={`w-2.5 h-2.5 rounded-full ${getStatusColor(value).split(' ')[0]} shadow-sm ring-1 ring-white dark:ring-white/10`}></span>
+                    <span className="text-sm font-bold text-[var(--text-main)]">{value}</span>
                 </div>
                 <ChevronDown size={14} className="text-[#A3AED0]" />
             </button>
 
             {/* Dropdown */}
             {isOpen && (
-                <div className="absolute top-full mt-2 left-0 w-full bg-white border border-[#E0E5F2] rounded-2xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150 p-1">
+                <div className="absolute top-full mt-2 left-0 w-full bg-white dark:bg-[#242424] border border-[#E0E5F2] dark:border-white/10 rounded-2xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150 p-1">
                     {options.map((option) => (
                         <button
                             key={option}
@@ -54,7 +54,7 @@ export function StatusSelect({ value, onChange, options = ORDER_STATUS_LIST }) {
                                 onChange(option);
                                 setIsOpen(false);
                             }}
-                            className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all ${value === option ? 'bg-[#F4F7FE] text-[#2B3674]' : 'text-[#A3AED0] hover:bg-[#F4F7FE] hover:text-[#2B3674]'}`}
+                            className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all ${value === option ? 'bg-[var(--bg-subtle)] dark:bg-white/5 text-[var(--text-main)]' : 'text-[#A3AED0] hover:bg-[var(--bg-subtle)] dark:hover:bg-white/5 hover:text-[var(--text-main)]'}`}
                         >
                             <span className={`w-2 h-2 rounded-full ${getStatusColor(option).split(' ')[0]} ${value === option ? 'opacity-100' : 'opacity-40'} transition-opacity`}></span>
                             {option}

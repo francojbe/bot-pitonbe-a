@@ -37,8 +37,8 @@ export function LeadsView({ leads, search, onEdit, onCreate, selectedIds, setSel
         <div className="dashboard-card h-full flex flex-col">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                 <div>
-                    <h3 className="text-xl font-bold text-[var(--text-primary)]">Directorio de Clientes</h3>
-                    <p className="text-sm text-[var(--text-secondary)] font-medium">Total: {leads.length} clientes registrados</p>
+                    <h3 className="text-xl font-bold text-[var(--text-main)]">Directorio de Clientes</h3>
+                    <p className="text-sm text-gray-500 font-medium">Total: {leads.length} clientes registrados</p>
                 </div>
                 <div className="flex gap-3">
                     {selectedIds.size > 0 && (
@@ -49,7 +49,7 @@ export function LeadsView({ leads, search, onEdit, onCreate, selectedIds, setSel
                             <Trash2 size={16} /> Eliminar ({selectedIds.size})
                         </button>
                     )}
-                    <button onClick={onCreate} className="px-4 py-2 bg-[var(--brand-primary)] text-white rounded-full font-bold shadow-lg shadow-[#4318FF]/20 flex items-center gap-2">
+                    <button onClick={onCreate} className="px-4 py-2 bg-[var(--color-primary)] text-[var(--text-main)] rounded-full font-bold shadow-[var(--shadow-card)] flex items-center gap-2">
                         <Plus size={18} /> Nuevo Cliente
                     </button>
                 </div>
@@ -60,7 +60,7 @@ export function LeadsView({ leads, search, onEdit, onCreate, selectedIds, setSel
                     <thead className="sticky top-0 bg-[#F9FAFC] dark:bg-white/5 border-b border-gray-100 dark:border-white/5 z-20">
                         <tr>
                             <th className="px-6 py-4 w-14">
-                                <div onClick={toggleAll} className={`w-5 h-5 rounded border flex items-center justify-center cursor-pointer transition-colors ${selectedIds.size === filtered.length && filtered.length > 0 ? 'bg-[var(--brand-primary)] border-[var(--brand-primary)] text-white' : 'border-gray-300'}`}>
+                                <div onClick={toggleAll} className={`w-5 h-5 rounded border flex items-center justify-center cursor-pointer transition-colors ${selectedIds.size === filtered.length && filtered.length > 0 ? 'bg-[var(--color-primary)] border-[var(--color-primary)] text-[var(--text-main)]' : 'border-gray-300'}`}>
                                     {selectedIds.size === filtered.length && filtered.length > 0 && <CheckSquare size={14} />}
                                 </div>
                             </th>
@@ -75,13 +75,13 @@ export function LeadsView({ leads, search, onEdit, onCreate, selectedIds, setSel
                             <tr
                                 key={l.id}
                                 className={`group transition-all duration-300 cursor-pointer relative
-                  ${selectedIds.has(l.id) ? 'bg-[#F4F7FE]' : 'bg-white hover:bg-[#F4F7FE] dark:hover:bg-white/5'}
-                  hover:shadow-[0px_10px_30px_rgba(112,144,176,0.12)] hover:z-10
+                  ${selectedIds.has(l.id) ? 'bg-[var(--bg-subtle)] dark:bg-white/10' : 'bg-white dark:bg-[#242424] hover:bg-[var(--bg-subtle)] dark:hover:bg-white/5'}
+                  hover:shadow-[0px_4px_0px_rgba(79,97,40,0.2)] hover:z-10 hover:-translate-y-0.5
                 `}
                                 onClick={() => onEdit(l)}
                             >
                                 <td className="px-6 py-4" onClick={(e) => { e.stopPropagation(); toggleOne(l.id); }}>
-                                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${selectedIds.has(l.id) ? 'bg-[var(--brand-primary)] border-[var(--brand-primary)] text-white' : 'border-gray-300'}`}>
+                                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${selectedIds.has(l.id) ? 'bg-[var(--color-primary)] border-[var(--color-primary)] text-[var(--text-main)]' : 'border-gray-300'}`}>
                                         {selectedIds.has(l.id) && <CheckSquare size={14} />}
                                     </div>
                                 </td>
@@ -105,7 +105,7 @@ export function LeadsView({ leads, search, onEdit, onCreate, selectedIds, setSel
                                 <td className="px-6 py-4 text-right">
                                     <button
                                         onClick={(e) => { e.stopPropagation(); onEdit(l); }}
-                                        className="p-2 rounded-xl text-[var(--brand-primary)] opacity-0 group-hover:opacity-100 transition-all hover:bg-gray-50 dark:hover:bg-white/5"
+                                        className="p-2 rounded-xl text-[var(--color-primary)] opacity-0 group-hover:opacity-100 transition-all hover:bg-gray-50 dark:hover:bg-white/5"
                                     >
                                         <ChevronRight size={18} />
                                     </button>
