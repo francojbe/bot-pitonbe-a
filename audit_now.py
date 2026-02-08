@@ -35,8 +35,8 @@ def get_recent_conversations(days=1) -> Dict[str, List[Dict]]:
     try:
         res = supabase.table("message_logs") \
             .select("*") \
-            .gte("timestamp", cutoff) \
-            .order("timestamp", desc=True) \
+            .gte("created_at", cutoff) \
+            .order("created_at", desc=True) \
             .execute()
         
         logs = res.data
@@ -52,7 +52,7 @@ def get_recent_conversations(days=1) -> Dict[str, List[Dict]]:
             conversations[phone].append({
                 "role": log.get("role"),
                 "content": log.get("content"),
-                "timestamp": log.get("timestamp")
+                "timestamp": log.get("created_at")
             })
             
         # Ordenar cronológicamente
