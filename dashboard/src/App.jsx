@@ -136,7 +136,7 @@ function App() {
 
     // Call Backend (Notify) instead of direct DB update
     try {
-      const BACKEND_URL = import.meta.env.VITE_API_URL || "https://recuperadora-agente-pb.nojauc.easypanel.host";
+      const BACKEND_URL = import.meta.env.VITE_API_URL;
 
       const response = await fetch(`${BACKEND_URL}/orders/update_status`, {
         method: 'POST',

@@ -61,7 +61,7 @@ export function OrderDrawer({ order, onClose, updateOrderLocal }) {
 
         // 2. Call Backend to Notify
         try {
-            const BACKEND_URL = import.meta.env.VITE_API_URL || "https://recuperadora-agente-pb.nojauc.easypanel.host";
+            const BACKEND_URL = import.meta.env.VITE_API_URL;
 
             const response = await fetch(`${BACKEND_URL}/orders/update_status`, {
                 method: 'POST',
@@ -86,7 +86,7 @@ export function OrderDrawer({ order, onClose, updateOrderLocal }) {
     // Handle Payment Update with Notification
     const handlePaymentUpdate = async (newDeposit, newTotal) => {
         try {
-            const BACKEND_URL = import.meta.env.VITE_API_URL || "https://recuperadora-agente-pb.nojauc.easypanel.host";
+            const BACKEND_URL = import.meta.env.VITE_API_URL;
             const actualDeposit = newDeposit !== undefined ? newDeposit : form.deposit_amount;
             const actualTotal = newTotal !== undefined ? newTotal : form.total_amount;
 
@@ -614,7 +614,7 @@ export function MessageModal({ isOpen, onClose, customerName, phoneNumber, leadI
 
         setIsSending(true);
         try {
-            const BACKEND_URL = import.meta.env.VITE_API_URL || "https://recuperadora-agente-pb.nojauc.easypanel.host";
+            const BACKEND_URL = import.meta.env.VITE_API_URL;
 
             const response = await fetch(`${BACKEND_URL}/send_custom_message`, {
                 method: 'POST',

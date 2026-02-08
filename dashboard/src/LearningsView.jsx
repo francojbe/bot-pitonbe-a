@@ -9,7 +9,7 @@ export default function LearningsView() {
     const [auditing, setAuditing] = useState(false);
 
     // Use relative path for production (same domain) or localhost for dev if needed
-    const BACKEND_URL = import.meta.env.VITE_API_URL || "https://recuperadora-agente-pb.nojauc.easypanel.host";
+    const BACKEND_URL = import.meta.env.VITE_API_URL;
 
     const fetchLearnings = async () => {
         setLoading(true);
