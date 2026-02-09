@@ -375,9 +375,18 @@ def register_order(description: str, amount: int, rut: str, address: str, email:
                             "order_id": order_id,
                             "file_path": new_path
                         }).eq("id", file_rec["id"]).execute()
+                        
+                        # 3. Vincular también a la ficha de la orden (files_url)
+                        public_url = supabase.storage.from_("chat-media").get_public_url(new_path).public_url
+                        current_order = supabase.table("orders").select("files_url").eq("id", order_id).execute()
+                        current_files = current_order.data[0].get("files_url") or []
+                        if public_url not in current_files:
+                            current_files.append(public_url)
+                            supabase.table("orders").update({"files_url": current_files}).eq("id", order_id).execute()
+                        
                         logger.info(f"📎 Archivo vinculado y movido a la orden: {new_path}")
                     except Exception as move_err:
-                        # Si el movido falla (ej: archivo no existe o ya está allí), vinculamos metadata
+                        # Si el movido falla, intentamos al menos vincular por ID
                         supabase.table("file_metadata").update({"order_id": order_id}).eq("id", file_rec["id"]).execute()
                         logger.warning(f"⚠️ No se pudo mover el archivo físico, pero se vinculó por metadata: {move_err}")
                 
@@ -431,47 +440,35 @@ async def procesar_y_responder(phone: str, mensajes_acumulados: List[str], push_
              datos_guardados_txt = ""
 
         
-        # Verificar archivo reciente Y EXTRAER URL
-        # ESTRATEGIA: Basada en TIEMPO, no cantidad.
-        # Solo consideramos archivos válidos si se enviaron en los últimos 150 minutos (Sesión Activa)
-        last_logs = supabase.table("message_logs").select("content, created_at").eq("lead_id", lead_id).order("created_at", desc=True).limit(20).execute()
-        
-        recent_valid_content = []
+        # 1. Detectar archivos PENDIENTES (sin orden) de este cliente en los últimos 30 min
         from datetime import datetime, timedelta, timezone
         ahora = datetime.now(timezone.utc)
+        hace_30_min = (ahora - timedelta(minutes=30)).isoformat()
         
-        for msg in last_logs.data:
-            ts_str = msg['created_at']
-            # Fix robusto para ISO format en Python < 3.11
-            try:
-                if ts_str.endswith('Z'):
-                    ts_str = ts_str.replace('Z', '+00:00')
-                fecha_msg = datetime.fromisoformat(ts_str)
-            except ValueError:
-                # Fallback: Quitar microsegundos y zona si falla
-                ts_str = ts_str.split('.')[0] 
-                fecha_msg = datetime.strptime(ts_str, "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
-
-            # Si el mensaje es de hace menos de 15 minutos, lo consideramos "Contexto Vivo"
-            if (ahora - fecha_msg).total_seconds() < 900: # 15 min = 900 seg
-                recent_valid_content.append(msg['content'])
+        pending_files = supabase.table("file_metadata")\
+            .select("id, file_path")\
+            .eq("lead_id", lead_id)\
+            .is_("order_id", "null")\
+            .gt("created_at", hace_30_min)\
+            .execute()
         
-        recent_txt = " ".join(recent_valid_content)
+        has_file_context = len(pending_files.data) > 0 or "[DOCUMENTO RECIBIDO (PDF VÁLIDO):" in texto_completo
         
-        # Detectar presencia de archivos y tipos
-        has_file_context = "[DOCUMENTO RECIBIDO (PDF VÁLIDO):" in recent_txt or "[DOCUMENTO RECIBIDO (PDF VÁLIDO):" in texto_completo
-        has_invalid_file = "[ARCHIVO_INVALIDO:" in recent_txt or "[ARCHIVO_INVALIDO:" in texto_completo
-        
-        # Extraer URL del archivo válido (si hay)
-        import re
         extracted_url = None
         if has_file_context:
-            url_match = re.search(r"URL: ((?:https?://|www\.)[^\s\]]+)", recent_txt + " " + texto_completo)
-            extracted_url = url_match.group(1) if url_match else None
+            if pending_files.data:
+                # Obtener la URL pública del más reciente
+                last_f = pending_files.data[-1]
+                extracted_url = supabase.storage.from_("chat-media").get_public_url(last_f["file_path"]).public_url
+            else:
+                import re
+                url_match = re.search(r"URL: ((?:https?://|www\.)[^\s\]]+)", texto_completo)
+                extracted_url = url_match.group(1) if url_match else None
 
-        # EXTRACCIÓN INTELIGENTE DE DATOS DE CLIENTE (RUT/EMAIL) DEL HISTORIAL
-        # Para que no olvide datos dados hace 3 mensajes.
-        full_context_str = recent_txt + " " + texto_completo
+        has_invalid_file = "[ARCHIVO_INVALIDO:" in texto_completo
+        full_context_str = texto_completo
+
+        # EXTRACCIÓN INTELIGENTE DE DATOS
         
         # Regex mejorados para capturar RUTs en medio de texto multilinea
         import re
@@ -590,14 +587,20 @@ Usa el formato exacto que entrega `calculate_quote`.
 💰 *TOTAL FINAL: $[Total] (IVA Incluido)* ✅
 ──────────────────
 
+🧠 *REGLA DE ARCHIVOS (ESTRICTA):*
+- Si el cliente dice "Tengo el diseño" o similar, pero `Archivo detectado` es ❌ NO, **NO PUEDES** registrar la orden ni pedir el "APROBADO".
+- Debes decir: "Excelente que tengas el diseño. Por favor, **envíalo ahora mismo** por este medio (en formato PDF de preferencia) para que yo pueda validarlo y registrar tu orden".
+- Solo procede si `Archivo detectado` cambia a ✅ SÍ.
+- *EXCEPCIÓN:* Si contrató servicio de diseño pagado, no es necesario el archivo.
+
 📝 *FLUJO DE TRABAJO COMPLETO:*
 1. **Detectar necesidad** (¿Tiene diseño o necesita que le hagamos uno?).
-2. **Ofrecer Niveles de Diseño** (Básico a Premium, aclarando los 3 cambios máx).
-3. **Cotizar Oficialmente** usando `calculate_quote` (Suma automática de base + diseño).
-4. **Pedir Datos Fiscales** (RUT, Nombre, Dirección, Email).
-5. **Pedir Detalles para Diseño** (Texto, colores, estilo, logo).
+2. **Ofrecer Niveles de Diseño** (Si no tiene).
+3. **Validar Archivo** (Si dice que tiene, pídelo antes de seguir).
+4. **Cotizar Oficialmente** usando `calculate_quote`.
+5. **Pedir Datos Fiscales** (RUT, Nombre, Dirección, Email).
 6. **Confirmación del Cliente** (Pide que escriba *APROBADO*).
-7. **Registrar Orden** en `register_order` (Una sola vez).
+7. **Registrar Orden** en `register_order`.
 8. **Brindar Datos de Pago (Banco Estado)** 🏦:
    - *Titular*: PB IMPRENTA SPA
    - *RUT*: 77.108.007-3
