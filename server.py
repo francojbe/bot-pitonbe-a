@@ -337,7 +337,57 @@ def register_order(description: str, amount: int, rut: str, address: str, email:
             "print_sides": print_sides
         }
         res = supabase.table("orders").insert(new_order).execute()
-        return f"✅ Orden #{str(res.data[0]['id'])[:8]} Creada Exitosamente."
+        order_id = res.data[0]['id']
+
+        # NOVEDAD: Vinculación Automática de Archivos Recientes
+        try:
+            from datetime import datetime, timedelta, timezone
+            # Buscar archivos del cliente sin orden asignada, creados en los últimos 30 min
+            ahora = datetime.now(timezone.utc)
+            hace_30_min = (ahora - timedelta(minutes=30)).isoformat()
+            
+            recent_files = supabase.table("file_metadata")\
+                .select("id, file_path, file_name")\
+                .eq("lead_id", lead_id)\
+                .is_("order_id", "null")\
+                .gt("created_at", hace_30_min)\
+                .execute()
+            
+            if recent_files.data:
+                # Obtener nombre para el path
+                lead_resp = supabase.table("leads").select("name").eq("id", lead_id).execute()
+                cust_prefix = "cliente"
+                if lead_resp.data:
+                    cust_prefix = "".join(x for x in lead_resp.data[0]["name"] if x.isalnum()) or "cliente"
+                
+                for file_rec in recent_files.data:
+                    old_path = file_rec["file_path"]
+                    # Reutilizar el timestamp del nombre de archivo si es posible o usar el original
+                    fname = file_rec["file_name"]
+                    # Nuevo path estructurado
+                    new_path = f"archivos/{cust_prefix}_{lead_id[:5]}/{str(order_id)[:8]}/{fname}"
+                    
+                    try:
+                        # 1. Intentar mover en Storage
+                        supabase.storage.from_("chat-media").move(old_path, new_path)
+                        # 2. Actualizar DB con el nuevo path y el order_id
+                        supabase.table("file_metadata").update({
+                            "order_id": order_id,
+                            "file_path": new_path
+                        }).eq("id", file_rec["id"]).execute()
+                        logger.info(f"📎 Archivo vinculado y movido a la orden: {new_path}")
+                    except Exception as move_err:
+                        # Si el movido falla (ej: archivo no existe o ya está allí), vinculamos metadata
+                        supabase.table("file_metadata").update({"order_id": order_id}).eq("id", file_rec["id"]).execute()
+                        logger.warning(f"⚠️ No se pudo mover el archivo físico, pero se vinculó por metadata: {move_err}")
+                
+                # Opcional: Actualizar también el campo 'files_url' de la orden si queremos
+                # Pero el dashboard ahora leerá de file_metadata, así que no es estrictamente necesario.
+
+        except Exception as e_bind:
+            logger.error(f"❌ Error en vinculación automática: {e_bind}")
+
+        return f"✅ Orden #{str(order_id)[:8]} Creada Exitosamente."
     except Exception as e:
         return f"Error DB: {str(e)}"
 
@@ -810,7 +860,7 @@ async def webhook_whatsapp(request: Request):
         media_url = None
         
         # Helper robusto para guardar medios (B64 o URL -> Supabase)
-        def save_media_to_supabase(b64_data, file_url, mime, ext):
+        def save_media_to_supabase(b64_data, file_url, mime, ext, custom_path=None):
             file_bytes = None
             import base64
             import time
@@ -846,25 +896,28 @@ async def webhook_whatsapp(request: Request):
                     logger.warning(f"⚠️ Los bytes recibidos no parecen una imagen válida (JPG/PNG). Primeros bytes: {file_bytes[:10].hex(' ')}")
                 
                 try:
-                    # Extraer número de teléfono para la carpeta
                     jid = key.get('remoteJid', 'unknown').split('@')[0]
                     timestamp = int(time.time())
                     filename = f"{timestamp}.{ext}"
-                    path = f"inbox/{jid}/{filename}"
                     
-                    logger.info(f"📤 Subiendo a carpeta de usuario: {path}...")
+                    if custom_path:
+                        path = f"{custom_path}/{filename}"
+                    else:
+                        path = f"inbox/{jid}/{filename}"
+                    
+                    logger.info(f"📤 Subiendo a carpeta: {path}...")
                     # upsert=True por si acaso
                     supabase.storage.from_("chat-media").upload(path, file_bytes, {"content-type": mime, "upsert": "true"})
                     public_url = supabase.storage.from_("chat-media").get_public_url(path)
 
                     logger.info(f"✅ Media guardada en Supabase: {public_url}")
-                    return public_url
+                    return public_url, path
                 except Exception as e:
                     logger.error(f"Error uploading to Supabase: {e}")
 
             
             # 4. Fallback: Devolver URL original si no pudimos procesarla internamente
-            return file_url
+            return file_url, None
 
         # [PROCESAMIENTO SEGURO DEL CONTENIDO]
         try:
@@ -916,10 +969,46 @@ async def webhook_whatsapp(request: Request):
                     
                     final_url = save_media_to_supabase(b64, url_msg, mime_type, ext)
                     texto = f"[ARCHIVO_INVALIDO: Documento No-PDF (Mime: {mime_type})] El archivo {filename} ({final_url}) no es un PDF. El sistema solo acepta PDF. {caption}"
-                else:
-                    # ES UN PDF VÁLIDO
-                    final_url = save_media_to_supabase(b64, url_msg, mime_type, "pdf")
-                    texto = f"[DOCUMENTO RECIBIDO (PDF VÁLIDO): {filename} - URL: {final_url}] {caption}"
+                # ES UN PDF VÁLIDO
+                # Determinar carpeta de destino: archivos/nombre_cliente/orden_id/
+                # Buscamos si el cliente tiene una orden reciente
+                order_path = "global"
+                current_order_id = None
+                try:
+                    # Buscar lead_id
+                    lead_res = supabase.table("leads").select("id, name").eq("phone_number", key.get("remoteJid", "").split("@")[0]).execute()
+                    if lead_res.data:
+                        lead_obj = lead_res.data[0]
+                        lead_db_id = lead_obj["id"]
+                        cust_name_clean = "".join(x for x in lead_obj["name"] if x.isalnum()) or "cliente"
+                        
+                        # Buscar orden pendiente/ativa
+                        ord_res = supabase.table("orders").select("id").eq("lead_id", lead_db_id).order("created_at", desc=True).limit(1).execute()
+                        if ord_res.data:
+                            current_order_id = ord_res.data[0]["id"]
+                            order_path = f"archivos/{cust_name_clean}_{lead_db_id[:5]}/{current_order_id[:8]}"
+                        else:
+                            order_path = f"archivos/{cust_name_clean}_{lead_db_id[:5]}/general"
+                except Exception as e:
+                    logger.error(f"Error calculando path de archivo: {e}")
+
+                final_url, storage_path = save_media_to_supabase(b64, url_msg, mime_type, "pdf", custom_path=order_path)
+                
+                # Registrar en metadata si tenemos lead_id
+                if storage_path and 'lead_db_id' in locals():
+                    try:
+                        supabase.table("file_metadata").insert({
+                            "file_path": storage_path,
+                            "file_name": filename,
+                            "file_type": mime_type,
+                            "lead_id": lead_db_id,
+                            "order_id": current_order_id,
+                            "status": "original"
+                        }).execute()
+                    except Exception as e:
+                        logger.error(f"Error guardando metadata: {e}")
+
+                texto = f"[DOCUMENTO RECIBIDO (PDF VÁLIDO): {filename} - URL: {final_url}] {caption}"
 
                     
         except Exception as e:
@@ -1146,8 +1235,30 @@ async def update_order_status(payload: OrderStatusUpdate):
 
         return {"status": "success", "notified": bool(phone)}
 
+        return {"status": "error", "message": str(e)}
+
+# --- ENDPOINTS PITRONB DRIVE ---
+
+@app.get("/storage/tree")
+async def get_storage_tree():
+    """Retorna la jerarquía de archivos para el explorador."""
+    try:
+        # Obtenemos toda la metadata
+        res = supabase.table("file_metadata").select("*, leads(name)").eq("is_deleted", False).execute()
+        return res.data
     except Exception as e:
-        logger.error(f"Error actualizando estado: {e}")
+        logger.error(f"Error en storage tree: {e}")
+        return []
+
+@app.post("/storage/update_metadata")
+async def update_storage_metadata(payload: dict):
+    """Actualiza etiquetas o estado de un archivo."""
+    try:
+        file_id = payload.get("id")
+        update_data = payload.get("data", {})
+        res = supabase.table("file_metadata").update(update_data).eq("id", file_id).execute()
+        return {"status": "success", "data": res.data}
+    except Exception as e:
         return {"status": "error", "message": str(e)}
 
 class PaymentUpdate(BaseModel):

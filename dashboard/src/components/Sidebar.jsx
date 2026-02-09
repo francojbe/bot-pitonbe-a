@@ -1,10 +1,11 @@
-import { LayoutDashboard, Users, BarChart2, Brain, ChevronLeft, ChevronRight } from 'lucide-react'
+import { LayoutDashboard, Users, BarChart2, Brain, ChevronLeft, ChevronRight, Folder } from 'lucide-react'
 
 export function Sidebar({ activeTab, setActiveTab, collapsed, setCollapsed, mobileOpen, setMobileOpen }) {
     const menuItems = [
         { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
         { id: 'clientes', icon: <Users size={20} />, label: 'Clientes' },
         { id: 'reportes', icon: <BarChart2 size={20} />, label: 'Reportes' },
+        { id: 'archivos', icon: <Folder size={20} />, label: 'Archivos' },
         { id: 'mejoras', icon: <Brain size={20} />, label: 'Mejoras' },
     ]
 

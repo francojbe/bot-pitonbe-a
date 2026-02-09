@@ -8,8 +8,9 @@ import { LeadsView } from './components/LeadsView'
 import { ReportsView } from './components/ReportsView'
 import { OrderDrawer, LeadModal } from './components/Modals'
 import {
-  Search, Moon, Sun, Trash2, CheckSquare, Menu
+  Search, Moon, Sun, Trash2, CheckSquare, Menu, Folder
 } from 'lucide-react'
+import FileExplorer from './components/FileExplorer'
 
 import { useOrders } from './hooks/useOrders'
 import { useLeads } from './hooks/useLeads'
@@ -243,6 +244,7 @@ function App() {
             />
           )}
           {activeTab === 'reportes' && <ReportsView orders={orders} />}
+          {activeTab === 'archivos' && <FileExplorer />}
           {activeTab === 'mejoras' && <LearningsView />}
         </main>
       </div>
