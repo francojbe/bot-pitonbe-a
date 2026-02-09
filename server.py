@@ -1235,6 +1235,8 @@ async def update_order_status(payload: OrderStatusUpdate):
 
         return {"status": "success", "notified": bool(phone)}
 
+    except Exception as e:
+        logger.error(f"Error actualizando estado: {e}")
         return {"status": "error", "message": str(e)}
 
 # --- ENDPOINTS PITRONB DRIVE ---
