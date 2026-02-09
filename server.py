@@ -1285,31 +1285,38 @@ async def update_storage_metadata(payload: dict):
         return {"status": "error", "message": str(e)}
 
 @app.post("/storage/upload")
-async def upload_file(file: UploadFile = File(...), path: str = Form(...), response: Response = None):
+async def upload_file(file: UploadFile = File(...), path: str = Form(...)):
     """Sube un archivo manualmente desde el Dashboard."""
     try:
         content = await file.read()
         size_bytes = len(content)
+        mime_type = file.content_type or "application/octet-stream"
         
         # Path format: archivos/Customer_Name_LeadID/OrderID or archivos/Customer_Name_LeadID/general
-        full_path = f"{path}/{file.filename}"
+        # Limpiar posibles slashes dobles
+        clean_path = path.strip("/")
+        full_path = f"{clean_path}/{file.filename}"
         
-        logger.info(f"📁 Subida manual recibida: {full_path} (Size: {size_bytes})")
+        logger.info(f"📁 Subida manual: {full_path} (Size: {size_bytes}, Mime: {mime_type})")
         
         # 1. Subir a Supabase Storage
-        # Importante: upsert=True para permitir sobrescribir
-        storage_res = supabase.storage.from_("chat-media").upload(
-            full_path, 
-            content, 
-            {"content-type": file.content_type, "upsert": "true"}
-        )
+        try:
+            supabase.storage.from_("chat-media").upload(
+                full_path, 
+                content, 
+                {"content-type": mime_type, "upsert": True} # Booleano literal
+            )
+        except Exception as storage_err:
+            logger.error(f"❌ Error en Storage: {storage_err}")
+            # Si el error es que ya existe (y upsert falló), seguimos intentando registrar metadata
+            if "already exists" not in str(storage_err).lower():
+                return {"status": "error", "message": f"Storage Error: {str(storage_err)}"}
         
-        # 2. Intentar extraer lead_id y order_id del path para la metadata
-        parts = path.split('/') 
+        # 2. Extraer lead_id y order_id
+        parts = clean_path.split('/') 
         lead_id = None
         order_id = None
         
-        # Segmento del Lead (ej: FrancoBlanco_fe5d0)
         if len(parts) >= 2:
             lead_segment = parts[1]
             if "_" in lead_segment:
@@ -1317,40 +1324,37 @@ async def upload_file(file: UploadFile = File(...), path: str = Form(...), respo
                 leads_res = supabase.table("leads").select("id").ilike("id", f"{lead_id_hint}%").execute()
                 if leads_res.data:
                     lead_id = leads_res.data[0]["id"]
-                    logger.info(f"🔗 Lead vinculado: {lead_id}")
 
-        # Segmento de la Orden (ej: 086495f9)
         if len(parts) >= 3:
             order_segment = parts[2]
             if order_segment != "general":
                 orders_res = supabase.table("orders").select("id").ilike("id", f"{order_segment}%").execute()
                 if orders_res.data:
                     order_id = orders_res.data[0]["id"]
-                    logger.info(f"🔗 Orden vinculada: {order_id}")
 
         # 3. Insertar metadata
-        insert_res = supabase.table("file_metadata").insert({
+        data_to_insert = {
             "file_path": full_path,
             "file_name": file.filename,
-            "file_type": file.content_type,
+            "file_type": mime_type,
             "size_bytes": size_bytes,
             "lead_id": lead_id,
             "order_id": order_id,
-            "status": "original" # Cambiado a 'original' para consistencia con el bot
-        }).execute()
+            "status": "original"
+        }
+        
+        insert_res = supabase.table("file_metadata").insert(data_to_insert).execute()
         
         if not insert_res.data:
-            logger.error(f"❌ Error insertando metadata: {insert_res}")
-            raise HTTPException(status_code=500, detail="Error al registrar metadata en DB")
+            logger.error(f"❌ Error DB: {insert_res}")
+            return {"status": "error", "message": "Error al registrar metadata en base de datos"}
 
-        logger.info(f"✅ Subida manual completada: {full_path}")
-        return {"status": "success", "path": full_path, "data": insert_res.data[0]}
+        logger.info(f"✅ Subida exitosa: {full_path}")
+        return {"status": "success", "data": insert_res.data[0]}
         
     except Exception as e:
-        logger.error(f"❌ Error crítico en upload_file: {str(e)}")
-        if isinstance(e, HTTPException):
-            raise e
-        return Response(content=f"Error en el servidor: {str(e)}", status_code=500)
+        logger.error(f"❌ Error crítico subida: {str(e)}")
+        return {"status": "error", "message": str(e)}
 
 class PaymentUpdate(BaseModel):
     order_id: str
