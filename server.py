@@ -1330,16 +1330,39 @@ async def upload_file(file: UploadFile = File(...), path: str = Form(...)):
             lead_segment = parts[1]
             if "_" in lead_segment:
                 lead_id_hint = lead_segment.split("_")[-1]
-                leads_res = supabase.table("leads").select("id").ilike("id", f"{lead_id_hint}%").execute()
-                if leads_res.data:
-                    lead_id = leads_res.data[0]["id"]
+                # FIX: UUID column cannot use ilike directly without casting to text
+                # We use .ilike("id::text", pattern) if supported, or filter on client side?
+                # Safer: Supabase client filter syntax .ilike("id::text", ...) might fail if not exposed efficiently.
+                # Actually, the error `operator does not exist: uuid ~~* unknown` means we are trying to ILIKE a UUID.
+                # We need to explicitly cast. Or search by other field? Name?
+                # Since 'lead_id_hint' is just a prefix (fe5d0), we MUST use text casting.
+                
+                # NOTE: PostgREST syntax for casting is usually column::type.
+                # But python library might not support it directly in the key string easily.
+                # Let's try explicit casting via filter modifier if possible, or use `or` filter.
+                
+                # ALTERNATIVE: Don't use ID prefix. Use the NAME if unique enough?
+                # "FrancoBlanco_fe5d0". Name = FrancoBlanco.
+                # But name is not unique. ID prefix is better.
+                
+                # Correct PostgREST way for casting: "id::text"
+                try:
+                    leads_res = supabase.table("leads").select("id").ilike("id::text", f"{lead_id_hint}%").execute()
+                    if leads_res.data:
+                        lead_id = leads_res.data[0]["id"]
+                except Exception as e_lead:
+                    logger.warning(f"⚠️ Falló búsqueda de Lead por ID parcial: {e_lead}")
 
         if len(parts) >= 3:
             order_segment = parts[2]
             if order_segment != "general":
-                orders_res = supabase.table("orders").select("id").ilike("id", f"{order_segment}%").execute()
-                if orders_res.data:
-                    order_id = orders_res.data[0]["id"]
+                try:
+                    # Same fix for orders
+                    orders_res = supabase.table("orders").select("id").ilike("id::text", f"{order_segment}%").execute()
+                    if orders_res.data:
+                        order_id = orders_res.data[0]["id"]
+                except Exception as e_order:
+                    logger.warning(f"⚠️ Falló búsqueda de Orden por ID parcial: {e_order}")
 
         # 3. Insertar metadata
         data_to_insert = {
