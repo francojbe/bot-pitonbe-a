@@ -1284,6 +1284,23 @@ async def update_storage_metadata(payload: dict):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+@app.post("/storage/delete")
+async def delete_file(payload: dict):
+    """Marca un archivo como eliminado (Soft Delete)."""
+    try:
+        file_id = payload.get("id")
+        if not file_id:
+             return {"status": "error", "message": "ID requerido"}
+             
+        # Soft delete en DB
+        res = supabase.table("file_metadata").update({"is_deleted": True}).eq("id", file_id).execute()
+        
+        logger.info(f"🗑️ Archivo eliminado (Soft Delete): {file_id}")
+        return {"status": "success", "data": res.data}
+    except Exception as e:
+        logger.error(f"Error eliminando archivo: {e}")
+        return {"status": "error", "message": str(e)}
+
 @app.post("/storage/upload")
 async def upload_file(file: UploadFile = File(...), path: str = Form(...)):
     """Sube un archivo manualmente desde el Dashboard."""

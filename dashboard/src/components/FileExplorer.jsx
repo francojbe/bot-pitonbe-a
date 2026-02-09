@@ -147,6 +147,29 @@ export default function FileExplorer() {
         }
     };
 
+    const handleDeleteFile = async (fileId) => {
+        if (!confirm("¿Estás seguro de que quieres eliminar este archivo?")) return;
+
+        try {
+            const response = await fetch(`${BACKEND_URL}/storage/delete`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: fileId })
+            });
+
+            if (response.ok) {
+                toast.success("Archivo eliminado");
+                setSelectedFile(null); // Close sidebar
+                fetchFiles(); // Refresh list
+            } else {
+                toast.error("Error al eliminar archivo");
+            }
+        } catch (error) {
+            console.error("Delete error:", error);
+            toast.error("Error de conexión");
+        }
+    };
+
     const visibleItems = getVisibleItems();
 
     return (
@@ -328,7 +351,10 @@ export default function FileExplorer() {
                         >
                             <Download size={16} /> Abrir
                         </a>
-                        <button className="flex items-center justify-center gap-2 px-4 py-2 bg-red-100 text-red-600 rounded-lg text-sm font-bold">
+                        <button
+                            onClick={() => handleDeleteFile(selectedFile.id)}
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-sm font-bold hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                        >
                             <Trash2 size={16} /> Borrar
                         </button>
                     </div>
