@@ -147,9 +147,23 @@ export default function FileExplorer() {
         }
     };
 
-    const handleDeleteFile = async (fileId) => {
-        if (!confirm("¿Estás seguro de que quieres eliminar este archivo?")) return;
+    const handleDeleteFile = (fileId) => {
+        toast("¿Eliminar este archivo?", {
+            description: "Esta acción moverá el archivo a la papelera.",
+            action: {
+                label: "Eliminar",
+                onClick: () => executeDelete(fileId),
+            },
+            cancel: {
+                label: "Cancelar",
+                onClick: () => { }
+            },
+            duration: 5000,
+        });
+    };
 
+    const executeDelete = async (fileId) => {
+        const toastId = toast.loading("Eliminando archivo...");
         try {
             const response = await fetch(`${BACKEND_URL}/storage/delete`, {
                 method: 'POST',
@@ -158,15 +172,15 @@ export default function FileExplorer() {
             });
 
             if (response.ok) {
-                toast.success("Archivo eliminado");
+                toast.success("Archivo eliminado correctamente", { id: toastId });
                 setSelectedFile(null); // Close sidebar
                 fetchFiles(); // Refresh list
             } else {
-                toast.error("Error al eliminar archivo");
+                toast.error("Error al eliminar el archivo", { id: toastId });
             }
         } catch (error) {
             console.error("Delete error:", error);
-            toast.error("Error de conexión");
+            toast.error("Error de conexión con el servidor", { id: toastId });
         }
     };
 
