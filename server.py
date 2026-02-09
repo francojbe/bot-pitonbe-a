@@ -1287,6 +1287,7 @@ async def update_storage_metadata(payload: dict):
 @app.post("/storage/upload")
 async def upload_file(file: UploadFile = File(...), path: str = Form(...)):
     """Sube un archivo manualmente desde el Dashboard."""
+    import traceback
     try:
         content = await file.read()
         size_bytes = len(content)
@@ -1296,33 +1297,35 @@ async def upload_file(file: UploadFile = File(...), path: str = Form(...)):
         clean_path = path.strip("/")
         full_path = f"{clean_path}/{file.filename}"
         
-        logger.info(f"📁 [MANUAL UPLOAD] Recibido: {full_path} ({size_bytes} bytes)")
+        logger.info(f"📁 [UPLOAD] Intentando: {full_path} ({size_bytes} bytes)")
         
         # 1. Subir a Supabase Storage
         try:
-            # En algunas versiones del SDK, upload lanza excepción en error, en otras retorna objeto con 'error'
-            storage_res = supabase.storage.from_("chat-media").upload(
-                path=full_path, 
-                file=content, 
-                file_options={"content-type": mime_type, "upsert": "true"} # 'true' como string suele ser más seguro en algunas versiones
+            # Intentar con la forma más simple y compatible
+            supabase.storage.from_("chat-media").upload(
+                full_path, 
+                content, 
+                {"content-type": mime_type, "x-upsert": "true"} # Algunas versiones usan x-upsert o upsert como string/bool
             )
-            # Si storage_res tiene atributo error, lanzarlo
-            if hasattr(storage_res, 'error') and storage_res.error:
-                raise Exception(f"Storage Error: {storage_res.error}")
         except Exception as storage_err:
-            # Si el error es solo que ya existe, podemos intentar seguir si no es crítico
-            if "already exists" in str(storage_err).lower():
-                logger.warning(f"⚠️ El archivo ya existe en storage, intentando actualizar metadata: {full_path}")
-            else:
-                logger.error(f"❌ Error en Supabase Storage: {storage_err}")
-                raise HTTPException(status_code=500, detail=f"Error en Storage: {str(storage_err)}")
+            logger.warning(f"⚠️ Re-intentando subida con upsert booleano por: {storage_err}")
+            try:
+                # Segundo intento con upsert booleano
+                supabase.storage.from_("chat-media").upload(
+                    full_path, 
+                    content, 
+                    {"content-type": mime_type, "upsert": True}
+                )
+            except Exception as e2:
+                if "already exists" not in str(e2).lower():
+                    logger.error(f"❌ Fallo definitivo en Storage: {e2}")
+                    raise Exception(f"Storage Error: {str(e2)}")
         
         # 2. Extraer IDs para metadata
         parts = clean_path.split('/') 
         lead_id = None
         order_id = None
         
-        # Part[0] = 'archivos', Part[1] = 'Customer_LeadID', Part[2] = 'OrderID'
         if len(parts) >= 2:
             lead_segment = parts[1]
             if "_" in lead_segment:
@@ -1338,7 +1341,7 @@ async def upload_file(file: UploadFile = File(...), path: str = Form(...)):
                 if orders_res.data:
                     order_id = orders_res.data[0]["id"]
 
-        # 3. Insertar metadata en base de datos
+        # 3. Insertar metadata
         data_to_insert = {
             "file_path": full_path,
             "file_name": file.filename,
@@ -1349,21 +1352,22 @@ async def upload_file(file: UploadFile = File(...), path: str = Form(...)):
             "status": "original"
         }
         
-        logger.info(f"🔗 Insertando metadata: {data_to_insert}")
         insert_res = supabase.table("file_metadata").insert(data_to_insert).execute()
         
         if not insert_res.data:
-            logger.error(f"❌ Fallo al insertar metadata en DB: {insert_res}")
-            raise HTTPException(status_code=500, detail="No se pudo registrar la metadata en la base de datos.")
+            raise Exception("No se pudo insertar la metadata en la base de datos.")
 
-        logger.info(f"✅ Subida exitosa y registrada: {full_path}")
+        logger.info(f"✅ Subida exitosa: {full_path}")
         return {"status": "success", "data": insert_res.data[0]}
         
-    except HTTPException as he:
-        raise he
     except Exception as e:
-        logger.error(f"❌ Error crítico en upload_file: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        err_detail = traceback.format_exc()
+        logger.error(f"❌ Error en upload_file:\n{err_detail}")
+        return Response(
+            content=json.dumps({"status": "error", "message": str(e), "detail": err_detail}),
+            status_code=500,
+            media_type="application/json"
+        )
 
 class PaymentUpdate(BaseModel):
     order_id: str
