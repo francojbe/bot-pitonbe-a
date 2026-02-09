@@ -342,15 +342,15 @@ def register_order(description: str, amount: int, rut: str, address: str, email:
         # NOVEDAD: Vinculación Automática de Archivos Recientes
         try:
             from datetime import datetime, timedelta, timezone
-            # Buscar archivos del cliente sin orden asignada, creados en los últimos 30 min
+            # Buscar archivos del cliente sin orden asignada, creados en los últimos 120 min
             ahora = datetime.now(timezone.utc)
-            hace_30_min = (ahora - timedelta(minutes=30)).isoformat()
+            hace_120_min = (ahora - timedelta(minutes=120)).isoformat()
             
             recent_files = supabase.table("file_metadata")\
                 .select("id, file_path, file_name")\
                 .eq("lead_id", lead_id)\
                 .is_("order_id", "null")\
-                .gt("created_at", hace_30_min)\
+                .gt("created_at", hace_120_min)\
                 .execute()
             
             if recent_files.data:
@@ -440,16 +440,16 @@ async def procesar_y_responder(phone: str, mensajes_acumulados: List[str], push_
              datos_guardados_txt = ""
 
         
-        # 1. Detectar archivos PENDIENTES (sin orden) de este cliente en los últimos 30 min
+        # 1. Detectar archivos PENDIENTES (sin orden) de este cliente en los últimos 120 min
         from datetime import datetime, timedelta, timezone
         ahora = datetime.now(timezone.utc)
-        hace_30_min = (ahora - timedelta(minutes=30)).isoformat()
+        hace_120_min = (ahora - timedelta(minutes=120)).isoformat()
         
         pending_files = supabase.table("file_metadata")\
             .select("id, file_path")\
             .eq("lead_id", lead_id)\
             .is_("order_id", "null")\
-            .gt("created_at", hace_30_min)\
+            .gt("created_at", hace_120_min)\
             .execute()
         
         has_file_context = len(pending_files.data) > 0 or "[DOCUMENTO RECIBIDO (PDF VÁLIDO):" in texto_completo
@@ -985,11 +985,29 @@ async def webhook_whatsapp(request: Request):
                         lead_db_id = lead_obj["id"]
                         cust_name_clean = "".join(x for x in lead_obj["name"] if x.isalnum()) or "cliente"
                         
-                        # Buscar orden pendiente/ativa
-                        ord_res = supabase.table("orders").select("id").eq("lead_id", lead_db_id).order("created_at", desc=True).limit(1).execute()
+                        # Buscar orden pendiente/activa (Solo últimos 120 min)
+                        from datetime import datetime, timezone
+                        ord_res = supabase.table("orders").select("id, status, created_at").eq("lead_id", lead_db_id).order("created_at", desc=True).limit(1).execute()
                         if ord_res.data:
-                            current_order_id = ord_res.data[0]["id"]
-                            order_path = f"archivos/{cust_name_clean}_{lead_db_id[:5]}/{current_order_id[:8]}"
+                            last_ord = ord_res.data[0]
+                            is_active_and_recent = False
+                            try:
+                                # Convertir created_at a datetime
+                                ord_ts = last_ord["created_at"].replace('Z', '+00:00')
+                                fecha_ord = datetime.fromisoformat(ord_ts)
+                                if (datetime.now(timezone.utc) - fecha_ord).total_seconds() < 7200: # 2 horas
+                                    if last_ord["status"] not in ["LISTO", "ENTREGADO", "ANULADO"]:
+                                        is_active_and_recent = True
+                            except Exception as te:
+                                logger.error(f"Error parseando fecha orden: {te}")
+
+                            if is_active_and_recent:
+                                current_order_id = last_ord["id"]
+                                order_path = f"archivos/{cust_name_clean}_{lead_db_id[:5]}/{current_order_id[:8]}"
+                            else:
+                                # Si la orden es vieja o está lista/entregada, el archivo va a /general
+                                # para que register_order lo "succione" si es una nueva orden.
+                                order_path = f"archivos/{cust_name_clean}_{lead_db_id[:5]}/general"
                         else:
                             order_path = f"archivos/{cust_name_clean}_{lead_db_id[:5]}/general"
                 except Exception as e:
