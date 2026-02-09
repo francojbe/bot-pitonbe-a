@@ -4,7 +4,7 @@ import json
 import logging
 import asyncio
 from typing import List, Optional, Any, Dict
-from fastapi import FastAPI, Request, BackgroundTasks
+from fastapi import FastAPI, Request, BackgroundTasks, UploadFile, File, Form
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
@@ -1282,6 +1282,57 @@ async def update_storage_metadata(payload: dict):
         res = supabase.table("file_metadata").update(update_data).eq("id", file_id).execute()
         return {"status": "success", "data": res.data}
     except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.post("/storage/upload")
+async def upload_file(file: UploadFile = File(...), path: str = Form(...)):
+    """Sube un archivo manualmente desde el Dashboard."""
+    try:
+        content = await file.read()
+        
+        # Path format: archivos/Customer_Name_LeadID/OrderID or archivos/Customer_Name_LeadID/general
+        full_path = f"{path}/{file.filename}"
+        
+        # 1. Subir a Supabase Storage
+        supabase.storage.from_("chat-media").upload(full_path, content, {"content-type": file.content_type, "upsert": "true"})
+        
+        # 2. Intentar extraer lead_id y order_id del path para la metadata
+        parts = path.split('/') # ['archivos', 'Customer_Name_LeadID', 'OrderID']
+        lead_id = None
+        order_id = None
+        
+        # Segmento del Lead (ej: FrancoBlanco_fe5d0)
+        if len(parts) >= 2:
+            lead_segment = parts[1]
+            if "_" in lead_segment:
+                lead_id_hint = lead_segment.split("_")[-1]
+                # Buscar el lead_id real en la DB basado en ese hint
+                leads_res = supabase.table("leads").select("id").ilike("id", f"{lead_id_hint}%").execute()
+                if leads_res.data:
+                    lead_id = leads_res.data[0]["id"]
+
+        # Segmento de la Orden (ej: 086495f9)
+        if len(parts) >= 3:
+            order_segment = parts[2]
+            if order_segment != "general":
+                # Buscar order_id real basado en hint
+                orders_res = supabase.table("orders").select("id").ilike("id", f"{order_segment}%").execute()
+                if orders_res.data:
+                    order_id = orders_res.data[0]["id"]
+
+        # 3. Insertar metadata
+        supabase.table("file_metadata").insert({
+            "file_path": full_path,
+            "file_name": file.filename,
+            "file_type": file.content_type,
+            "lead_id": lead_id,
+            "order_id": order_id,
+            "status": "ready"
+        }).execute()
+
+        return {"status": "success", "path": full_path}
+    except Exception as e:
+        logger.error(f"Error subiendo archivo manual: {e}")
         return {"status": "error", "message": str(e)}
 
 class PaymentUpdate(BaseModel):

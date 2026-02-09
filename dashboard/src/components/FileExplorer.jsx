@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     Folder,
     File,
@@ -24,6 +24,8 @@ export default function FileExplorer() {
     const [searchQuery, setSearchQuery] = useState('');
     const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
     const [selectedFile, setSelectedFile] = useState(null);
+    const [uploading, setUploading] = useState(false);
+    const fileInputRef = useRef(null);
 
     const BACKEND_URL = import.meta.env.VITE_API_URL;
 
@@ -110,6 +112,41 @@ export default function FileExplorer() {
         return <File className="text-gray-500" />;
     };
 
+    const handleUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (currentPath.length === 0) {
+            toast.error("Por favor selecciona una carpeta de cliente para subir el archivo");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('path', `archivos/${currentPath.join('/')}`);
+
+        setUploading(true);
+        try {
+            const response = await fetch(`${BACKEND_URL}/storage/upload`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                toast.success("Archivo subido con éxito");
+                fetchFiles();
+            } else {
+                toast.error("Error al subir archivo");
+            }
+        } catch (error) {
+            console.error("Upload error:", error);
+            toast.error("Error de conexión");
+        } finally {
+            setUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
     const visibleItems = getVisibleItems();
 
     return (
@@ -135,8 +172,23 @@ export default function FileExplorer() {
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <button className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg text-gray-500" title="Subir">
-                            <Upload size={20} />
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            onChange={handleUpload}
+                        />
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploading}
+                            className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg text-gray-500 disabled:opacity-50"
+                            title="Subir"
+                        >
+                            {uploading ? (
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-500"></div>
+                            ) : (
+                                <Upload size={20} />
+                            )}
                         </button>
                         <button className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg text-gray-500" title="Vista">
                             <MoreVertical size={20} />
