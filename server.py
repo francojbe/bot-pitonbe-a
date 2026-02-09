@@ -365,7 +365,7 @@ def register_order(description: str, amount: int, rut: str, address: str, email:
                     # Reutilizar el timestamp del nombre de archivo si es posible o usar el original
                     fname = file_rec["file_name"]
                     # Nuevo path estructurado
-                    new_path = f"archivos/{cust_prefix}_{lead_id[:5]}/{str(order_id)[:8]}/{fname}"
+                    new_path = f"{cust_prefix}_{lead_id[:5]}/{str(order_id)[:8]}/{fname}"
                     
                     try:
                         # 1. Intentar mover en Storage
@@ -1003,13 +1003,13 @@ async def webhook_whatsapp(request: Request):
 
                             if is_active_and_recent:
                                 current_order_id = last_ord["id"]
-                                order_path = f"archivos/{cust_name_clean}_{lead_db_id[:5]}/{current_order_id[:8]}"
+                                order_path = f"{cust_name_clean}_{lead_db_id[:5]}/{current_order_id[:8]}"
                             else:
                                 # Si la orden es vieja o está lista/entregada, el archivo va a /general
                                 # para que register_order lo "succione" si es una nueva orden.
-                                order_path = f"archivos/{cust_name_clean}_{lead_db_id[:5]}/general"
+                                order_path = f"{cust_name_clean}_{lead_db_id[:5]}/general"
                         else:
-                            order_path = f"archivos/{cust_name_clean}_{lead_db_id[:5]}/general"
+                            order_path = f"{cust_name_clean}_{lead_db_id[:5]}/general"
                 except Exception as e:
                     logger.error(f"Error calculando path de archivo: {e}")
 

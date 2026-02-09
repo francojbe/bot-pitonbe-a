@@ -51,7 +51,12 @@ export default function FileExplorer() {
     const buildTree = () => {
         const root = {};
         files.forEach(file => {
-            const parts = file.file_path.split('/');
+            let parts = file.file_path.split('/');
+            // Si la ruta empieza con 'archivos/', omitimos ese primer nivel para evitar redundancia
+            if (parts[0] === 'archivos') {
+                parts.shift();
+            }
+
             let current = root;
             parts.forEach((part, index) => {
                 if (!current[part]) {
@@ -190,8 +195,8 @@ export default function FileExplorer() {
                                     key={idx}
                                     onClick={() => item.isFolder ? handleFolderClick(item.name) : setSelectedFile(item.metadata)}
                                     className={`flex flex-col items-center p-4 rounded-xl cursor-pointer transition-all border ${selectedFile?.id === item.metadata?.id
-                                            ? 'bg-white dark:bg-white/10 border-[var(--color-primary)] shadow-md'
-                                            : 'hover:bg-white dark:hover:bg-white/5 border-transparent hover:border-gray-200 dark:hover:border-white/10'
+                                        ? 'bg-white dark:bg-white/10 border-[var(--color-primary)] shadow-md'
+                                        : 'hover:bg-white dark:hover:bg-white/5 border-transparent hover:border-gray-200 dark:hover:border-white/10'
                                         } group`}
                                 >
                                     <div className="w-16 h-16 flex items-center justify-center">
