@@ -16,6 +16,10 @@ import {
 } from 'lucide-react';
 import { supabase } from '../supabase';
 import { toast } from 'sonner';
+import { Worker, Viewer } from '@react-pdf-viewer/core';
+import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
+import '@react-pdf-viewer/core/lib/styles/index.css';
+import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 
 export default function FileExplorer() {
     const [files, setFiles] = useState([]);
@@ -25,8 +29,10 @@ export default function FileExplorer() {
     const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
     const [selectedFile, setSelectedFile] = useState(null);
     const [uploading, setUploading] = useState(false);
+    const [isPdfOpen, setIsPdfOpen] = useState(false);
     const fileInputRef = useRef(null);
 
+    const defaultLayoutPluginInstance = defaultLayoutPlugin();
     const BACKEND_URL = import.meta.env.VITE_API_URL;
 
     useEffect(() => {
@@ -317,17 +323,42 @@ export default function FileExplorer() {
 
                     <div className="flex-1 overflow-y-auto p-4">
                         {/* Preview (Mockup for now, could use Supabase Public URL) */}
-                        <div className="aspect-square bg-gray-100 dark:bg-white/5 rounded-xl mb-4 flex items-center justify-center border border-gray-200 dark:border-white/10 overflow-hidden">
+                        <div className="aspect-square bg-gray-100 dark:bg-white/5 rounded-xl mb-4 flex items-center justify-center border border-gray-200 dark:border-white/10 overflow-hidden relative group">
                             {selectedFile.file_type?.includes('image') ? (
                                 <img
                                     src={supabase.storage.from("chat-media").getPublicUrl(selectedFile.file_path).data.publicUrl}
                                     alt="preview"
                                     className="w-full h-full object-cover"
                                 />
+                            ) : selectedFile.file_type?.includes('pdf') ? (
+                                <div className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-gray-200 dark:hover:bg-white/10 transition-colors" onClick={() => setIsPdfOpen(true)}>
+                                    <FileText className="w-16 h-16 text-red-500 mb-2" />
+                                    <span className="text-xs font-bold text-gray-500">Clic para previsualizar PDF</span>
+                                </div>
                             ) : (
                                 <FileText className="w-16 h-16 text-gray-300" />
                             )}
                         </div>
+
+                        {/* PDF Modal Viewer */}
+                        {isPdfOpen && selectedFile.file_type?.includes('pdf') && (
+                            <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-8 backdrop-blur-sm" onClick={() => setIsPdfOpen(false)}>
+                                <div className="bg-white w-full h-full max-w-5xl rounded-2xl overflow-hidden shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
+                                    <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
+                                        <h3 className="font-bold flex items-center gap-2"><FileText size={18} className="text-red-500" /> {selectedFile.file_name}</h3>
+                                        <button onClick={() => setIsPdfOpen(false)} className="p-2 hover:bg-gray-200 rounded-full"><Trash2 size={20} className="rotate-45" /></button>
+                                    </div>
+                                    <div className="flex-1 overflow-auto bg-gray-100">
+                                        <Worker workerUrl={`https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`}>
+                                            <Viewer
+                                                fileUrl={supabase.storage.from("chat-media").getPublicUrl(selectedFile.file_path).data.publicUrl}
+                                                plugins={[defaultLayoutPluginInstance]}
+                                            />
+                                        </Worker>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         <div className="space-y-4">
                             <div>

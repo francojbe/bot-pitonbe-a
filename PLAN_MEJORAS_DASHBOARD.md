@@ -1,22 +1,35 @@
-# Plan de Mejoras del Dashboard
+# Plan de Mejoras del Dashboard - Fase 2
 
-## 1. Arquitectura y Mantenimiento (Prioridad Alta)
-- [x] **Centralizar URL del Backend:** Mover `https://recuperadora-agente-pb.nojauc.easypanel.host` a una variable de entorno `VITE_API_URL` en un archivo `.env` para facilitar cambios entre desarrollo y producción.
-- [x] **Refactorización de `App.jsx`:** Separar componentes (`DashboardView`, `ReportsView`, `Sidebar`, `OrderDrawer`) en archivos individuales dentro de `src/components/` o `src/views/`.
-- [x] **Hooks Personalizados:** Crear `useOrders` y `useLeads` para encapsular la lógica de carga y suscripción a Supabase.
+Este documento detalla las mejoras implementadas y la hoja de ruta para convertir el Dashboard de PitonB en una plataforma de gestión premium y automatizada.
 
-## 2. Experiencia de Usuario (UI/UX)
-- [x] **Feedback de Carga:** Implementar Skeletons o Spinners mientras cargan los datos.
-- [x] **Buscador Global:** Mejorar la funcionalidad de búsqueda para filtrar órdenes y clientes en tiempo real.
-- [x] **Filtros Avanzados:** Agregar filtros por rango de fechas y estado.
-- [x] **Localización:** Traducir interfaz al español y configurar `lang="es"` en HTML.
+## ✅ Logros Recientes (Fase 1 Completada)
+- [x] **Arquitectura:** Código factorizado en componentes modulares y uso de variables de entorno.
+- [x] **PitronB Drive:** Explorador de archivos con jerarquía Cliente/Orden, subida manual y previsualización.
+- [x] **Gestión Pro activa:** Sistema Kanban para órdenes con sincronización en tiempo real.
+- [x] **CRUD de Archivos:** Implementación de subida, visualización y borrado seguro (Soft Delete).
+- [x] **UX Pulida:** Notificaciones elegantes con Sonner y manejo de errores robusto.
 
-## 3. Seguridad y Datos
-- [ ] **Autenticación:** Implementar Login con Supabase Auth si se expone a internet.
-- [x] **Validación de Formularios:** Añadir validación robusta para RUT y Teléfono.
-- [x] **Constantes para Estados:** Definir objeto `ORDER_STATUS` para evitar errores de tipo.
+---
 
-## 4. Funcionalidades Potenciales
-- [x] **Historial de Cambios (Audit Log):** Mostrar cronología de cambios de estado y pagos en el `OrderDrawer`.
-- [x] **Vista Móvil:** Adaptar el Kanban o forzar vista de lista en dispositivos móviles.
-- [x] **Mensajes Personalizados Vía Agente:** Enviar mensajes manuales desde el dashboard que se registran en la memoria del agente.
+## 🚀 Hoja de Ruta - Próximas Mejoras (Fase 2)
+
+### 1. Visualización y Experiencia Premium (UI/UX)
+- [ ] **Visor de Documentos Integrado:** Implementar previsualización para archivos PDF y documentos Office sin necesidad de descarga.
+- [ ] **Pulido de Modo Oscuro:** Revisión exhaustiva de contrastes, modales y sombras para una experiencia nocturna 100% premium.
+- [ ] **Animaciones Fluídas:** Integrar `framer-motion` para transiciones de estado, apertura de modales y reordenamiento del Kanban.
+- [ ] **Dashboard Home:** Crear una sección de "Resumen General" con gráficas de ventas, órdenes del día y actividad de clientes.
+
+### 2. Operaciones Avanzadas
+- [ ] **Live Chat View:** Añadir una pestaña para visualizar la conversación de WhatsApp en tiempo real, permitiendo ver el contexto del chat mientras se gestiona la orden.
+- [ ] **Centro de Notificaciones:** Sistema de alertas internas cuando un cliente sube un nuevo archivo o el agente detecta una intención de compra.
+- [ ] **Generador de Reportes:** Botón para exportar resúmenes financieros y listado de órdenes en formato PDF y Excel (Especial para cierres de mes).
+- [ ] **Registro de Actividad (Audit Log):** Sistema detallado para ver quién y cuándo realizó cambios críticos (cambios de precio, estado de pago, etc.).
+
+### 3. Inteligencia Artificial Aplicada (AI-Drive)
+- [ ] **Etiquetado Automático de Archivos:** Usar la IA para analizar imágenes/PDFs subidos y asignarles tags automáticamente (ej: "Transferencia", "Factura", "Producto").
+- [ ] **Resumen Inteligente de Documentos:** Generar un pequeño resumen tipo "sticky-note" cuando se sube un archivo (ej: "Este PDF es un comprobante de $45.000 del Banco Estado").
+- [ ] **Detección de Urgencia:** IA que prioriza automáticamente ciertas órdenes en el Kanban según el tono del chat del cliente.
+
+### 4. Seguridad y Escalabilidad
+- [ ] **Sistema de Autenticación:** Implementar Supabase Auth para proteger el acceso al dashboard con Login/Password.
+- [ ] **Gestores de Roles:** Diferenciar permisos (ej: Admin puede borrar archivos, Operador solo puede mover estados del Kanban).
