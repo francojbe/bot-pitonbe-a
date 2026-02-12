@@ -377,7 +377,7 @@ def register_order(description: str, amount: int, rut: str, address: str, email:
                         }).eq("id", file_rec["id"]).execute()
                         
                         # 3. Vincular también a la ficha de la orden (files_url)
-                        public_url = supabase.storage.from_("chat-media").get_public_url(new_path).public_url
+                        public_url = supabase.storage.from_("chat-media").get_public_url(new_path)
                         current_order = supabase.table("orders").select("files_url").eq("id", order_id).execute()
                         current_files = current_order.data[0].get("files_url") or []
                         if public_url not in current_files:
@@ -459,7 +459,7 @@ async def procesar_y_responder(phone: str, mensajes_acumulados: List[str], push_
             if pending_files.data:
                 # Obtener la URL pública del más reciente
                 last_f = pending_files.data[-1]
-                extracted_url = supabase.storage.from_("chat-media").get_public_url(last_f["file_path"]).public_url
+                extracted_url = supabase.storage.from_("chat-media").get_public_url(last_f["file_path"])
             else:
                 import re
                 url_match = re.search(r"URL: ((?:https?://|www\.)[^\s\]]+)", texto_completo)
