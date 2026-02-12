@@ -21,11 +21,23 @@ const formatPhone = (phone) => {
 
 import { AuditService } from '../services/AuditService'
 
+// Imports for PDF Viewer
+import { Worker, Viewer } from '@react-pdf-viewer/core';
+import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
+import '@react-pdf-viewer/core/lib/styles/index.css';
+import '@react-pdf-viewer/default-layout/lib/styles/index.css';
+
 export function OrderDrawer({ order, onClose, updateOrderLocal }) {
     const [form, setForm] = useState({ ...order })
     const [activeTab, setActiveTab] = useState('specs') // 'specs' or 'history'
     const [auditLogs, setAuditLogs] = useState([])
     const [isLoadingLogs, setIsLoadingLogs] = useState(false)
+
+    // PDF Preview State
+    const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null)
+    const defaultLayoutPluginInstance = defaultLayoutPlugin()
+
+    // ... (rest of the component state)
 
     // Load logs when activeTab becomes 'history'
     useEffect(() => {
@@ -393,33 +405,19 @@ export function OrderDrawer({ order, onClose, updateOrderLocal }) {
                                     const isPdf = file.toLowerCase().endsWith('.pdf');
                                     const fileName = decodeURIComponent(file.split('/').pop());
 
-                                    // Construct preview URL for PDFs (same logic as FileExplorer)
-                                    const handlePreview = (e) => {
-                                        if (isPdf) {
-                                            e.preventDefault();
-                                            // Extract path relative to bucket (assuming standard Supabase URL structure)
-                                            // URL format: .../storage/v1/object/public/chat-media/FOLDER/FILE.pdf
-                                            const urlObj = new URL(file);
-                                            const pathParts = urlObj.pathname.split('/chat-media/');
-                                            if (pathParts[1]) {
-                                                const storagePath = pathParts[1];
-                                                const previewUrl = `https://laboratorio-ia-odontologia.nojauc.easypanel.host/dashboard/?file=${encodeURIComponent(storagePath)}`;
-                                                window.open(previewUrl, '_blank');
-                                            } else {
-                                                // Fallback if URL structure doesn't match expected pattern
-                                                window.open(file, '_blank');
-                                            }
-                                        }
-                                    };
-
                                     return (
                                         <a
                                             key={i}
                                             href={file}
-                                            onClick={handlePreview}
+                                            onClick={(e) => {
+                                                if (isPdf) {
+                                                    e.preventDefault();
+                                                    setPdfPreviewUrl(file);
+                                                }
+                                            }}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-white/5 hover:bg-[#F4F7FE] dark:hover:bg-white/5 transition-colors group"
+                                            className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-white/5 hover:bg-[#F4F7FE] dark:hover:bg-white/5 transition-colors group cursor-pointer"
                                             title={isPdf ? "Click para previsualizar PDF" : "Descargar archivo"}
                                         >
                                             <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isPdf ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
@@ -482,6 +480,26 @@ export function OrderDrawer({ order, onClose, updateOrderLocal }) {
                     phoneNumber={order.leads?.phone_number}
                     leadId={order.leads?.id}
                 />
+
+                {/* PDF PREVIEW MODAL */}
+                {pdfPreviewUrl && (
+                    <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setPdfPreviewUrl(null)}>
+                        <div className="bg-white w-full h-full max-w-5xl rounded-2xl overflow-hidden shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
+                            <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
+                                <h3 className="font-bold flex items-center gap-2"><FileText size={18} className="text-red-500" /> Previsualización PDF {decodeURIComponent(pdfPreviewUrl.split('/').pop())}</h3>
+                                <button onClick={() => setPdfPreviewUrl(null)} className="p-2 hover:bg-gray-200 rounded-full"><X size={20} /></button>
+                            </div>
+                            <div className="flex-1 overflow-auto bg-gray-100">
+                                <Worker workerUrl={`https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`}>
+                                    <Viewer
+                                        fileUrl={pdfPreviewUrl}
+                                        plugins={[defaultLayoutPluginInstance]}
+                                    />
+                                </Worker>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     )
