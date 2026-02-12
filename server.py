@@ -368,12 +368,27 @@ def register_order(description: str, amount: int, rut: str, address: str, email:
                     new_path = f"{cust_prefix}_{lead_id[:5]}/{str(order_id)[:8]}/{fname}"
                     
                     try:
+                        # Ensure paths are clean and valid
+                        old_path_clean = old_path.strip()
+                        new_path_clean = new_path.strip()
+
                         # 1. Intentar mover en Storage
-                        supabase.storage.from_("chat-media").move(old_path, new_path)
+                        logger.info(f"🚚 Movimiento de archivo iniciado: {old_path_clean} -> {new_path_clean}")
+                        
+                        # Validar existencia previa (opcional pero recomendado)
+                        # list_check = supabase.storage.from_("chat-media").list(os.path.dirname(old_path_clean))
+                        # found = any(f['name'] == os.path.basename(old_path_clean) for f in list_check)
+                        # if not found: logger.warning(f"⚠️ Archivo origen no encontrado en lista: {old_path_clean}")
+
+                        move_res = supabase.storage.from_("chat-media").move(old_path_clean, new_path_clean)
+                        # Verificar si move retorna error explícito (algunas libs lanzan excepción, otras retornan error)
+                        if isinstance(move_res, dict) and 'error' in move_res:
+                             raise Exception(f"Storage Error: {move_res['error']}")
+                        
                         # 2. Actualizar DB con el nuevo path y el order_id
                         supabase.table("file_metadata").update({
                             "order_id": order_id,
-                            "file_path": new_path
+                            "file_path": new_path_clean
                         }).eq("id", file_rec["id"]).execute()
                         
                         # 3. Vincular también a la ficha de la orden (files_url)
