@@ -11,7 +11,7 @@ import {
   Search, Moon, Sun, Trash2, CheckSquare, Menu, Folder
 } from 'lucide-react'
 import FileExplorer from './components/FileExplorer'
-import { AnimatePresence } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 
 import { useOrders } from './hooks/useOrders'
 import { useLeads } from './hooks/useLeads'
@@ -214,39 +214,50 @@ function App() {
 
         {/* CONTENT */}
         <main className="flex-1 overflow-y-auto p-6 scroll-smooth">
-          {activeTab === 'dashboard' && (
-            <DashboardView
-              orders={orders}
-              loading={loadingOrders}
-              search={globalSearch}
-              viewMode={viewMode}
-              setViewMode={setViewMode}
-              onSelectOrder={setSelectedOrder}
-              selectedIds={selectedIds}
-              setSelectedIds={setSelectedIds}
-              onDelete={deleteOrders}
-              onDragEnd={handleDragEnd}
-              currentPage={currentPage}
-              setCurrentPage={setCurrentPage}
-              itemsPerPage={ITEMS_PER_PAGE}
-            />
-          )}
-          {activeTab === 'clientes' && (
-            <LeadsView
-              leads={leads}
-              orders={orders}
-              search={globalSearch}
-              setSearch={setGlobalSearch}
-              onEdit={(l) => { setSelectedLead(l); setLeadForm(l); setIsEditingLead(true) }}
-              onCreate={() => { setLeadForm({}); setIsCreatingLead(true) }}
-              selectedIds={selectedLeadIds}
-              setSelectedIds={setSelectedLeadIds}
-              onDelete={deleteLeads}
-            />
-          )}
-          {activeTab === 'reportes' && <ReportsView orders={orders} />}
-          {activeTab === 'archivos' && <FileExplorer isDarkMode={isDarkMode} />}
-          {activeTab === 'mejoras' && <LearningsView />}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="h-full"
+            >
+              {activeTab === 'dashboard' && (
+                <DashboardView
+                  orders={orders}
+                  loading={loadingOrders}
+                  search={globalSearch}
+                  viewMode={viewMode}
+                  setViewMode={setViewMode}
+                  onSelectOrder={setSelectedOrder}
+                  selectedIds={selectedIds}
+                  setSelectedIds={setSelectedIds}
+                  onDelete={deleteOrders}
+                  onDragEnd={handleDragEnd}
+                  currentPage={currentPage}
+                  setCurrentPage={setCurrentPage}
+                  itemsPerPage={ITEMS_PER_PAGE}
+                />
+              )}
+              {activeTab === 'clientes' && (
+                <LeadsView
+                  leads={leads}
+                  orders={orders}
+                  search={globalSearch}
+                  setSearch={setGlobalSearch}
+                  onEdit={(l) => { setSelectedLead(l); setLeadForm(l); setIsEditingLead(true) }}
+                  onCreate={() => { setLeadForm({}); setIsCreatingLead(true) }}
+                  selectedIds={selectedLeadIds}
+                  setSelectedIds={setSelectedLeadIds}
+                  onDelete={deleteLeads}
+                />
+              )}
+              {activeTab === 'reportes' && <ReportsView orders={orders} />}
+              {activeTab === 'archivos' && <FileExplorer isDarkMode={isDarkMode} />}
+              {activeTab === 'mejoras' && <LearningsView />}
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
 

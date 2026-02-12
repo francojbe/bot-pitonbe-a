@@ -17,7 +17,7 @@ Este documento detalla las mejoras implementadas y la hoja de ruta para converti
 - [x] **Visor de Documentos Integrado:** Implementación robusta de previsualización PDF en modales (sin descargas ni redirecciones 404).
 - [x] **Estabilidad del Backend:** Corrección de lógica de movimiento de archivos y manejo de permisos en Supabase (Fix 404/400 errors).
 - [x] **Pulido de Modo Oscuro:** Revisión exhaustiva de contrastes, modales y drop-downs para una experiencia nocturna 100% premium (Fixed PDF Viewer & Dropdowns).
-- [x] **Animaciones Fluídas:** Integrar `framer-motion` para transiciones de estado, apertura de modales y reordenamiento del Kanban.
+- [x] **Animaciones Fluídas:** Integrar `framer-motion` para transiciones de estado, apertura de modales, reordenamiento del Kanban y **transiciones de página**.
 - [ ] **Dashboard Home:** Crear una sección de "Resumen General" con gráficas de ventas, órdenes del día y actividad de clientes.
 
 ### 2. Operaciones Avanzadas
