@@ -8,6 +8,7 @@ Este documento detalla las mejoras implementadas y la hoja de ruta para converti
 - [x] **Gestión Pro activa:** Sistema Kanban para órdenes con sincronización en tiempo real.
 - [x] **CRUD de Archivos:** Implementación de subida, visualización y borrado seguro (Soft Delete).
 - [x] **UX Pulida:** Notificaciones elegantes con Sonner y manejo de errores robusto.
+- [x] **Automatización Backend:** Configurada tarea programada (cron) para ejecutar el análisis de Mejora Continua diariamente a las 03:00 AM.
 
 ---
 
