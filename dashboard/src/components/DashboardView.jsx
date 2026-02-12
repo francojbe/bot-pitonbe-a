@@ -3,6 +3,7 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 import { StatusBadge } from './StatusBadge'
 import { useState } from 'react'
 import { ORDER_STATUS_LIST } from '../constants'
+import { motion, AnimatePresence } from 'framer-motion'
 
 function KanbanBoard({ orders, onSelectOrder }) {
     const columns = ORDER_STATUS_LIST
@@ -27,12 +28,15 @@ function KanbanBoard({ orders, onSelectOrder }) {
                                     {items.map((order, index) => (
                                         <Draggable key={order.id} draggableId={order.id} index={index}>
                                             {(provided, snapshot) => (
-                                                <div
+                                                <motion.div
                                                     ref={provided.innerRef}
                                                     {...provided.draggableProps}
                                                     {...provided.dragHandleProps}
                                                     onClick={() => onSelectOrder(order)}
                                                     style={{ ...provided.draggableProps.style }}
+                                                    initial={{ opacity: 0, y: 20 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ duration: 0.2 }}
                                                     className={`dashboard-card cursor-grab active:cursor-grabbing group transition-all duration-300
                               hover:-translate-y-0.5 hover:shadow-[var(--shadow-card)] hover:z-20
                               ${snapshot.isDragging ? 'rotate-2 scale-105 shadow-2xl z-50 ring-2 ring-[var(--color-primary)]' : ''}`}
@@ -54,18 +58,19 @@ function KanbanBoard({ orders, onSelectOrder }) {
                                                             )}
                                                         </div>
                                                     </div>
-                                                </div>
+                                                </motion.div>
                                             )}
                                         </Draggable>
                                     ))}
                                     {provided.placeholder}
                                 </div>
                             </div>
-                        )}
+                        )
+                        }
                     </Droppable>
                 )
             })}
-        </div>
+        </div >
     )
 }
 

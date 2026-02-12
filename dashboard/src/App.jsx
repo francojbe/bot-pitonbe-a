@@ -11,6 +11,7 @@ import {
   Search, Moon, Sun, Trash2, CheckSquare, Menu, Folder
 } from 'lucide-react'
 import FileExplorer from './components/FileExplorer'
+import { AnimatePresence } from 'framer-motion'
 
 import { useOrders } from './hooks/useOrders'
 import { useLeads } from './hooks/useLeads'
@@ -250,25 +251,31 @@ function App() {
       </div>
 
       {/* RIGHT SIDEBAR / DRAWER (Overlay) */}
-      {selectedOrder && (
-        <OrderDrawer
-          order={selectedOrder}
-          onClose={() => setSelectedOrder(null)}
-          updateOrderLocal={(u) => setOrders(prev => prev.map(o => o.id === u.id ? u : o))}
-          isDarkMode={isDarkMode}
-        />
-      )}
+      <AnimatePresence>
+        {selectedOrder && (
+          <OrderDrawer
+            key="order-drawer"
+            order={selectedOrder}
+            onClose={() => setSelectedOrder(null)}
+            updateOrderLocal={(u) => setOrders(prev => prev.map(o => o.id === u.id ? u : o))}
+            isDarkMode={isDarkMode}
+          />
+        )}
+      </AnimatePresence>
 
-      {(isCreatingLead || isEditingLead) && (
-        <LeadModal
-          isOpen={true}
-          isCreating={isCreatingLead}
-          form={leadForm}
-          setForm={setLeadForm}
-          onClose={() => { setIsCreatingLead(false); setIsEditingLead(false) }}
-          onSubmit={handleSaveLead}
-        />
-      )}
+      <AnimatePresence>
+        {(isCreatingLead || isEditingLead) && (
+          <LeadModal
+            key="lead-modal"
+            isOpen={true}
+            isCreating={isCreatingLead}
+            form={leadForm}
+            setForm={setLeadForm}
+            onClose={() => { setIsCreatingLead(false); setIsEditingLead(false) }}
+            onSubmit={handleSaveLead}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Delete Confirmation Modal */}
       {/* Delete Confirmation Modal */}

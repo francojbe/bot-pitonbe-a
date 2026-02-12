@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { X, User, Phone, Mail, DollarSign, Image, FileText, ExternalLink, MessageCircle, CheckCircle2, MapPin, CreditCard, ChevronRight, AlertCircle, Save, MessageSquarePlus } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import { supabase } from '../supabase'
 import { StatusSelect } from './StatusSelect'
@@ -158,9 +159,27 @@ export function OrderDrawer({ order, onClose, updateOrderLocal, isDarkMode }) {
     const [isMsgModalOpen, setIsMsgModalOpen] = useState(false)
 
     return (
-        <div className="fixed inset-0 z-[60] flex justify-end">
-            <div className="absolute inset-0 bg-[#0B1437]/40 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
-            <div className="relative w-full max-w-2xl h-full bg-white dark:bg-[#242424] shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex justify-end"
+        >
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="absolute inset-0 bg-[#0B1437]/40 backdrop-blur-sm"
+                onClick={onClose}
+            ></motion.div>
+            <motion.div
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="relative w-full max-w-2xl h-full bg-white dark:bg-[#242424] shadow-2xl flex flex-col"
+            >
                 {/* Header */}
                 <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-white/5">
                     <div>
@@ -482,29 +501,44 @@ export function OrderDrawer({ order, onClose, updateOrderLocal, isDarkMode }) {
                 />
 
                 {/* PDF PREVIEW MODAL */}
-                {pdfPreviewUrl && (
-                    <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setPdfPreviewUrl(null)}>
-                        <div className="bg-white dark:bg-[#1a1a1a] w-full h-full max-w-5xl rounded-2xl overflow-hidden shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
-                            <div className="p-4 bg-gray-50 dark:bg-[#111C44] border-b border-gray-200 dark:border-white/10 flex justify-between items-center">
-                                <h3 className="font-bold flex items-center gap-2 text-[var(--text-main)]"><FileText size={18} className="text-red-500" /> Previsualización PDF {decodeURIComponent(pdfPreviewUrl.split('/').pop())}</h3>
-                                <button onClick={() => setPdfPreviewUrl(null)} className="p-2 hover:bg-gray-200 dark:hover:bg-white/10 rounded-full text-[var(--text-main)]"><X size={20} /></button>
-                            </div>
-                            <div className="flex-1 overflow-auto bg-gray-100 dark:bg-black">
-                                <Worker workerUrl={`https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`}>
-                                    <div className={isDarkMode ? 'rpv-core__viewer--dark' : ''} style={{ height: '100%' }}>
-                                        <Viewer
-                                            fileUrl={pdfPreviewUrl}
-                                            plugins={[defaultLayoutPluginInstance]}
-                                            theme={isDarkMode ? 'dark' : 'light'}
-                                        />
-                                    </div>
-                                </Worker>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </div>
-        </div>
+                <AnimatePresence>
+                    {pdfPreviewUrl && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm"
+                            onClick={() => setPdfPreviewUrl(null)}
+                        >
+                            <motion.div
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.9, opacity: 0 }}
+                                transition={{ type: 'spring', duration: 0.3 }}
+                                className="bg-white dark:bg-[#1a1a1a] w-full h-full max-w-5xl rounded-2xl overflow-hidden shadow-2xl flex flex-col"
+                                onClick={e => e.stopPropagation()}
+                            >
+                                <div className="p-4 bg-gray-50 dark:bg-[#111C44] border-b border-gray-200 dark:border-white/10 flex justify-between items-center">
+                                    <h3 className="font-bold flex items-center gap-2 text-[var(--text-main)]"><FileText size={18} className="text-red-500" /> Previsualización PDF {decodeURIComponent(pdfPreviewUrl.split('/').pop())}</h3>
+                                    <button onClick={() => setPdfPreviewUrl(null)} className="p-2 hover:bg-gray-200 dark:hover:bg-white/10 rounded-full text-[var(--text-main)]"><X size={20} /></button>
+                                </div>
+                                <div className="flex-1 overflow-auto bg-gray-100 dark:bg-black">
+                                    <Worker workerUrl={`https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`}>
+                                        <div className={isDarkMode ? 'rpv-core__viewer--dark' : ''} style={{ height: '100%' }}>
+                                            <Viewer
+                                                fileUrl={pdfPreviewUrl}
+                                                plugins={[defaultLayoutPluginInstance]}
+                                                theme={isDarkMode ? 'dark' : 'light'}
+                                            />
+                                        </div>
+                                    </Worker>
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </motion.div>
+        </motion.div>
     )
 }
 
@@ -565,9 +599,26 @@ export function LeadModal({ isOpen, isCreating, form: initialForm, onClose, onSu
     }
 
     return (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-[#0B1437]/50 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
-            <div className="dashboard-card w-full max-w-2xl relative animate-in zoom-in duration-200 p-0 max-h-[90vh] flex flex-col">
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] flex items-center justify-center p-4"
+        >
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-[#0B1437]/50 backdrop-blur-sm"
+                onClick={onClose}
+            ></motion.div>
+            <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                className="dashboard-card w-full max-w-2xl relative p-0 max-h-[90vh] flex flex-col"
+            >
                 <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-white/5">
                     <h2 className="text-xl font-bold text-[var(--text-primary)]">{isCreating ? 'Nuevo Cliente' : 'Ficha de Cliente'}</h2>
                     <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-full text-[var(--text-secondary)]"><X size={24} /></button>
@@ -651,8 +702,8 @@ export function LeadModal({ isOpen, isCreating, form: initialForm, onClose, onSu
                         Guardar Datos
                     </button>
                 </div>
-            </div>
-        </div>
+            </motion.div>
+        </motion.div>
     )
 }
 
@@ -698,78 +749,98 @@ export function MessageModal({ isOpen, onClose, customerName, phoneNumber, leadI
     }
 
     return (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-[#0B1437]/50 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
-            <div className="dashboard-card w-full max-w-md relative animate-in zoom-in duration-200 p-0 flex flex-col shadow-2xl">
-                {/* Header */}
-                <div className="flex justify-between items-center p-5 border-b border-gray-100 dark:border-white/5 bg-[var(--color-primary)] text-white rounded-t-2xl">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                            <MessageCircle size={20} className="text-white" />
-                        </div>
-                        <div>
-                            <h2 className="text-lg font-bold">Mensaje Vía Agente</h2>
-                            <p className="text-xs text-white/80">Para: {customerName}</p>
-                        </div>
-                    </div>
-                    <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full text-white transition-colors"><X size={20} /></button>
-                </div>
-
-                {/* Body */}
-                <div className="p-6 space-y-4 bg-white dark:bg-[#1B254B]">
-                    <div className="bg-blue-50 dark:bg-blue-500/10 p-3 rounded-xl border border-blue-100 dark:border-blue-500/20">
-                        <p className="text-xs text-blue-600 dark:text-blue-300 flex gap-2">
-                            <AlertCircle size={14} className="shrink-0 mt-0.5" />
-                            <span>
-                                <b>Nota:</b> Este mensaje se enviará a través del Agente y quedará registrado en el historial de la conversación.
-                            </span>
-                        </p>
-                    </div>
-
-                    <div>
-                        <textarea
-                            autoFocus
-                            rows={6}
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                            placeholder="Escribe tu mensaje aquí..."
-                            className="w-full p-4 rounded-xl bg-gray-50 dark:bg-[#111C44] border border-transparent focus:border-[var(--color-primary)] outline-none text-[var(--text-main)] resize-none transition-all placeholder:text-gray-400"
-                        ></textarea>
-                        <div className="flex justify-between mt-2">
-                            <span className="text-xs text-gray-400">Se usará formato WhatsApp (*negrita*, etc.)</span>
-                            <span className={`text-xs font-bold ${message.length > 500 ? 'text-red-500' : 'text-gray-400'}`}>{message.length} car.</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Footer */}
-                <div className="p-5 border-t border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-[#111C44] rounded-b-2xl flex justify-end gap-3">
-                    <button
+        <AnimatePresence>
+            {isOpen && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-[80] flex items-center justify-center p-4"
+                >
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 bg-[#0B1437]/50 backdrop-blur-sm"
                         onClick={onClose}
-                        disabled={isSending}
-                        className="px-5 py-2.5 rounded-xl font-bold text-gray-500 hover:bg-gray-200 dark:hover:bg-white/5 transition-colors"
+                    ></motion.div>
+                    <motion.div
+                        initial={{ scale: 0.95, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.95, opacity: 0 }}
+                        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                        className="dashboard-card w-full max-w-md relative p-0 flex flex-col shadow-2xl"
                     >
-                        Cancelar
-                    </button>
-                    <button
-                        onClick={handleSend}
-                        disabled={isSending || !message.trim()}
-                        className="btn-primary-paper px-6 py-2.5 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {isSending ? (
-                            <>
-                                <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
-                                Enviando...
-                            </>
-                        ) : (
-                            <>
-                                <MessageCircle size={18} />
-                                Enviar Mensaje
-                            </>
-                        )}
-                    </button>
-                </div>
-            </div>
-        </div>
+                        {/* Header */}
+                        <div className="flex justify-between items-center p-5 border-b border-gray-100 dark:border-white/5 bg-[var(--color-primary)] text-white rounded-t-2xl">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                                    <MessageCircle size={20} className="text-white" />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-bold">Mensaje Vía Agente</h2>
+                                    <p className="text-xs text-white/80">Para: {customerName}</p>
+                                </div>
+                            </div>
+                            <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full text-white transition-colors"><X size={20} /></button>
+                        </div>
+
+                        {/* Body */}
+                        <div className="p-6 space-y-4 bg-white dark:bg-[#1B254B]">
+                            <div className="bg-blue-50 dark:bg-blue-500/10 p-3 rounded-xl border border-blue-100 dark:border-blue-500/20">
+                                <p className="text-xs text-blue-600 dark:text-blue-300 flex gap-2">
+                                    <AlertCircle size={14} className="shrink-0 mt-0.5" />
+                                    <span>
+                                        <b>Nota:</b> Este mensaje se enviará a través del Agente y quedará registrado en el historial de la conversación.
+                                    </span>
+                                </p>
+                            </div>
+
+                            <div>
+                                <textarea
+                                    autoFocus
+                                    rows={6}
+                                    value={message}
+                                    onChange={(e) => setMessage(e.target.value)}
+                                    placeholder="Escribe tu mensaje aquí..."
+                                    className="w-full p-4 rounded-xl bg-gray-50 dark:bg-[#111C44] border border-transparent focus:border-[var(--color-primary)] outline-none text-[var(--text-main)] resize-none transition-all placeholder:text-gray-400"
+                                ></textarea>
+                                <div className="flex justify-between mt-2">
+                                    <span className="text-xs text-gray-400">Se usará formato WhatsApp (*negrita*, etc.)</span>
+                                    <span className={`text-xs font-bold ${message.length > 500 ? 'text-red-500' : 'text-gray-400'}`}>{message.length} car.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-5 border-t border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-[#111C44] rounded-b-2xl flex justify-end gap-3">
+                            <button
+                                onClick={onClose}
+                                disabled={isSending}
+                                className="px-5 py-2.5 rounded-xl font-bold text-gray-500 hover:bg-gray-200 dark:hover:bg-white/5 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleSend}
+                                disabled={isSending || !message.trim()}
+                                className="btn-primary-paper px-6 py-2.5 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isSending ? (
+                                    <>
+                                        <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+                                        Enviando...
+                                    </>
+                                ) : (
+                                    <>
+                                        <MessageCircle size={18} />
+                                        Enviar Mensaje
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
     )
 }
