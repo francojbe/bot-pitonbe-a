@@ -389,18 +389,50 @@ export function OrderDrawer({ order, onClose, updateOrderLocal }) {
                         </div>
                         {order.files_url && order.files_url.length > 0 ? (
                             <div className="grid grid-cols-2 gap-4">
-                                {order.files_url.map((file, i) => (
-                                    <a key={i} href={file} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-white/5 hover:bg-[#F4F7FE] dark:hover:bg-white/5 transition-colors group">
-                                        <div className="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
-                                            {file.match(/\.(jpg|jpeg|png|gif)$/i) ? <Image size={18} /> : <FileText size={18} />}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-bold truncate">Archivo {i + 1}</p>
-                                            <p className="text-xs text-[var(--text-secondary)] uppercase">{file.split('.').pop()}</p>
-                                        </div>
-                                        <ExternalLink size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    </a>
-                                ))}
+                                {order.files_url.map((file, i) => {
+                                    const isPdf = file.toLowerCase().endsWith('.pdf');
+                                    const fileName = decodeURIComponent(file.split('/').pop());
+
+                                    // Construct preview URL for PDFs (same logic as FileExplorer)
+                                    const handlePreview = (e) => {
+                                        if (isPdf) {
+                                            e.preventDefault();
+                                            // Extract path relative to bucket (assuming standard Supabase URL structure)
+                                            // URL format: .../storage/v1/object/public/chat-media/FOLDER/FILE.pdf
+                                            const urlObj = new URL(file);
+                                            const pathParts = urlObj.pathname.split('/chat-media/');
+                                            if (pathParts[1]) {
+                                                const storagePath = pathParts[1];
+                                                const previewUrl = `https://laboratorio-ia-odontologia.nojauc.easypanel.host/dashboard/?file=${encodeURIComponent(storagePath)}`;
+                                                window.open(previewUrl, '_blank');
+                                            } else {
+                                                // Fallback if URL structure doesn't match expected pattern
+                                                window.open(file, '_blank');
+                                            }
+                                        }
+                                    };
+
+                                    return (
+                                        <a
+                                            key={i}
+                                            href={file}
+                                            onClick={handlePreview}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-white/5 hover:bg-[#F4F7FE] dark:hover:bg-white/5 transition-colors group"
+                                            title={isPdf ? "Click para previsualizar PDF" : "Descargar archivo"}
+                                        >
+                                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isPdf ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
+                                                {isPdf ? <FileText size={18} /> : (file.match(/\.(jpg|jpeg|png|gif)$/i) ? <Image size={18} /> : <FileText size={18} />)}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-bold truncate">{fileName}</p>
+                                                <p className="text-xs text-[var(--text-secondary)] uppercase">{file.split('.').pop()}</p>
+                                            </div>
+                                            <ExternalLink size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        </a>
+                                    );
+                                })}
                             </div>
                         ) : (
                             <div className="p-8 border-2 border-dashed border-gray-200 dark:border-white/10 rounded-xl flex flex-col items-center justify-center text-[var(--text-secondary)] gap-2">
