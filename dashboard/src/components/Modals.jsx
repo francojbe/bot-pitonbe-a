@@ -27,7 +27,7 @@ import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
 import '@react-pdf-viewer/core/lib/styles/index.css';
 import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 
-export function OrderDrawer({ order, onClose, updateOrderLocal }) {
+export function OrderDrawer({ order, onClose, updateOrderLocal, isDarkMode }) {
     const [form, setForm] = useState({ ...order })
     const [activeTab, setActiveTab] = useState('specs') // 'specs' or 'history'
     const [auditLogs, setAuditLogs] = useState([])
@@ -484,17 +484,20 @@ export function OrderDrawer({ order, onClose, updateOrderLocal }) {
                 {/* PDF PREVIEW MODAL */}
                 {pdfPreviewUrl && (
                     <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setPdfPreviewUrl(null)}>
-                        <div className="bg-white w-full h-full max-w-5xl rounded-2xl overflow-hidden shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
-                            <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
-                                <h3 className="font-bold flex items-center gap-2"><FileText size={18} className="text-red-500" /> Previsualización PDF {decodeURIComponent(pdfPreviewUrl.split('/').pop())}</h3>
-                                <button onClick={() => setPdfPreviewUrl(null)} className="p-2 hover:bg-gray-200 rounded-full"><X size={20} /></button>
+                        <div className="bg-white dark:bg-[#1a1a1a] w-full h-full max-w-5xl rounded-2xl overflow-hidden shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
+                            <div className="p-4 bg-gray-50 dark:bg-[#111C44] border-b border-gray-200 dark:border-white/10 flex justify-between items-center">
+                                <h3 className="font-bold flex items-center gap-2 text-[var(--text-main)]"><FileText size={18} className="text-red-500" /> Previsualización PDF {decodeURIComponent(pdfPreviewUrl.split('/').pop())}</h3>
+                                <button onClick={() => setPdfPreviewUrl(null)} className="p-2 hover:bg-gray-200 dark:hover:bg-white/10 rounded-full text-[var(--text-main)]"><X size={20} /></button>
                             </div>
-                            <div className="flex-1 overflow-auto bg-gray-100">
+                            <div className="flex-1 overflow-auto bg-gray-100 dark:bg-black">
                                 <Worker workerUrl={`https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`}>
-                                    <Viewer
-                                        fileUrl={pdfPreviewUrl}
-                                        plugins={[defaultLayoutPluginInstance]}
-                                    />
+                                    <div className={isDarkMode ? 'rpv-core__viewer--dark' : ''} style={{ height: '100%' }}>
+                                        <Viewer
+                                            fileUrl={pdfPreviewUrl}
+                                            plugins={[defaultLayoutPluginInstance]}
+                                            theme={isDarkMode ? 'dark' : 'light'}
+                                        />
+                                    </div>
                                 </Worker>
                             </div>
                         </div>

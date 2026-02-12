@@ -244,7 +244,7 @@ function App() {
             />
           )}
           {activeTab === 'reportes' && <ReportsView orders={orders} />}
-          {activeTab === 'archivos' && <FileExplorer />}
+          {activeTab === 'archivos' && <FileExplorer isDarkMode={isDarkMode} />}
           {activeTab === 'mejoras' && <LearningsView />}
         </main>
       </div>
@@ -255,6 +255,7 @@ function App() {
           order={selectedOrder}
           onClose={() => setSelectedOrder(null)}
           updateOrderLocal={(u) => setOrders(prev => prev.map(o => o.id === u.id ? u : o))}
+          isDarkMode={isDarkMode}
         />
       )}
 

@@ -39,7 +39,7 @@ function KanbanBoard({ orders, onSelectOrder }) {
                                                 >
                                                     <div className="flex justify-between items-start mb-3">
                                                         <StatusBadge status={order.status} mini />
-                                                        <span className="text-[10px] font-bold text-[#A3AED0]">#{order.id.slice(0, 4)}</span>
+                                                        <span className="text-[10px] font-bold text-[#A3AED0] dark:text-gray-400">#{order.id.slice(0, 4)}</span>
                                                     </div>
                                                     <p className="text-sm font-bold text-[var(--text-main)] mb-4 whitespace-normal break-words line-clamp-3 leading-snug">{order.description || 'Sin descripción'}</p>
 
@@ -140,7 +140,7 @@ export function DashboardView({ orders, search, viewMode, setViewMode, onSelectO
                     <div className="flex items-center gap-3 flex-wrap">
                         {/* Status Filter */}
                         <div className="relative group">
-                            <button className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition-all ${statusFilter ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}>
+                            <button className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition-all ${statusFilter ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]' : 'bg-white dark:bg-[#242424] border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'}`}>
                                 <Filter size={14} />
                                 {statusFilter || 'Todos los Estados'}
                                 {statusFilter && <X size={12} className="ml-1 hover:text-red-200" onClick={(e) => { e.stopPropagation(); setStatusFilter('') }} />}
@@ -148,9 +148,9 @@ export function DashboardView({ orders, search, viewMode, setViewMode, onSelectO
                             {/* Invisible Bridge */}
                             <div className="absolute h-2 w-full top-full left-0 z-40"></div>
                             {/* Dropdown */}
-                            <div className="absolute right-0 top-[calc(100%+8px)] mt-0 w-40 bg-white border border-gray-100 rounded-xl shadow-xl p-1 hidden group-hover:block z-50 animate-in fade-in zoom-in-95 duration-100">
+                            <div className="absolute right-0 top-[calc(100%+8px)] mt-0 w-40 bg-white dark:bg-[#1a1a1a] border border-gray-100 dark:border-white/10 rounded-xl shadow-xl p-1 hidden group-hover:block z-50 animate-in fade-in zoom-in-95 duration-100">
                                 {ORDER_STATUS_LIST.map(s => (
-                                    <button key={s} onClick={() => setStatusFilter(s)} className="w-full text-left px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:bg-gray-50 rounded-lg">
+                                    <button key={s} onClick={() => setStatusFilter(s)} className="w-full text-left px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg">
                                         {s}
                                     </button>
                                 ))}
@@ -159,7 +159,7 @@ export function DashboardView({ orders, search, viewMode, setViewMode, onSelectO
 
                         {/* Date Filter */}
                         <div className="relative group">
-                            <button className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition-all ${dateFilter !== 'all' ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}>
+                            <button className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition-all ${dateFilter !== 'all' ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]' : 'bg-white dark:bg-[#242424] border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'}`}>
                                 <Calendar size={14} />
                                 {dateFilter === 'all' ? 'Cualquier Fecha' : dateFilter === 'today' ? 'Hoy' : dateFilter === 'week' ? 'Esta Semana' : 'Este Mes'}
                                 {dateFilter !== 'all' && <X size={12} className="ml-1 hover:text-red-200" onClick={(e) => { e.stopPropagation(); setDateFilter('all') }} />}
@@ -167,11 +167,11 @@ export function DashboardView({ orders, search, viewMode, setViewMode, onSelectO
                             {/* Invisible Bridge */}
                             <div className="absolute h-2 w-full top-full left-0 z-40"></div>
                             {/* Dropdown */}
-                            <div className="absolute right-0 top-[calc(100%+8px)] mt-0 w-40 bg-white border border-gray-100 rounded-xl shadow-xl p-1 hidden group-hover:block z-50 animate-in fade-in zoom-in-95 duration-100">
-                                <button onClick={() => setDateFilter('all')} className="w-full text-left px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:bg-gray-50 rounded-lg">Cualquier Fecha</button>
-                                <button onClick={() => setDateFilter('today')} className="w-full text-left px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:bg-gray-50 rounded-lg">Hoy</button>
-                                <button onClick={() => setDateFilter('week')} className="w-full text-left px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:bg-gray-50 rounded-lg">Última Semana</button>
-                                <button onClick={() => setDateFilter('month')} className="w-full text-left px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:bg-gray-50 rounded-lg">Último Mes</button>
+                            <div className="absolute right-0 top-[calc(100%+8px)] mt-0 w-40 bg-white dark:bg-[#1a1a1a] border border-gray-100 dark:border-white/10 rounded-xl shadow-xl p-1 hidden group-hover:block z-50 animate-in fade-in zoom-in-95 duration-100">
+                                <button onClick={() => setDateFilter('all')} className="w-full text-left px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg">Cualquier Fecha</button>
+                                <button onClick={() => setDateFilter('today')} className="w-full text-left px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg">Hoy</button>
+                                <button onClick={() => setDateFilter('week')} className="w-full text-left px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg">Última Semana</button>
+                                <button onClick={() => setDateFilter('month')} className="w-full text-left px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg">Último Mes</button>
                             </div>
                         </div>
 
@@ -248,7 +248,7 @@ export function DashboardView({ orders, search, viewMode, setViewMode, onSelectO
                                                 {new Date(order.created_at).toLocaleDateString()}
                                             </td>
                                             <td className="px-6 py-4 text-right" onClick={e => e.stopPropagation()}>
-                                                <button onClick={() => onDelete([order.id])} className="p-2 rounded-lg hover:bg-red-50 text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={16} /></button>
+                                                <button onClick={() => onDelete([order.id])} className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={16} /></button>
                                             </td>
                                         </tr>
                                     )

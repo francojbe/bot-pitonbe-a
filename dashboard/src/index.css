@@ -5,20 +5,24 @@
 @tailwind utilities;
 
 :root {
-  /* Marca */
-  --color-primary: #8DC63F;
-  --color-secondary: #F7941D;
-  --color-accent: #4F6128;
-  
-  /* Textos y Fondos */
-  --text-main: #333333;
-  --text-light: #FFFFFF;
-  --bg-body: #FFFFFF;
-  --bg-subtle: #F4F6F0; /* Un gris verdoso muy suave para secciones alternas */
-  
-  /* Estilos */
-  --shadow-card: 4px 4px 0px rgba(79, 97, 40, 0.2); /* Sombra dura, no difusa */
-  --border-radius: 2px; /* Bordes casi rectos, estilo corte de papel */
+    /* Marca */
+    --color-primary: #8DC63F;
+    --color-secondary: #F7941D;
+    --color-accent: #4F6128;
+
+    /* Textos y Fondos */
+    --text-main: #333333;
+    --text-secondary: #6B7280;
+    --text-light: #FFFFFF;
+    --bg-body: #FFFFFF;
+    --bg-subtle: #F4F6F0;
+    /* Un gris verdoso muy suave para secciones alternas */
+
+    /* Estilos */
+    --shadow-card: 4px 4px 0px rgba(79, 97, 40, 0.2);
+    /* Sombra dura, no difusa */
+    --border-radius: 2px;
+    /* Bordes casi rectos, estilo corte de papel */
 }
 
 /* Dark mode overrides if needed, but for now enforcing the Paper-Craft light vibrant look as primary */
@@ -28,6 +32,7 @@
     --bg-subtle: #2d2d2d;
     --text-main: #f0f0f0;
     --text-light: #aaaaaa;
+    --text-secondary: #A3AED0;
     --bg-card: #242424;
     --shadow-card: 4px 4px 0px rgba(0, 0, 0, 0.5);
 }
@@ -38,7 +43,12 @@ body {
     font-family: 'DM Sans', sans-serif;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
     font-family: 'Oswald', sans-serif;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -56,7 +66,8 @@ h1, h2, h3, h4, h5, h6 {
 
 ::-webkit-scrollbar-thumb {
     background: var(--color-accent);
-    border-radius: 0px; /* Angular */
+    border-radius: 0px;
+    /* Angular */
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -67,14 +78,15 @@ h1, h2, h3, h4, h5, h6 {
 @layer components {
     .dashboard-card {
         background-color: var(--bg-body);
-        border: 1px solid var(--color-accent); /* Explicit border for paper look */
+        border: 1px solid var(--color-accent);
+        /* Explicit border for paper look */
         border-radius: var(--border-radius);
         box-shadow: var(--shadow-card);
         padding: 24px;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
         position: relative;
     }
-    
+
     .dark .dashboard-card {
         background-color: var(--bg-card);
         border-color: #444;
@@ -95,7 +107,8 @@ h1, h2, h3, h4, h5, h6 {
         font-weight: 500;
         outline: none;
         transition: all 0.2s;
-        box-shadow: inset 2px 2px 4px rgba(0,0,0,0.05); /* Slight inset for depth */
+        box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.05);
+        /* Slight inset for depth */
     }
 
     .dark .dashboard-input {
@@ -131,7 +144,8 @@ h1, h2, h3, h4, h5, h6 {
     .btn-primary-paper:hover {
         transform: translate(-2px, -2px);
         box-shadow: 6px 6px 0px var(--color-accent);
-        background-color: #9bd64b; /* Slightly lighter */
+        background-color: #9bd64b;
+        /* Slightly lighter */
     }
 
     .btn-primary-paper:active {

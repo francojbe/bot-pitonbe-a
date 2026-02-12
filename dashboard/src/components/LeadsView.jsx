@@ -44,7 +44,7 @@ export function LeadsView({ leads, search, onEdit, onCreate, selectedIds, setSel
                     {selectedIds.size > 0 && (
                         <button
                             onClick={() => onDelete(Array.from(selectedIds))}
-                            className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-full font-bold text-sm hover:bg-red-100 transition-all animate-in fade-in zoom-in duration-200"
+                            className="flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 rounded-full font-bold text-sm hover:bg-red-100 dark:hover:bg-red-900/20 transition-all animate-in fade-in zoom-in duration-200"
                         >
                             <Trash2 size={16} /> Eliminar ({selectedIds.size})
                         </button>
