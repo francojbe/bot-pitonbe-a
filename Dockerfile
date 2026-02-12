@@ -1,5 +1,5 @@
-# Usa una imagen oficial ligera de Python
-FROM python:3.9-slim
+# Usa una imagen oficial ligera de Python (desde ECR Public para evitar rate limit de Docker Hub)
+FROM public.ecr.aws/docker/library/python:3.9-slim
 
 # Evitar que Python genere archivos .pyc y permitir logs en tiempo real
 ENV PYTHONDONTWRITEBYTECODE=1
