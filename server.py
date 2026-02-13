@@ -1599,7 +1599,7 @@ async def run_audit_job():
 def start_scheduler():
     # Programar para las 03:00 AM hora local (Chile)
     chile_tz = pytz.timezone('America/Santiago')
-    trigger = CronTrigger(hour=3, minute=0, timezone=chile_tz)
+    trigger = CronTrigger(hour=22, minute=15, timezone=chile_tz)
     
     scheduler.add_job(run_audit_job, trigger)
     scheduler.start()
