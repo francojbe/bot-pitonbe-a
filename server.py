@@ -274,9 +274,21 @@ def register_order(description: str, amount: int, rut: str, address: str, email:
     design_keywords = ["servicio de diseño", "diseño básico", "diseño medio", "diseño complejo", "creación de diseño", "costo diseño", "con diseño"]
     is_design_service = any(phrase in desc_lower for phrase in design_keywords)
     
-    # VALIDACIÓN ESTRICTA: Evita confusiones
+    # VALIDACIÓN ESTRICTA: Evita confusiones y Datos Faltantes
+    errors = []
     if not has_file and not is_design_service:
-        return "❌ ERROR BLOQUEANTE: No se puede crear la orden. Razón: El sistema detectó que 'has_file' es Falso (no hay archivo). Para proceder sin archivo, DEBES incluir explícitamente la frase 'Servicio de Diseño' en el parámetro 'description' de esta herramienta. Por favor, corrige tu llamada a la herramienta."
+        errors.append("Falta Archivo (has_file=False) y no es Servicio de Diseño.")
+    
+    # Validar Datos Fiscales OBLIGATORIOS (Anti-Lazy Agent)
+    if not rut or len(rut.strip()) < 8:
+        errors.append("Falta RUT válido.")
+    if not email or "@" not in email:
+        errors.append("Falta Email válido.")
+    if not address or len(address.strip()) < 5:
+        errors.append("Falta Dirección válida.")
+
+    if errors:
+        return f"❌ ERROR BLOQUEANTE (No se creó la orden): {', '.join(errors)}. \n➡️ ACCIÓN REQUERIDA: Pide estos datos al cliente y vuelve a llamar a la herramienta cuando los tengas."
 
     try:
         # Logs para depuración
@@ -538,7 +550,8 @@ Eres *Richard*, el Asistente Virtual Oficial de *Pitrón Beña Impresión*. 🤵
 - Al usar `register_order`, NO inventes información.
 - Si el cliente NO especifica "Couché" o "Bond", deja el campo `material` vacío (None).
 - Si NO dice la cantidad exacta, deja `quantity` vacío (None).
-- Solo rellena los datos que estén explícitos en la conversación. ¡Ante la duda, déjalo en blanco para que el humano lo rellene después!
+- Solo rellena los datos que estén explícitos. Si faltan datos críticos (RUT, Email), ¡PÍDELOS!
+- 🚫 PROHIBIDO dejar RUT o Email en blanco si vas a registrar una orden.
 
 👤 *INFORMACIÓN DEL CLIENTE:*
 - Cliente: *{cliente_nombre}*.
@@ -993,8 +1006,24 @@ async def webhook_whatsapp(request: Request):
                 order_path = "global"
                 current_order_id = None
                 try:
-                    # Buscar lead_id
-                    lead_res = supabase.table("leads").select("id, name").eq("phone_number", key.get("remoteJid", "").split("@")[0]).execute()
+                    # Buscar lead_id (O CREARLO SI ES NUEVO para asociar el archivo)
+                    target_phone = key.get("remoteJid", "").split("@")[0]
+                    target_pushname = data.get("pushName")
+                    
+                    # Intentar buscar primero
+                    lead_res = supabase.table("leads").select("id, name").eq("phone_number", target_phone).execute()
+                    
+                    if not lead_res.data:
+                        # Si no existe, CREARLO AHORA MISMO para no perder el archivo
+                        logger.info(f"🆕 Cliente nuevo detectado por archivo: {target_phone}. Creando Lead...")
+                        try:
+                            new_lead_data = {"phone_number": target_phone, "name": target_pushname, "status": "new"}
+                            create_res = supabase.table("leads").insert(new_lead_data).execute()
+                            if create_res.data:
+                                lead_res = create_res # Asignar para usar abajo
+                        except Exception as e_create:
+                            logger.error(f"❌ Error creando lead en webhook: {e_create}")
+
                     if lead_res.data:
                         lead_obj = lead_res.data[0]
                         lead_db_id = lead_obj["id"]
