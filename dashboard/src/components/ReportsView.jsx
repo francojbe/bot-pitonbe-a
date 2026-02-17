@@ -28,6 +28,8 @@ import {
 import { format, subDays, isAfter } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { ReportService } from '../services/ReportService'
+import { AuditService } from '../services/AuditService'
+import { toast } from 'sonner'
 
 export function ReportsView({ orders, leads }) {
     const [timeRange, setTimeRange] = useState('30') // days
@@ -75,6 +77,22 @@ export function ReportsView({ orders, leads }) {
         }, {})
         return Object.entries(counts).map(([name, value]) => ({ name, value }))
     }, [filteredOrders])
+
+    const handleExportAudit = async () => {
+        const loadingToast = toast.loading('Generando historial de auditoría...')
+        try {
+            const logs = await AuditService.getAllLogs()
+            if (logs && logs.length > 0) {
+                ReportService.generateAuditExcel(logs)
+                toast.success('Auditoría exportada correctamente', { id: loadingToast })
+            } else {
+                toast.error('No hay registros de auditoría para exportar', { id: loadingToast })
+            }
+        } catch (error) {
+            console.error(error)
+            toast.error('Error al exportar auditoría', { id: loadingToast })
+        }
+    }
 
     const COLORS = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']
 
@@ -250,8 +268,7 @@ export function ReportsView({ orders, leads }) {
                     <ExportItem
                         title="Historial de Auditoría"
                         desc="Registro de todos los cambios críticos realizados."
-                        onExport={() => toast.info('Función en desarrollo...')}
-                        disabled
+                        onExport={handleExportAudit}
                     />
                 </div>
             </motion.div>

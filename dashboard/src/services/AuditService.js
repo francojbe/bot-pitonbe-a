@@ -43,5 +43,29 @@ export const AuditService = {
             return []
         }
         return data
+    },
+
+    // 3. Fetch All Logs
+    async getAllLogs(limit = 1000) {
+        const { data, error } = await supabase
+            .from('audit_logs')
+            .select(`
+                *,
+                orders (
+                    description,
+                    leads (
+                        name
+                    )
+                )
+            `)
+            .order('created_at', { ascending: false })
+            .limit(limit)
+
+        if (error) {
+            console.error("Error fetching all logs:", error)
+            return []
+        }
+        return data
     }
 }
+

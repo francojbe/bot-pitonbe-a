@@ -75,5 +75,24 @@ export const ReportService = {
         XLSX.utils.book_append_sheet(workbook, worksheet, "Órdenes")
 
         XLSX.writeFile(workbook, `PitonB_Export_${format(new Date(), 'yyyyMMdd')}.xlsx`)
+    },
+
+    // 3. Generate Audit Excel
+    generateAuditExcel: (logs) => {
+        const data = logs.map(log => ({
+            Fecha: format(new Date(log.created_at), 'dd/MM/yyyy HH:mm'),
+            Orden: log.order_id?.slice(0, 8),
+            Cliente: log.orders?.leads?.name || 'Sistema',
+            Tipo: log.change_type,
+            Detalles: log.details,
+            Usuario: log.changed_by
+        }))
+
+        const worksheet = XLSX.utils.json_to_sheet(data)
+        const workbook = XLSX.utils.book_new()
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Auditoria")
+
+        XLSX.writeFile(workbook, `PitonB_Auditoria_${format(new Date(), 'yyyyMMdd_HHmm')}.xlsx`)
     }
 }
+
