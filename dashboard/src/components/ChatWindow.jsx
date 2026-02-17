@@ -139,7 +139,7 @@ export function ChatWindow({ lead, isDarkMode }) {
             {/* Header Mini */}
             <div className="p-4 border-b border-gray-100 dark:border-white/5 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold overflow-hidden border border-gray-100 dark:border-white/10">
+                    <div className="w-10 h-10 rounded-full bg-[var(--color-primary)]/10 dark:bg-[var(--color-primary)]/20 flex items-center justify-center text-[var(--color-accent)] dark:text-[var(--color-primary)] font-bold overflow-hidden border border-[var(--color-primary)]/20 dark:border-white/10">
                         {lead.profile_picture_url ? (
                             <img src={lead.profile_picture_url} alt={lead.name} className="w-full h-full object-cover" />
                         ) : (
@@ -154,15 +154,15 @@ export function ChatWindow({ lead, isDarkMode }) {
 
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10">
                     <div className="flex items-center gap-1.5 min-w-[70px]">
-                        {isAIEnabled ? <Bot size={14} className="text-indigo-600 animate-pulse" /> : <UserCheck size={14} className="text-amber-500" />}
-                        <span className={`text-[9px] font-bold uppercase ${isAIEnabled ? 'text-indigo-600' : 'text-amber-600'}`}>
+                        {isAIEnabled ? <Bot size={14} className="text-[var(--color-primary)] animate-pulse" /> : <UserCheck size={14} className="text-[var(--color-secondary)]" />}
+                        <span className={`text-[9px] font-bold uppercase ${isAIEnabled ? 'text-[var(--color-primary)]' : 'text-[var(--color-secondary)]'}`}>
                             {isAIEnabled ? 'IA Activa' : 'Manual'}
                         </span>
                     </div>
                     <button
                         onClick={handleToggleAI}
                         disabled={isToggling}
-                        className={`w-8 h-4 rounded-full relative transition-colors ${isAIEnabled ? 'bg-indigo-500' : 'bg-gray-300 dark:bg-gray-600'}`}
+                        className={`w-8 h-4 rounded-full relative transition-colors ${isAIEnabled ? 'bg-[var(--color-primary)]' : 'bg-gray-300 dark:bg-gray-600'}`}
                     >
                         <motion.div animate={{ x: isAIEnabled ? 16 : 0 }} className="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow-sm" />
                     </button>
@@ -185,9 +185,9 @@ export function ChatWindow({ lead, isDarkMode }) {
                         )}
                         {messages.map((msg, idx) => (
                             <div key={msg.id || idx} className={`flex ${msg.role === 'assistant' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm shadow-sm ${msg.role === 'assistant' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white dark:bg-[#2a2a2a] text-[var(--text-main)] rounded-bl-none border border-gray-100 dark:border-white/5'}`}>
+                                <div className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm shadow-sm ${msg.role === 'assistant' ? 'bg-[var(--color-accent)] text-white rounded-br-none' : 'bg-white dark:bg-[#2a2a2a] text-[var(--text-main)] rounded-bl-none border border-gray-100 dark:border-white/5'}`}>
                                     <div className="whitespace-pre-wrap">{msg.content}</div>
-                                    <p className={`text-[9px] mt-1 text-right opacity-70 ${msg.role === 'assistant' ? 'text-indigo-100' : 'text-gray-400'}`}>
+                                    <p className={`text-[9px] mt-1 text-right opacity-70 ${msg.role === 'assistant' ? 'text-white/60' : 'text-gray-400'}`}>
                                         {msg.created_at ? format(new Date(msg.created_at), 'HH:mm', { locale: es }) : '...'}
                                     </p>
                                 </div>
@@ -210,7 +210,7 @@ export function ChatWindow({ lead, isDarkMode }) {
                         disabled={isAIEnabled || isSending}
                         onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(e); } }}
                     />
-                    <button type="submit" disabled={!newMessage.trim() || isAIEnabled || isSending} className="p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+                    <button type="submit" disabled={!newMessage.trim() || isAIEnabled || isSending} className="p-2 bg-[var(--color-primary)] text-[var(--text-main)] rounded-lg hover:brightness-110 disabled:opacity-50 transition-colors">
                         {isSending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                     </button>
                 </form>

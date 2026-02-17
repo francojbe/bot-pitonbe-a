@@ -212,7 +212,7 @@ function App() {
               {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
             </button>
             <NotificationCenter isDarkMode={isDarkMode} onOpenChat={(lead) => setSelectedChatLead(lead)} />
-            <div className="w-10 h-10 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold shadow-lg shadow-indigo-500/20">
+            <div className="w-10 h-10 rounded-full bg-[var(--color-primary)] text-[var(--text-main)] flex items-center justify-center font-bold shadow-lg shadow-[var(--color-primary)]/20">
               PB
             </div>
           </div>

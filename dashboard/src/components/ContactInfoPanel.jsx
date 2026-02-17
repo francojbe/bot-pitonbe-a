@@ -1,7 +1,8 @@
-import { Mail, Phone, Briefcase, MapPin, User, Copy, Edit3, ChevronDown, ChevronUp, History, ExternalLink, RefreshCw, Loader2 } from 'lucide-react'
-import { useState } from 'react'
+import { Mail, Phone, Briefcase, MapPin, User, Copy, Edit3, ChevronDown, ChevronUp, History, ExternalLink, RefreshCw, Loader2, MessageSquare } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../supabase'
+import { LeadModal } from './Modals'
 
 export function ContactInfoPanel({ lead, isDarkMode }) {
     const [expandedSections, setExpandedSections] = useState({
@@ -9,7 +10,36 @@ export function ContactInfoPanel({ lead, isDarkMode }) {
         previous: false
     })
     const [syncing, setSyncing] = useState(false)
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+    const [stats, setStats] = useState({ inProgress: 0, completed: 0, total: 0 })
+    const [loadingStats, setLoadingStats] = useState(true)
     const BACKEND_URL = import.meta.env.VITE_API_URL
+
+    useEffect(() => {
+        if (lead?.id) {
+            fetchStats()
+        }
+    }, [lead?.id])
+
+    async function fetchStats() {
+        setLoadingStats(true)
+        try {
+            const { data, error } = await supabase
+                .from('orders')
+                .select('status')
+                .eq('lead_id', lead.id)
+
+            if (data) {
+                const inProgress = data.filter(o => o.status !== 'ENTREGADO').length
+                const completed = data.filter(o => o.status === 'ENTREGADO').length
+                setStats({ inProgress, completed, total: data.length })
+            }
+        } catch (err) {
+            console.error('Error fetching lead stats:', err)
+        } finally {
+            setLoadingStats(false)
+        }
+    }
 
     const syncPicture = async () => {
         if (syncing || !lead?.id) return
@@ -37,6 +67,29 @@ export function ContactInfoPanel({ lead, isDarkMode }) {
 
     const toggleSection = (section) => {
         setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }))
+    }
+
+    const handleUpdateLead = async (formData) => {
+        try {
+            const { error } = await supabase
+                .from('leads')
+                .update({
+                    name: formData.name,
+                    email: formData.email,
+                    phone_number: formData.phone_number,
+                    rut: formData.rut,
+                    business_name: formData.business_name,
+                    address: formData.address
+                })
+                .eq('id', lead.id)
+
+            if (error) throw error
+            toast.success('Información del cliente actualizada')
+            setIsEditModalOpen(false)
+        } catch (err) {
+            console.error('Error updating lead:', err)
+            toast.error('Error al actualizar el cliente')
+        }
     }
 
     const copyToClipboard = (text, label) => {
@@ -91,13 +144,45 @@ export function ContactInfoPanel({ lead, isDarkMode }) {
                 <p className="text-[11px] text-gray-500 font-medium mb-3">{lead.business_name || 'Cliente Particular'}</p>
 
                 {/* Quick Actions */}
-                <div className="flex gap-2">
-                    {[Edit3, MessageSquare, History].map((Icon, i) => (
-                        <button key={i} className="p-2 rounded-xl border border-gray-100 dark:border-white/5 text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all">
-                            <Icon size={18} />
-                        </button>
-                    ))}
+                <div className="flex gap-2 mb-4">
+                    <button
+                        onClick={() => setIsEditModalOpen(true)}
+                        className="p-2 rounded-xl border border-gray-100 dark:border-white/5 text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all border-dashed"
+                        title="Editar cliente"
+                    >
+                        <Edit3 size={18} />
+                    </button>
+                    <button className="p-2 rounded-xl border border-gray-100 dark:border-white/5 text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all border-dashed">
+                        <MessageSquare size={18} />
+                    </button>
+                    <button className="p-2 rounded-xl border border-gray-100 dark:border-white/5 text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all border-dashed">
+                        <History size={18} />
+                    </button>
                 </div>
+
+                {/* Projects Stats */}
+                <div className="w-full grid grid-cols-2 gap-2 px-2">
+                    <div className="bg-[var(--color-primary)]/10 dark:bg-[var(--color-primary)]/5 p-2 rounded-xl border border-[var(--color-primary)]/20 dark:border-[var(--color-primary)]/10">
+                        <p className="text-[9px] text-[var(--color-accent)] dark:text-[var(--color-primary)] uppercase font-black mb-1">En curso</p>
+                        <p className="text-xl font-black text-[var(--color-accent)] dark:text-[var(--color-primary)] leading-none">
+                            {loadingStats ? '...' : stats.inProgress}
+                        </p>
+                    </div>
+                    <div className="bg-[var(--color-secondary)]/10 dark:bg-[var(--color-secondary)]/5 p-2 rounded-xl border border-[var(--color-secondary)]/20 dark:border-[var(--color-secondary)]/10">
+                        <p className="text-[9px] text-[var(--color-secondary)] uppercase font-black mb-1">Cerrados</p>
+                        <p className="text-xl font-black text-[var(--color-secondary)] leading-none">
+                            {loadingStats ? '...' : stats.completed}
+                        </p>
+                    </div>
+                </div>
+
+                <LeadModal
+                    isOpen={isEditModalOpen}
+                    isCreating={false}
+                    form={lead}
+                    onClose={() => setIsEditModalOpen(false)}
+                    onSubmit={handleUpdateLead}
+                />
             </div>
 
             {/* Info List */}
@@ -192,7 +277,3 @@ export function ContactInfoPanel({ lead, isDarkMode }) {
     )
 }
 
-// Simple internal component to fix the missing Icon in loop
-const MessageSquare = (props) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
-)

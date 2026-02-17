@@ -57,7 +57,7 @@ export function InboxView({ isDarkMode }) {
                             placeholder="Buscar conversación..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 bg-white dark:bg-[#2a2a2a] rounded-xl text-sm border-none outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all shadow-sm"
+                            className="w-full pl-10 pr-4 py-2 bg-white dark:bg-[#2a2a2a] rounded-xl text-sm border-none outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 transition-all shadow-sm"
                         />
                     </div>
                 </div>
@@ -73,11 +73,11 @@ export function InboxView({ isDarkMode }) {
                                 <button
                                     key={lead.id}
                                     onClick={() => setSelectedLead(lead)}
-                                    className={`w-full p-4 flex gap-3 transition-all hover:bg-white dark:hover:bg-white/10 text-left relative ${selectedLead?.id === lead.id ? 'bg-white dark:bg-white/10 ring-1 ring-inset ring-indigo-500/20' : ''}`}
+                                    className={`w-full p-4 flex gap-3 transition-all hover:bg-white dark:hover:bg-white/10 text-left relative ${selectedLead?.id === lead.id ? 'bg-white dark:bg-white/10 ring-1 ring-inset ring-[var(--color-primary)]/20' : ''}`}
                                 >
-                                    {selectedLead?.id === lead.id && <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500"></div>}
+                                    {selectedLead?.id === lead.id && <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--color-primary)]"></div>}
 
-                                    <div className="w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-lg flex-shrink-0 overflow-hidden border border-gray-100 dark:border-white/10">
+                                    <div className="w-12 h-12 rounded-full bg-[var(--color-primary)]/10 dark:bg-[var(--color-primary)]/20 text-[var(--color-accent)] dark:text-[var(--color-primary)] flex items-center justify-center font-bold text-lg flex-shrink-0 overflow-hidden border border-[var(--color-primary)]/10 dark:border-white/10">
                                         {lead.profile_picture_url ? (
                                             <img src={lead.profile_picture_url} alt={lead.name} className="w-full h-full object-cover" onError={(e) => e.target.style.display = 'none'} />
                                         ) : (
@@ -100,12 +100,12 @@ export function InboxView({ isDarkMode }) {
                                             <p className="text-xs text-gray-500 truncate">{lead.phone_number}</p>
                                             <div className="flex items-center gap-1">
                                                 {lead.ai_enabled ? (
-                                                    <div className="flex items-center gap-1 bg-indigo-50 dark:bg-indigo-500/10 px-1.5 py-0.5 rounded text-indigo-600 dark:text-indigo-400 scale-75 origin-right">
+                                                    <div className="flex items-center gap-1 bg-[var(--color-primary)]/10 dark:bg-[var(--color-primary)]/20 px-1.5 py-0.5 rounded text-[var(--color-accent)] dark:text-[var(--color-primary)] scale-75 origin-right">
                                                         <Bot size={12} />
                                                         <span className="text-[10px] font-bold">IA</span>
                                                     </div>
                                                 ) : (
-                                                    <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded text-amber-600 dark:text-amber-400 scale-75 origin-right">
+                                                    <div className="flex items-center gap-1 bg-[var(--color-secondary)]/10 dark:bg-[var(--color-secondary)]/20 px-1.5 py-0.5 rounded text-[var(--color-secondary)] scale-75 origin-right">
                                                         <UserCheck size={12} />
                                                         <span className="text-[10px] font-bold">HUMAN</span>
                                                     </div>
