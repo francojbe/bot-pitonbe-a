@@ -1423,16 +1423,26 @@ async def sync_lead_picture(payload: dict):
             return {"status": "error", "message": "Lead no encontrado"}
         
         phone = res.data[0]["phone_number"]
-        pic_url = get_whatsapp_profile_picture(phone)
+        # Limpiar número
+        clean_phone = "".join(filter(str.isdigit, phone))
+        
+        # 1. Intentar con número limpio
+        pic_url = get_whatsapp_profile_picture(clean_phone)
+        
+        # 2. Fallback con @s.whatsapp.net si falló
+        if not pic_url:
+            logger.info(f"🔄 Reintentando con suffix JID para {clean_phone}...")
+            pic_url = get_whatsapp_profile_picture(f"{clean_phone}@s.whatsapp.net")
         
         if pic_url:
             supabase.table("leads").update({"profile_picture_url": pic_url}).eq("id", lead_id).execute()
             return {"status": "success", "profile_picture_url": pic_url}
         else:
-            # Intentar dar una respuesta más específica
+            # Aquí podríamos haber capturado un error más específico en get_whatsapp_profile_picture
+            # Pero por ahora daremos un mensaje que sugiera revisar la configuración
             return {
                 "status": "error", 
-                "message": "No se pudo obtener la foto. Asegúrate de que el número sea correcto y la foto sea pública."
+                "message": "No se encontró foto. Revisa si el nombre de instancia 'Pitron Beña' es exacto en Evolution API (incluyendo la ñ)."
             }
     except Exception as e:
         logger.error(f"Error sync picture manual: {e}")
