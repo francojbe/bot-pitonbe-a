@@ -139,8 +139,12 @@ export function ChatWindow({ lead, isDarkMode }) {
             {/* Header Mini */}
             <div className="p-4 border-b border-gray-100 dark:border-white/5 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold">
-                        {lead.name?.charAt(0).toUpperCase()}
+                    <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold overflow-hidden border border-gray-100 dark:border-white/10">
+                        {lead.profile_picture_url ? (
+                            <img src={lead.profile_picture_url} alt={lead.name} className="w-full h-full object-cover" />
+                        ) : (
+                            lead.name?.charAt(0).toUpperCase()
+                        )}
                     </div>
                     <div>
                         <h3 className="font-bold text-[var(--text-main)] text-sm">{lead.name}</h3>

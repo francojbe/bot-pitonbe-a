@@ -81,13 +81,24 @@ export function NotificationCenter({ isDarkMode, onOpenChat }) {
                                             key={notif.id}
                                             className={`p-4 flex gap-3 group transition-colors hover:bg-gray-50 dark:hover:bg-white/5 ${!notif.is_read ? 'bg-indigo-50/30 dark:bg-indigo-500/5' : ''}`}
                                         >
-                                            <div className="mt-1 shrink-0">
-                                                {getIcon(notif.type)}
+                                            <div className="mt-1 shrink-0 relative">
+                                                <div className="w-9 h-9 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center overflow-hidden border border-gray-100 dark:border-white/10">
+                                                    {notif.leads?.profile_picture_url ? (
+                                                        <img src={notif.leads.profile_picture_url} alt={notif.leads.name} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <div className="text-xs font-bold text-indigo-500 uppercase">
+                                                            {notif.leads?.name?.charAt(0) || '?'}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="absolute -bottom-1 -right-1 bg-white dark:bg-[#1e1e1e] rounded-full p-0.5 shadow-sm border border-gray-100 dark:border-white/10">
+                                                    {getIcon(notif.type)}
+                                                </div>
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex justify-between items-start">
                                                     <p className={`text-sm font-bold truncate ${!notif.is_read ? 'text-[var(--text-main)]' : 'text-gray-500'}`}>
-                                                        {notif.title}
+                                                        {notif.leads?.name ? `${notif.leads.name}: ${notif.title}` : notif.title}
                                                     </p>
                                                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                         {!notif.is_read && (

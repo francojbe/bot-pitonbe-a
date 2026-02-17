@@ -175,8 +175,20 @@ export function HomeView({ orders }) {
                         <tbody className="divide-y divide-gray-100 dark:divide-white/5">
                             {orders.slice(0, 5).map((order) => (
                                 <tr key={order.id} className="hover:bg-[var(--bg-subtle)] transition-colors">
-                                    <td className="px-6 py-4 font-medium text-[var(--text-main)]">
-                                        {order.client_id} <span className="text-[var(--text-secondary)] text-xs font-normal ml-1">#{order.id.slice(0, 4)}</span>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-bold overflow-hidden border border-gray-100 dark:border-white/10">
+                                                {order.leads?.profile_picture_url ? (
+                                                    <img src={order.leads.profile_picture_url} alt={order.leads?.name} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    order.leads?.name?.charAt(0) || '?'
+                                                )}
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-bold text-[var(--text-main)]">{order.leads?.name || 'Cliente'}</p>
+                                                <p className="text-[10px] text-[var(--text-secondary)]">#{(order.id || '').slice(0, 4)}</p>
+                                            </div>
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${getStatusColor(order.status)}`}>

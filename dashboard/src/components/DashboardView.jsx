@@ -49,7 +49,13 @@ function KanbanBoard({ orders, onSelectOrder, onOpenChat }) {
 
                                                     <div className="flex items-center justify-between pt-4 border-t border-gray-50 dark:border-white/5">
                                                         <div className="flex -space-x-2">
-                                                            <div className="w-6 h-6 rounded-full bg-indigo-500 text-white flex items-center justify-center text-[9px] font-bold border-2 border-white dark:border-[#111C44]">{order.leads?.name?.slice(0, 1)}</div>
+                                                            <div className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center text-[10px] font-bold border-2 border-white dark:border-[#111C44] overflow-hidden">
+                                                                {order.leads?.profile_picture_url ? (
+                                                                    <img src={order.leads.profile_picture_url} alt={order.leads.name} className="w-full h-full object-cover" />
+                                                                ) : (
+                                                                    order.leads?.name?.slice(0, 1)
+                                                                )}
+                                                            </div>
                                                         </div>
                                                         <div className="flex items-center gap-1">
                                                             <button
@@ -245,8 +251,19 @@ export function DashboardView({ orders, search, viewMode, setViewMode, onSelectO
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <p className="text-sm font-bold text-[var(--text-main)] mb-1">{order.description || 'Orden sin título'}</p>
-                                                <p className="text-xs text-gray-500 flex items-center gap-1"><Users size={12} /> {order.leads?.name || 'Cliente'}</p>
+                                                <div className="flex flex-col">
+                                                    <p className="text-sm font-bold text-[var(--text-main)] mb-1">{order.description || 'Orden sin título'}</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-5 h-5 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-[10px] font-bold overflow-hidden border border-gray-100 dark:border-white/10">
+                                                            {order.leads?.profile_picture_url ? (
+                                                                <img src={order.leads.profile_picture_url} alt={order.leads.name} className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                order.leads?.name?.charAt(0) || '?'
+                                                            )}
+                                                        </div>
+                                                        <p className="text-xs text-gray-500 flex items-center gap-1 font-medium italic">{order.leads?.name || 'Cliente'}</p>
+                                                    </div>
+                                                </div>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <StatusBadge status={order.status} />
