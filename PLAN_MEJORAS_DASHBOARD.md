@@ -28,16 +28,11 @@ Este documento detalla las mejoras implementadas y la hoja de ruta para converti
 - [x] **Generador de Reportes:** Centro de analítica premium con gráficas interactivas, métricas financieras y exportación profesional a PDF y Excel.🚀
 - [x] **Registro de Actividad (Audit Log):** Sistema detallado integrado en el historial de órdenes para ver quién y cuándo realizó cambios críticos (cambios de precio, abonos, estados, etc.). Almacenado en la tabla `audit_logs`.
 
-### 3. Inteligencia Artificial Aplicada (AI-Drive)
-- [ ] **Etiquetado Automático de Archivos:** Usar la IA para analizar imágenes/PDFs subidos y asignarles tags automáticamente (ej: "Transferencia", "Factura", "Producto").
-- [ ] **Resumen Inteligente de Documentos:** Generar un pequeño resumen tipo "sticky-note" cuando se sube un archivo (ej: "Este PDF es un comprobante de $45.000 del Banco Estado").
-
-
-### 4. Seguridad y Escalabilidad
+### 3. Seguridad y Escalabilidad
 - [ ] **Sistema de Autenticación:** Implementar Supabase Auth para proteger el acceso al dashboard con Login/Password.
 - [ ] **Gestores de Roles:** Diferenciar permisos (ej: Admin puede borrar archivos, Operador solo puede mover estados del Kanban).
 
-### 5. Experiencia CRM (Relacional) 👥
+### 4. Experiencia CRM (Relacional) 👥
 - [ ] **Perfil de Cliente 360:** Vista centralizada por cliente que muestra historial completo de órdenes, archivos compartidos y notas internas.
 - [ ] **Intervención Humana (Human Takeover):** (En progreso) Permitir al equipo silenciar a la IA y chatear directamente desde el Dashboard como un CRM moderno.
 - [ ] **Segmentación de Clientes:** Etiquetas para clasificar clientes (Ej: "VIP", "Nuevo", "Problemático").
