@@ -274,49 +274,50 @@ export function ChatDrawer({ lead, onClose, isDarkMode }) {
                         <div ref={messagesEndRef} />
                     </>
                 )}
+            </div>
 
-                {/* Input Area */}
-                <div className="p-4 bg-white dark:bg-[#1e1e1e] border-t border-gray-100 dark:border-white/5">
-                    <form onSubmit={handleSendMessage} className="flex items-end gap-2 bg-gray-50 dark:bg-[#2a2a2a] p-2 rounded-xl border border-gray-200 dark:border-white/5 focus-within:ring-2 focus-within:ring-indigo-500/50 transition-all">
-                        <button type="button" className="p-2 text-gray-400 hover:text-[var(--text-main)] transition-colors">
-                            <Image size={20} />
-                        </button>
-                        <textarea
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                            placeholder={isAIEnabled ? "Active el Modo Humano para responder..." : "Escribe tu mensaje aquí..."}
-                            className="flex-1 bg-transparent border-none outline-none text-sm text-[var(--text-main)] resize-none py-2 max-h-32"
-                            rows={1}
-                            disabled={isAIEnabled || isSending}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                    e.preventDefault()
-                                    handleSendMessage(e)
-                                }
-                            }}
-                        />
+            {/* Input Area */}
+            <div className="p-4 bg-white dark:bg-[#1e1e1e] border-t border-gray-100 dark:border-white/5">
+                <form onSubmit={handleSendMessage} className="flex items-end gap-2 bg-gray-50 dark:bg-[#2a2a2a] p-2 rounded-xl border border-gray-200 dark:border-white/5 focus-within:ring-2 focus-within:ring-indigo-500/50 transition-all">
+                    <button type="button" className="p-2 text-gray-400 hover:text-[var(--text-main)] transition-colors">
+                        <Image size={20} />
+                    </button>
+                    <textarea
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        placeholder={isAIEnabled ? "Active el Modo Humano para responder..." : "Escribe tu mensaje aquí..."}
+                        className="flex-1 bg-transparent border-none outline-none text-sm text-[var(--text-main)] resize-none py-2 max-h-32"
+                        rows={1}
+                        disabled={isAIEnabled || isSending}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault()
+                                handleSendMessage(e)
+                            }
+                        }}
+                    />
+                    <button
+                        type="submit"
+                        disabled={!newMessage.trim() || isAIEnabled || isSending}
+                        className="p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:bg-gray-400 transition-colors"
+                    >
+                        {isSending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                    </button>
+                </form>
+                <div className="flex items-center justify-between mt-2 px-1">
+                    <p className="text-[9px] text-gray-400">
+                        Los mensajes se envían vía WhatsApp Realtime.
+                    </p>
+                    {isAIEnabled && (
                         <button
-                            type="submit"
-                            disabled={!newMessage.trim() || isAIEnabled || isSending}
-                            className="p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:bg-gray-400 transition-colors"
+                            onClick={handleToggleAI}
+                            className="text-[9px] font-bold text-indigo-600 hover:text-indigo-700 underline"
                         >
-                            {isSending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                            Activar control manual
                         </button>
-                    </form>
-                    <div className="flex items-center justify-between mt-2 px-1">
-                        <p className="text-[9px] text-gray-400">
-                            Los mensajes se envían vía WhatsApp Realtime.
-                        </p>
-                        {isAIEnabled && (
-                            <button
-                                onClick={handleToggleAI}
-                                className="text-[9px] font-bold text-indigo-600 hover:text-indigo-700 underline"
-                            >
-                                Activar control manual
-                            </button>
-                        )}
-                    </div>
+                    )}
                 </div>
+            </div>
         </motion.div>
     )
 }
