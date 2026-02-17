@@ -6,15 +6,35 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
 export const ReportService = {
-    // Generate PDF Report
-    generatePDF: (data, title, stats) => {
+    // 1. Generate PDF Report
+    generatePDF: async (data, title, stats) => {
         try {
             const doc = new jsPDF()
             const now = format(new Date(), 'dd/MM/yyyy HH:mm')
 
+            // Helper to load image
+            const loadImage = (src) => {
+                return new Promise((resolve) => {
+                    const img = new Image()
+                    img.src = src
+                    img.onload = () => resolve(img)
+                    img.onerror = () => resolve(null)
+                })
+            }
+
+            const logo = await loadImage('/logo.png')
+
             // Header Background
             doc.setFillColor(79, 70, 229) // Indigo-600
             doc.rect(0, 0, 210, 40, 'F')
+
+            // Logo (if available)
+            if (logo) {
+                // Background for logo to make it pop if it's dark
+                doc.setFillColor(255, 255, 255)
+                doc.roundedRect(170, 5, 30, 30, 5, 5, 'F')
+                doc.addImage(logo, 'PNG', 172, 7, 26, 26)
+            }
 
             // Title
             doc.setTextColor(255, 255, 255)
