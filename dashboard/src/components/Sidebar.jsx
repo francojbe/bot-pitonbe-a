@@ -4,7 +4,8 @@ export function Sidebar({ activeTab, setActiveTab, collapsed, setCollapsed, mobi
     /* Nav Items Configuration */
     const navItems = [
         { id: 'inicio', label: 'Inicio', icon: LayoutGrid },
-        { id: 'kanban', label: 'Órdenes', icon: MessageSquare },
+        { id: 'mensajes', label: 'Mensajes', icon: MessageSquare },
+        { id: 'kanban', label: 'Órdenes', icon: LayoutDashboard },
         { id: 'clientes', label: 'Clientes', icon: Users },
         { id: 'archivos', label: 'Archivos', icon: Folder },
         { id: 'reportes', label: 'Reportes', icon: BarChart2 },

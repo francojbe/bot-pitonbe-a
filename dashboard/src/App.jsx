@@ -15,6 +15,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ChatDrawer } from './components/ChatDrawer'
 import { NotificationCenter } from './components/NotificationCenter'
 import { ReportsView } from './components/ReportsView'
+import { InboxView } from './components/InboxView'
 
 import { useOrders } from './hooks/useOrders'
 import { useLeads } from './hooks/useLeads'
@@ -261,6 +262,7 @@ function App() {
                   onOpenChat={(lead) => setSelectedChatLead(lead)}
                 />
               )}
+              {activeTab === 'mensajes' && <InboxView isDarkMode={isDarkMode} />}
               {activeTab === 'archivos' && <FileExplorer isDarkMode={isDarkMode} />}
               {activeTab === 'reportes' && <ReportsView orders={orders} leads={leads} />}
               {activeTab === 'mejoras' && <LearningsView />}
