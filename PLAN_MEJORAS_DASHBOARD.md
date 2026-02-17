@@ -26,7 +26,7 @@ Este documento detalla las mejoras implementadas y la hoja de ruta para converti
 - [ ] **Human Takeover & Control (Intervención Humana):** Implementar un switch de "Toma de Mando" para pausar al agente IA Richard y permitir al humano responder directamente desde el dashboard. Todo el historial se guarda para que la IA retome el contexto al reactivarse.
 - [x] **Centro de Notificaciones:** Sistema de alertas internas e inteligentes que detectan intenciones de compra y subida de archivos en tiempo real. Almacenadas en DB y gestionables.
 - [ ] **Generador de Reportes:** Botón para exportar resúmenes financieros y listado de órdenes en formato PDF y Excel (Especial para cierres de mes).
-- [ ] **Registro de Actividad (Audit Log):** Sistema detallado para ver quién y cuándo realizó cambios críticos (cambios de precio, estado de pago, etc.).
+- [x] **Registro de Actividad (Audit Log):** Sistema detallado integrado en el historial de órdenes para ver quién y cuándo realizó cambios críticos (cambios de precio, abonos, estados, etc.). Almacenado en la tabla `audit_logs`.
 
 ### 3. Inteligencia Artificial Aplicada (AI-Drive)
 - [ ] **Etiquetado Automático de Archivos:** Usar la IA para analizar imágenes/PDFs subidos y asignarles tags automáticamente (ej: "Transferencia", "Factura", "Producto").
