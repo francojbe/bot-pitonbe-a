@@ -1,4 +1,4 @@
-import { Trash2, Plus, CheckSquare, ChevronRight, Users } from 'lucide-react'
+import { Trash2, Plus, CheckSquare, ChevronRight, Users, MessageCircle } from 'lucide-react'
 
 // --- HELPER FUNCTION ---
 const formatPhone = (phone) => {
@@ -13,7 +13,7 @@ const formatPhone = (phone) => {
     return phone
 }
 
-export function LeadsView({ leads, search, onEdit, onCreate, selectedIds, setSelectedIds, onDelete }) {
+export function LeadsView({ leads, search, onEdit, onCreate, selectedIds, setSelectedIds, onDelete, onOpenChat }) {
     const filtered = leads.filter(l =>
         !search ||
         l.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -67,7 +67,7 @@ export function LeadsView({ leads, search, onEdit, onCreate, selectedIds, setSel
                             <th className="px-6 py-4 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider w-[30%]">Nombre</th>
                             <th className="px-6 py-4 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider w-[25%]">Contacto</th>
                             <th className="px-6 py-4 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Empresa</th>
-                            <th className="px-6 py-4 w-20"></th>
+                            <th className="px-6 py-4 w-32"></th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 dark:divide-white/5">
@@ -75,9 +75,9 @@ export function LeadsView({ leads, search, onEdit, onCreate, selectedIds, setSel
                             <tr
                                 key={l.id}
                                 className={`group transition-all duration-300 cursor-pointer relative
-                  ${selectedIds.has(l.id) ? 'bg-[var(--bg-subtle)] dark:bg-white/10' : 'bg-white dark:bg-[#242424] hover:bg-[var(--bg-subtle)] dark:hover:bg-white/5'}
-                  hover:shadow-[0px_4px_0px_rgba(79,97,40,0.2)] hover:z-10 hover:-translate-y-0.5
-                `}
+                                    ${selectedIds.has(l.id) ? 'bg-[var(--bg-subtle)] dark:bg-white/10' : 'bg-white dark:bg-[#242424] hover:bg-[var(--bg-subtle)] dark:hover:bg-white/5'}
+                                    hover:shadow-[0px_4px_0px_rgba(79,97,40,0.2)] hover:z-10 hover:-translate-y-0.5
+                                `}
                                 onClick={() => onEdit(l)}
                             >
                                 <td className="px-6 py-4" onClick={(e) => { e.stopPropagation(); toggleOne(l.id); }}>
@@ -103,12 +103,21 @@ export function LeadsView({ leads, search, onEdit, onCreate, selectedIds, setSel
                                     <p className="text-sm font-medium text-[var(--text-secondary)] truncate" title={l.business_name}>{l.business_name || '-'}</p>
                                 </td>
                                 <td className="px-6 py-4 text-right">
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); onEdit(l); }}
-                                        className="p-2 rounded-xl text-[var(--color-primary)] opacity-0 group-hover:opacity-100 transition-all hover:bg-gray-50 dark:hover:bg-white/5"
-                                    >
-                                        <ChevronRight size={18} />
-                                    </button>
+                                    <div className="flex items-center justify-end gap-1">
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); onOpenChat(l); }}
+                                            className="p-2 rounded-xl text-indigo-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-gray-100 dark:hover:bg-white/5"
+                                            title="Ver chat"
+                                        >
+                                            <MessageCircle size={18} />
+                                        </button>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); onEdit(l); }}
+                                            className="p-2 rounded-xl text-gray-400 opacity-0 group-hover:opacity-100 transition-all hover:bg-gray-50 dark:hover:bg-white/5"
+                                        >
+                                            <ChevronRight size={18} />
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         ))}

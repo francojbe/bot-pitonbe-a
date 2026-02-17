@@ -1,11 +1,11 @@
-import { MoreVertical, ArrowUpRight, CheckCircle2, Trash2, X, Users, CheckSquare, ChevronLeft, ChevronRight, Filter, Calendar } from 'lucide-react'
+import { MoreVertical, ArrowUpRight, CheckCircle2, Trash2, X, Users, CheckSquare, ChevronLeft, ChevronRight, Filter, Calendar, MessageCircle } from 'lucide-react'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 import { StatusBadge } from './StatusBadge'
 import { useState } from 'react'
 import { ORDER_STATUS_LIST } from '../constants'
 import { motion, AnimatePresence } from 'framer-motion'
 
-function KanbanBoard({ orders, onSelectOrder }) {
+function KanbanBoard({ orders, onSelectOrder, onOpenChat }) {
     const columns = ORDER_STATUS_LIST
 
     return (
@@ -51,11 +51,19 @@ function KanbanBoard({ orders, onSelectOrder }) {
                                                         <div className="flex -space-x-2">
                                                             <div className="w-6 h-6 rounded-full bg-indigo-500 text-white flex items-center justify-center text-[9px] font-bold border-2 border-white dark:border-[#111C44]">{order.leads?.name?.slice(0, 1)}</div>
                                                         </div>
-                                                        <div className="flex flex-col text-right">
-                                                            <p className="text-xs font-bold text-[var(--color-primary)]">${(order.total_amount || 0).toLocaleString('es-CL')}</p>
-                                                            {(order.total_amount - (order.deposit_amount || 0) > 0) && (
-                                                                <p className="text-[9px] font-bold text-red-500">Debe: ${(order.total_amount - (order.deposit_amount || 0)).toLocaleString('es-CL')}</p>
-                                                            )}
+                                                        <div className="flex items-center gap-1">
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); onOpenChat(order.leads); }}
+                                                                className="p-1 px-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                                                            >
+                                                                <MessageCircle size={14} />
+                                                            </button>
+                                                            <div className="flex flex-col text-right">
+                                                                <p className="text-xs font-bold text-[var(--color-primary)]">${(order.total_amount || 0).toLocaleString('es-CL')}</p>
+                                                                {(order.total_amount - (order.deposit_amount || 0) > 0) && (
+                                                                    <p className="text-[9px] font-bold text-red-500">Debe: ${(order.total_amount - (order.deposit_amount || 0)).toLocaleString('es-CL')}</p>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </motion.div>
@@ -74,7 +82,7 @@ function KanbanBoard({ orders, onSelectOrder }) {
     )
 }
 
-export function DashboardView({ orders, search, viewMode, setViewMode, onSelectOrder, selectedIds, setSelectedIds, onDelete, onDragEnd, currentPage, setCurrentPage, itemsPerPage, loading }) {
+export function DashboardView({ orders, search, viewMode, setViewMode, onSelectOrder, selectedIds, setSelectedIds, onDelete, onDragEnd, currentPage, setCurrentPage, itemsPerPage, loading, onOpenChat }) {
     // Advanced Filters State
     const [statusFilter, setStatusFilter] = useState('')
     const [dateFilter, setDateFilter] = useState('all') // 'all', 'today', 'week', 'month'
@@ -203,7 +211,7 @@ export function DashboardView({ orders, search, viewMode, setViewMode, onSelectO
             <div className="flex-1 min-h-0 overflow-y-auto">
                 {viewMode === 'kanban' ? (
                     <DragDropContext onDragEnd={onDragEnd}>
-                        <KanbanBoard orders={paginatedOrders} onSelectOrder={onSelectOrder} />
+                        <KanbanBoard orders={paginatedOrders} onSelectOrder={onSelectOrder} onOpenChat={onOpenChat} />
                     </DragDropContext>
                 ) : (
                     <div className="dashboard-card overflow-x-auto !p-0">
@@ -253,7 +261,16 @@ export function DashboardView({ orders, search, viewMode, setViewMode, onSelectO
                                                 {new Date(order.created_at).toLocaleDateString()}
                                             </td>
                                             <td className="px-6 py-4 text-right" onClick={e => e.stopPropagation()}>
-                                                <button onClick={() => onDelete([order.id])} className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={16} /></button>
+                                                <div className="flex items-center justify-end gap-1">
+                                                    <button
+                                                        onClick={() => onOpenChat(order.leads)}
+                                                        className="p-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-indigo-500 opacity-0 group-hover:opacity-100 transition-all"
+                                                        title="Ver chat"
+                                                    >
+                                                        <MessageCircle size={16} />
+                                                    </button>
+                                                    <button onClick={() => onDelete([order.id])} className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={16} /></button>
+                                                </div>
                                             </td>
                                         </tr>
                                     )

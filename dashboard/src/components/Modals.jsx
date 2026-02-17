@@ -28,7 +28,7 @@ import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
 import '@react-pdf-viewer/core/lib/styles/index.css';
 import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 
-export function OrderDrawer({ order, onClose, updateOrderLocal, isDarkMode }) {
+export function OrderDrawer({ order, onClose, updateOrderLocal, isDarkMode, onOpenChat }) {
     const [form, setForm] = useState({ ...order })
     const [activeTab, setActiveTab] = useState('specs') // 'specs' or 'history'
     const [auditLogs, setAuditLogs] = useState([])
@@ -187,6 +187,13 @@ export function OrderDrawer({ order, onClose, updateOrderLocal, isDarkMode }) {
                         <p className="text-sm text-gray-500">Creada el {new Date(order.created_at).toLocaleDateString()}</p>
                     </div>
                     <div className="flex gap-2">
+                        <button
+                            onClick={() => onOpenChat(order.leads)}
+                            title="Ver conversación de WhatsApp"
+                            className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-full text-indigo-500 transition-colors"
+                        >
+                            <MessageCircle size={24} />
+                        </button>
                         <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-full text-gray-500"><X size={24} /></button>
                     </div>
                 </div>

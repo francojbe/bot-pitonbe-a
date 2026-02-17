@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import FileExplorer from './components/FileExplorer'
 import { AnimatePresence, motion } from 'framer-motion'
+import { ChatDrawer } from './components/ChatDrawer'
 
 import { useOrders } from './hooks/useOrders'
 import { useLeads } from './hooks/useLeads'
@@ -41,6 +42,7 @@ function App() {
   const [leadSearch, setLeadSearch] = useState('')
   const [selectedLeadIds, setSelectedLeadIds] = useState(new Set())
   const [deleteContext, setDeleteContext] = useState('orders') // 'orders' or 'leads'
+  const [selectedChatLead, setSelectedChatLead] = useState(null)
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1)
@@ -239,6 +241,7 @@ function App() {
                   currentPage={currentPage}
                   setCurrentPage={setCurrentPage}
                   itemsPerPage={ITEMS_PER_PAGE}
+                  onOpenChat={(lead) => setSelectedChatLead(lead)}
                 />
               )}
               {activeTab === 'clientes' && (
@@ -252,6 +255,7 @@ function App() {
                   selectedIds={selectedLeadIds}
                   setSelectedIds={setSelectedLeadIds}
                   onDelete={deleteLeads}
+                  onOpenChat={(lead) => setSelectedChatLead(lead)}
                 />
               )}
               {activeTab === 'archivos' && <FileExplorer isDarkMode={isDarkMode} />}
@@ -269,6 +273,17 @@ function App() {
             order={selectedOrder}
             onClose={() => setSelectedOrder(null)}
             updateOrderLocal={(u) => setOrders(prev => prev.map(o => o.id === u.id ? u : o))}
+            isDarkMode={isDarkMode}
+            onOpenChat={(lead) => setSelectedChatLead(lead)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {selectedChatLead && (
+          <ChatDrawer
+            lead={selectedChatLead}
+            onClose={() => setSelectedChatLead(null)}
             isDarkMode={isDarkMode}
           />
         )}
