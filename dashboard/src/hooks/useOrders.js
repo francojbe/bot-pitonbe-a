@@ -24,7 +24,7 @@ export function useOrders() {
             setLoading(true)
             const { data, error } = await supabase
                 .from('orders')
-                .select('*, leads(name, phone_number, rut, address, email)')
+                .select('*, leads(id, name, phone_number, rut, address, email)')
                 .order('created_at', { ascending: false })
 
             if (error) throw error
