@@ -19,7 +19,7 @@ Este documento detalla las mejoras implementadas y la hoja de ruta para converti
 - [x] **Estabilidad del Backend:** Corrección de lógica de movimiento de archivos y manejo de permisos en Supabase (Fix 404/400 errors).
 - [x] **Pulido de Modo Oscuro:** Revisión exhaustiva de contrastes, modales y drop-downs para una experiencia nocturna 100% premium (Fixed PDF Viewer & Dropdowns).
 - [x] **Animaciones Fluídas:** Integrar `framer-motion` para transiciones de estado, apertura de modales, reordenamiento del Kanban y **transiciones de página**.
-- [ ] **Dashboard Home:** Crear una sección de "Resumen General" con gráficas de ventas, órdenes del día y actividad de clientes.
+- [x] **Dashboard Home:** Crear una sección de "Resumen General" con gráficas de ventas, órdenes del día y actividad de clientes.
 
 ### 2. Operaciones Avanzadas
 - [ ] **Live Chat View:** Añadir una pestaña para visualizar la conversación de WhatsApp en tiempo real, permitiendo ver el contexto del chat mientras se gestiona la orden.
@@ -35,3 +35,4 @@ Este documento detalla las mejoras implementadas y la hoja de ruta para converti
 ### 4. Seguridad y Escalabilidad
 - [ ] **Sistema de Autenticación:** Implementar Supabase Auth para proteger el acceso al dashboard con Login/Password.
 - [ ] **Gestores de Roles:** Diferenciar permisos (ej: Admin puede borrar archivos, Operador solo puede mover estados del Kanban).
+- la parte de usaurio queiro que sea lo mas parecido a un crm   

@@ -3,9 +3,9 @@ import { supabase } from './supabase'
 import { Toaster, toast } from 'sonner'
 import LearningsView from './LearningsView'
 import { Sidebar } from './components/Sidebar'
+import { HomeView } from './components/HomeView'
 import { DashboardView } from './components/DashboardView'
 import { LeadsView } from './components/LeadsView'
-import { ReportsView } from './components/ReportsView'
 import { OrderDrawer, LeadModal } from './components/Modals'
 import {
   Search, Moon, Sun, Trash2, CheckSquare, Menu, Folder
@@ -23,8 +23,9 @@ function App() {
   // --- STATE CORE ---
   const { orders, setOrders, loading: loadingOrders } = useOrders()
   const { leads, setLeads, loading: loadingLeads } = useLeads()
+  const { leads, setLeads, loading: loadingLeads } = useLeads()
   const [selectedIds, setSelectedIds] = useState(new Set())
-  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('active_tab') || 'dashboard')
+  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('active_tab') || 'inicio')
   const [globalSearch, setGlobalSearch] = useState('')
   const [viewMode, setViewMode] = useState(() => localStorage.getItem('dashboard_view_mode') || 'kanban')
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') === 'dark')
@@ -223,7 +224,8 @@ function App() {
               transition={{ duration: 0.2 }}
               className="h-full"
             >
-              {activeTab === 'dashboard' && (
+              {activeTab === 'inicio' && <HomeView orders={orders} />}
+              {activeTab === 'kanban' && (
                 <DashboardView
                   orders={orders}
                   loading={loadingOrders}
@@ -253,7 +255,6 @@ function App() {
                   onDelete={deleteLeads}
                 />
               )}
-              {activeTab === 'reportes' && <ReportsView orders={orders} />}
               {activeTab === 'archivos' && <FileExplorer isDarkMode={isDarkMode} />}
               {activeTab === 'mejoras' && <LearningsView />}
             </motion.div>

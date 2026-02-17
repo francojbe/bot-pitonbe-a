@@ -1,12 +1,13 @@
-import { LayoutDashboard, Users, BarChart2, Brain, ChevronLeft, ChevronRight, Folder } from 'lucide-react'
+import { LayoutDashboard, Users, BarChart2, Brain, ChevronLeft, ChevronRight, Folder, LayoutGrid, MessageSquare, BrainCircuit } from 'lucide-react'
 
 export function Sidebar({ activeTab, setActiveTab, collapsed, setCollapsed, mobileOpen, setMobileOpen }) {
-    const menuItems = [
-        { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
-        { id: 'clientes', icon: <Users size={20} />, label: 'Clientes' },
-        { id: 'reportes', icon: <BarChart2 size={20} />, label: 'Reportes' },
-        { id: 'archivos', icon: <Folder size={20} />, label: 'Archivos' },
-        { id: 'mejoras', icon: <Brain size={20} />, label: 'Mejoras' },
+    /* Nav Items Configuration */
+    const navItems = [
+        { id: 'inicio', label: 'Inicio', icon: LayoutGrid },
+        { id: 'kanban', label: 'Órdenes', icon: MessageSquare },
+        { id: 'clientes', label: 'Clientes', icon: Users },
+        { id: 'archivos', label: 'Archivos', icon: Folder },
+        { id: 'mejoras', label: 'Mejoras', icon: BrainCircuit },
     ]
 
     const handleItemClick = (id) => {
@@ -38,7 +39,7 @@ export function Sidebar({ activeTab, setActiveTab, collapsed, setCollapsed, mobi
                 </div>
 
                 <div className="space-y-2 flex-1">
-                    {menuItems.map(item => {
+                    {navItems.map(item => {
                         const isActive = activeTab === item.id;
                         return (
                             <button
