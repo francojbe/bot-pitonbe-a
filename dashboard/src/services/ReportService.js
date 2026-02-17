@@ -5,6 +5,33 @@ import * as XLSX from 'xlsx'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
+const translateStatus = (status) => {
+    const map = {
+        'new': 'NUEVO',
+        'design': 'DISEÑO',
+        'production': 'PRODUCCIÓN',
+        'ready': 'LISTO',
+        'delivered': 'ENTREGADO',
+        'NUEVO': 'NUEVO',
+        'DISEÑO': 'DISEÑO',
+        'PRODUCCIÓN': 'PRODUCCIÓN',
+        'LISTO': 'LISTO',
+        'ENTREGADO': 'ENTREGADO'
+    }
+    return map[status] || status.toUpperCase()
+}
+
+const translateAuditType = (type) => {
+    const map = {
+        'status_change': 'CAMBIO DE ESTADO',
+        'deposit_added': 'ABONO REGISTRADO',
+        'price_update': 'ACTUALIZACIÓN DE PRECIO',
+        'note_added': 'NOTA AGREGADA',
+        'order_created': 'ORDEN CREADA'
+    }
+    return map[type] || type.toUpperCase()
+}
+
 export const ReportService = {
     // 1. Generate PDF Report
     generatePDF: async (data, title, stats) => {
@@ -60,7 +87,7 @@ export const ReportService = {
                 (order.id || '').slice(0, 5),
                 order.leads?.name || 'S/N',
                 (order.description || '-').slice(0, 30) + (order.description?.length > 30 ? '...' : ''),
-                (order.status || 'new').toUpperCase(),
+                translateStatus(order.status),
                 `$${(order.total_amount || 0).toLocaleString('es-CL')}`,
                 order.created_at ? format(new Date(order.created_at), 'dd/MM/yyyy') : '-'
             ])
@@ -89,7 +116,7 @@ export const ReportService = {
             Cliente: order.leads?.name || 'S/N',
             Telefono: order.leads?.phone_number || '-',
             Descripcion: order.description || '-',
-            Estado: (order.status || 'new').toUpperCase(),
+            Estado: translateStatus(order.status),
             Total: order.total_amount || 0,
             Abono: order.deposit_amount || 0,
             Saldo: (order.total_amount || 0) - (order.deposit_amount || 0),
@@ -126,7 +153,7 @@ export const ReportService = {
             Fecha: format(new Date(log.created_at), 'dd/MM/yyyy HH:mm'),
             Orden: log.order_id?.slice(0, 8),
             Cliente: log.orders?.leads?.name || 'Sistema',
-            Tipo: log.change_type,
+            Tipo: translateAuditType(log.change_type),
             Detalles: log.details,
             Usuario: log.changed_by
         }))
@@ -138,4 +165,5 @@ export const ReportService = {
         XLSX.writeFile(workbook, `PitonB_Auditoria_${format(new Date(), 'yyyyMMdd_HHmm')}.xlsx`)
     }
 }
+
 
