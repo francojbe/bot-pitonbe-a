@@ -87,8 +87,12 @@ export function LeadsView({ leads, search, onEdit, onCreate, selectedIds, setSel
                                 </td>
                                 <td className="px-6 py-4">
                                     <div className="flex items-center gap-3 overflow-hidden">
-                                        <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex-shrink-0 flex items-center justify-center font-bold text-xs">
-                                            {l.name?.charAt(0) || '?'}
+                                        <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex-shrink-0 flex items-center justify-center font-bold text-xs overflow-hidden border border-gray-100 dark:border-white/10">
+                                            {l.profile_picture_url ? (
+                                                <img src={l.profile_picture_url} alt={l.name} className="w-full h-full object-cover" />
+                                            ) : (
+                                                l.name?.charAt(0) || '?'
+                                            )}
                                         </div>
                                         <span className="font-bold text-[var(--text-primary)] truncate" title={l.name}>{l.name}</span>
                                     </div>

@@ -77,8 +77,12 @@ export function InboxView({ isDarkMode }) {
                                 >
                                     {selectedLead?.id === lead.id && <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500"></div>}
 
-                                    <div className="w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-lg flex-shrink-0">
-                                        {lead.name?.charAt(0).toUpperCase() || '?'}
+                                    <div className="w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-lg flex-shrink-0 overflow-hidden border border-gray-100 dark:border-white/10">
+                                        {lead.profile_picture_url ? (
+                                            <img src={lead.profile_picture_url} alt={lead.name} className="w-full h-full object-cover" onError={(e) => e.target.style.display = 'none'} />
+                                        ) : (
+                                            lead.name?.charAt(0).toUpperCase() || '?'
+                                        )}
                                     </div>
 
                                     <div className="flex-1 min-w-0">

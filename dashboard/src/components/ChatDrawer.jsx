@@ -23,8 +23,12 @@ export function ChatDrawer({ lead, onClose, isDarkMode }) {
             {/* Wrapper Header (Drawer specific) */}
             <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-white/5 bg-white/50 dark:bg-[#1e1e1e]/50 backdrop-blur-md">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-lg">
-                        {lead.name ? lead.name.charAt(0).toUpperCase() : <User size={20} />}
+                    <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-lg overflow-hidden border border-gray-100 dark:border-white/10">
+                        {lead.profile_picture_url ? (
+                            <img src={lead.profile_picture_url} alt={lead.name} className="w-full h-full object-cover" />
+                        ) : (
+                            lead.name ? lead.name.charAt(0).toUpperCase() : <User size={20} />
+                        )}
                     </div>
                     <div>
                         <h3 className="font-bold text-[var(--text-main)] truncate max-w-[150px]">{lead.name || 'Cliente'}</h3>

@@ -82,14 +82,47 @@ async def inactivity_manager(phone: str, lead_id: str):
 
 
 # --- GESTIÓN DE LEADS ---
+def get_whatsapp_profile_picture(phone: str) -> Optional[str]:
+    """Obtiene la URL de la foto de perfil desde Evolution API."""
+    try:
+        # Limpiar el número (solo dígitos)
+        clean_phone = "".join(filter(str.isdigit, phone))
+        url = f"{EVOLUTION_API_URL}/chat/fetchProfilePictureUrl/{INSTANCE_NAME}?number={clean_phone}"
+        headers = {"apikey": EVOLUTION_API_KEY}
+        
+        response = requests.get(url, headers=headers, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            return data.get("profilePictureUrl")
+        return None
+    except Exception as e:
+        logger.error(f"⚠️ Error recuperando foto de WhatsApp para {phone}: {e}")
+        return None
+
 def get_or_create_lead(phone: str, push_name: str = None) -> str:
     try:
-        response = supabase.table("leads").select("id, name").eq("phone_number", phone).execute()
+        response = supabase.table("leads").select("id, name, profile_picture_url").eq("phone_number", phone).execute()
         if response.data:
-            supabase.table("leads").update({"last_interaction": "now()"}).eq("id", response.data[0]['id']).execute()
-            return response.data[0]['id']
+            lead = response.data[0]
+            # Si no tiene foto, intentamos buscarla
+            if not lead.get("profile_picture_url"):
+                pic_url = get_whatsapp_profile_picture(phone)
+                if pic_url:
+                    supabase.table("leads").update({"profile_picture_url": pic_url, "last_interaction": "now()"}).eq("id", lead['id']).execute()
+                else:
+                    supabase.table("leads").update({"last_interaction": "now()"}).eq("id", lead['id']).execute()
+            else:
+                supabase.table("leads").update({"last_interaction": "now()"}).eq("id", lead['id']).execute()
+                
+            return lead['id']
         else:
-            new_lead = {"phone_number": phone, "name": push_name, "status": "new"}
+            pic_url = get_whatsapp_profile_picture(phone)
+            new_lead = {
+                "phone_number": phone, 
+                "name": push_name, 
+                "status": "new",
+                "profile_picture_url": pic_url
+            }
             response = supabase.table("leads").insert(new_lead).execute()
             return response.data[0]['id']
     except Exception as e:

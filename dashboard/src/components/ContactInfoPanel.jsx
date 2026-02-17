@@ -34,8 +34,12 @@ export function ContactInfoPanel({ lead, isDarkMode }) {
 
             {/* Profile Header */}
             <div className="p-4 flex flex-col items-center text-center border-b border-gray-100 dark:border-white/5 bg-gray-50/20">
-                <div className="w-16 h-16 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-2xl mb-3 shadow-inner">
-                    {lead.name?.charAt(0).toUpperCase()}
+                <div className="w-16 h-16 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-2xl mb-3 shadow-inner overflow-hidden border-2 border-white dark:border-white/10">
+                    {lead.profile_picture_url ? (
+                        <img src={lead.profile_picture_url} alt={lead.name} className="w-full h-full object-cover" />
+                    ) : (
+                        lead.name?.charAt(0).toUpperCase()
+                    )}
                 </div>
                 <h3 className="font-bold text-base text-[var(--text-main)] mb-0.5 flex items-center justify-center gap-2">
                     {lead.name}
