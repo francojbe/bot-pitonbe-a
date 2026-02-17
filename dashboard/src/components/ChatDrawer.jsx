@@ -14,7 +14,10 @@ export function ChatDrawer({ lead, onClose, isDarkMode }) {
 
     // 1. Fetch History
     useEffect(() => {
-        if (!lead?.id) return
+        if (!lead?.id) {
+            setLoading(false)
+            return
+        }
 
         const fetchMessages = async () => {
             setLoading(true)
