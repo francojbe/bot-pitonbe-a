@@ -23,7 +23,7 @@ Este documento detalla las mejoras implementadas y la hoja de ruta para converti
 
 ### 2. Operaciones Avanzadas
 - [x] **Live Chat View:** Añadir una pestaña para visualizar la conversación de WhatsApp en tiempo real, permitiendo ver el contexto del chat mientras se gestiona la orden.
-- [ ] **Human Takeover & Control (Intervención Humana):** Implementar un switch de "Toma de Mando" para pausar al agente IA Richard y permitir al humano responder directamente desde el dashboard. Todo el historial se guarda para que la IA retome el contexto al reactivarse.
+- [x] **Human Takeover & Control (Intervención Humana):** Implementado switch de "Toma de Mando" para pausar a Richard y chatear manualmente desde el dashboard. 👤🤖
 - [x] **Centro de Notificaciones:** Sistema de alertas internas e inteligentes que detectan intenciones de compra y subida de archivos en tiempo real. Almacenadas en DB y gestionables.
 - [x] **Generador de Reportes:** Centro de analítica premium con gráficas interactivas, métricas financieras y exportación profesional a PDF y Excel.🚀
 - [x] **Registro de Actividad (Audit Log):** Sistema detallado integrado en el historial de órdenes para ver quién y cuándo realizó cambios críticos (cambios de precio, abonos, estados, etc.). Almacenado en la tabla `audit_logs`.
@@ -34,5 +34,5 @@ Este documento detalla las mejoras implementadas y la hoja de ruta para converti
 
 ### 4. Experiencia CRM (Relacional) 👥
 - [ ] **Perfil de Cliente 360:** Vista centralizada por cliente que muestra historial completo de órdenes, archivos compartidos y notas internas.
-- [ ] **Intervención Humana (Human Takeover):** (En progreso) Permitir al equipo silenciar a la IA y chatear directamente desde el Dashboard como un CRM moderno.
+- [x] **Intervención Humana (Human Takeover):** Control total del chat de WhatsApp desde el Dashboard con toggle de IA individual por cliente.
 - [ ] **Segmentación de Clientes:** Etiquetas para clasificar clientes (Ej: "VIP", "Nuevo", "Problemático").
