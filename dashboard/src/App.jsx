@@ -219,7 +219,7 @@ function App() {
         </header>
 
         {/* CONTENT */}
-        <main className="flex-1 overflow-y-auto p-6 scroll-smooth">
+        <main className={`flex-1 overflow-hidden transition-all duration-300 ${activeTab === 'mensajes' ? 'p-0' : 'p-6'}`}>
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}

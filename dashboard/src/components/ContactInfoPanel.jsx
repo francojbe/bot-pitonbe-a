@@ -33,15 +33,15 @@ export function ContactInfoPanel({ lead, isDarkMode }) {
             </div>
 
             {/* Profile Header */}
-            <div className="p-6 flex flex-col items-center text-center border-b border-gray-100 dark:border-white/5">
-                <div className="w-20 h-20 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-3xl mb-4 shadow-inner">
+            <div className="p-4 flex flex-col items-center text-center border-b border-gray-100 dark:border-white/5 bg-gray-50/20">
+                <div className="w-16 h-16 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-2xl mb-3 shadow-inner">
                     {lead.name?.charAt(0).toUpperCase()}
                 </div>
-                <h3 className="font-bold text-lg text-[var(--text-main)] mb-1 flex items-center gap-2">
+                <h3 className="font-bold text-base text-[var(--text-main)] mb-0.5 flex items-center justify-center gap-2">
                     {lead.name}
-                    <ExternalLink size={14} className="text-gray-400 cursor-pointer hover:text-indigo-500" />
+                    <ExternalLink size={12} className="text-gray-400 cursor-pointer hover:text-indigo-500" />
                 </h3>
-                <p className="text-sm text-gray-500 font-medium mb-4">{lead.business_name || 'Cliente Particular'}</p>
+                <p className="text-[11px] text-gray-500 font-medium mb-3">{lead.business_name || 'Cliente Particular'}</p>
 
                 {/* Quick Actions */}
                 <div className="flex gap-2">
@@ -54,7 +54,7 @@ export function ContactInfoPanel({ lead, isDarkMode }) {
             </div>
 
             {/* Info List */}
-            <div className="p-6 space-y-5 border-b border-gray-100 dark:border-white/5">
+            <div className="p-4 space-y-4 border-b border-gray-100 dark:border-white/5 text-sm">
                 {/* Email */}
                 {lead.email && (
                     <div className="group relative">

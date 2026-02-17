@@ -46,9 +46,9 @@ export function InboxView({ isDarkMode }) {
     )
 
     return (
-        <div className="flex h-[calc(100vh-140px)] bg-white dark:bg-[#1e1e1e] rounded-3xl overflow-hidden shadow-xl border border-gray-100 dark:border-white/5">
+        <div className="flex h-full bg-white dark:bg-[#1e1e1e] overflow-hidden border-t border-gray-100 dark:border-white/5">
             {/* Sidebar: Chat List */}
-            <div className="w-full sm:w-80 md:w-96 border-r border-gray-100 dark:border-white/5 flex flex-col bg-gray-50/30 dark:bg-white/5">
+            <div className="w-full sm:w-72 md:w-80 border-r border-gray-100 dark:border-white/5 flex flex-col bg-gray-50/30 dark:bg-white/5">
                 <div className="p-4 border-b border-gray-100 dark:border-white/5">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
