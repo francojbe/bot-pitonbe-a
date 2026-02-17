@@ -85,15 +85,27 @@ async def inactivity_manager(phone: str, lead_id: str):
 def get_whatsapp_profile_picture(phone: str) -> Optional[str]:
     """Obtiene la URL de la foto de perfil desde Evolution API."""
     try:
+        from urllib.parse import quote
         # Limpiar el número (solo dígitos)
         clean_phone = "".join(filter(str.isdigit, phone))
-        url = f"{EVOLUTION_API_URL}/chat/fetchProfilePictureUrl/{INSTANCE_NAME}?number={clean_phone}"
+        instance_encoded = quote(INSTANCE_NAME)
+        url = f"{EVOLUTION_API_URL}/chat/fetchProfilePictureUrl/{instance_encoded}?number={clean_phone}"
         headers = {"apikey": EVOLUTION_API_KEY}
         
-        response = requests.get(url, headers=headers, timeout=5)
+        logger.info(f"📸 Consultando foto para {clean_phone} en Evolution API...")
+        response = requests.get(url, headers=headers, timeout=10)
+        
         if response.status_code == 200:
             data = response.json()
-            return data.get("profilePictureUrl")
+            pic_url = data.get("profilePictureUrl")
+            if pic_url:
+                logger.info(f"✅ Foto encontrada para {clean_phone}")
+                return pic_url
+            else:
+                logger.warning(f"⚠️ Evolution API respondió 200 pero sin URL para {clean_phone}")
+        else:
+            logger.error(f"❌ Error Evolution API ({response.status_code}): {response.text}")
+            
         return None
     except Exception as e:
         logger.error(f"⚠️ Error recuperando foto de WhatsApp para {phone}: {e}")
@@ -1417,7 +1429,11 @@ async def sync_lead_picture(payload: dict):
             supabase.table("leads").update({"profile_picture_url": pic_url}).eq("id", lead_id).execute()
             return {"status": "success", "profile_picture_url": pic_url}
         else:
-            return {"status": "error", "message": "No se pudo obtener la foto de WhatsApp"}
+            # Intentar dar una respuesta más específica
+            return {
+                "status": "error", 
+                "message": "No se pudo obtener la foto. Asegúrate de que el número sea correcto y la foto sea pública."
+            }
     except Exception as e:
         logger.error(f"Error sync picture manual: {e}")
         return {"status": "error", "message": str(e)}
