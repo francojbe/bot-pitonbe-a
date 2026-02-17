@@ -5,6 +5,7 @@ import { Search, Bot, UserCheck, MessageSquare, Clock } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { ChatWindow } from './ChatWindow'
+import { ContactInfoPanel } from './ContactInfoPanel'
 
 export function InboxView({ isDarkMode }) {
     const [leads, setLeads] = useState([])
@@ -118,7 +119,10 @@ export function InboxView({ isDarkMode }) {
             {/* Main Chat Area */}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 {selectedLead ? (
-                    <ChatWindow lead={selectedLead} isDarkMode={isDarkMode} />
+                    <div className="flex flex-1 overflow-hidden">
+                        <ChatWindow lead={selectedLead} isDarkMode={isDarkMode} />
+                        <ContactInfoPanel lead={selectedLead} isDarkMode={isDarkMode} />
+                    </div>
                 ) : (
                     <div className="flex-1 flex flex-col items-center justify-center text-gray-400 gap-4 opacity-30">
                         <MessageSquare size={80} strokeWidth={1} />
