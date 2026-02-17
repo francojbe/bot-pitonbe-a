@@ -48,8 +48,10 @@ export function Sidebar({ activeTab, setActiveTab, collapsed, setCollapsed, mobi
                                 title={collapsed ? item.label : ''}
                                 className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all relative group ${isActive ? 'font-bold text-[var(--text-main)]' : 'text-gray-500 font-medium hover:text-[var(--text-main)]'} ${collapsed ? 'justify-center' : ''}`}
                             >
-                                {isActive && !collapsed && <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[var(--color-primary)] rounded-l-lg"></div>}
-                                <span className={`${isActive ? 'text-[var(--color-primary)]' : ''} transition-colors group-hover:scale-110 duration-200`}>{item.icon}</span>
+                                {!collapsed && <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[var(--color-primary)] rounded-l-lg"></div>}
+                                <span className={`${isActive ? 'text-[var(--color-primary)]' : ''} transition-colors group-hover:scale-110 duration-200`}>
+                                    <item.icon size={20} />
+                                </span>
                                 {!collapsed && <span className="whitespace-nowrap overflow-hidden">{item.label}</span>}
                             </button>
                         )
