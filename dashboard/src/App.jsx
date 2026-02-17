@@ -14,6 +14,7 @@ import FileExplorer from './components/FileExplorer'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChatDrawer } from './components/ChatDrawer'
 import { NotificationCenter } from './components/NotificationCenter'
+import { ReportsView } from './components/ReportsView'
 
 import { useOrders } from './hooks/useOrders'
 import { useLeads } from './hooks/useLeads'
@@ -261,6 +262,7 @@ function App() {
                 />
               )}
               {activeTab === 'archivos' && <FileExplorer isDarkMode={isDarkMode} />}
+              {activeTab === 'reportes' && <ReportsView orders={orders} leads={leads} />}
               {activeTab === 'mejoras' && <LearningsView />}
             </motion.div>
           </AnimatePresence>

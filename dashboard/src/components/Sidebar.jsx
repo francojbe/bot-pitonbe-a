@@ -7,6 +7,7 @@ export function Sidebar({ activeTab, setActiveTab, collapsed, setCollapsed, mobi
         { id: 'kanban', label: 'Órdenes', icon: MessageSquare },
         { id: 'clientes', label: 'Clientes', icon: Users },
         { id: 'archivos', label: 'Archivos', icon: Folder },
+        { id: 'reportes', label: 'Reportes', icon: BarChart2 },
         { id: 'mejoras', label: 'Mejoras', icon: BrainCircuit },
     ]
 
