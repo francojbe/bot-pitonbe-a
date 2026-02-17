@@ -1398,6 +1398,30 @@ async def toggle_ai(payload: AIToggle):
         logger.error(f"Error toggle IA: {e}")
         return {"status": "error", "message": str(e)}
 
+@app.post("/leads/sync_picture")
+async def sync_lead_picture(payload: dict):
+    """Fuerza la sincronización de la foto de perfil de WhatsApp"""
+    try:
+        lead_id = payload.get("lead_id")
+        if not lead_id:
+            return {"status": "error", "message": "Falta lead_id"}
+        
+        res = supabase.table("leads").select("phone_number").eq("id", lead_id).execute()
+        if not res.data:
+            return {"status": "error", "message": "Lead no encontrado"}
+        
+        phone = res.data[0]["phone_number"]
+        pic_url = get_whatsapp_profile_picture(phone)
+        
+        if pic_url:
+            supabase.table("leads").update({"profile_picture_url": pic_url}).eq("id", lead_id).execute()
+            return {"status": "success", "profile_picture_url": pic_url}
+        else:
+            return {"status": "error", "message": "No se pudo obtener la foto de WhatsApp"}
+    except Exception as e:
+        logger.error(f"Error sync picture manual: {e}")
+        return {"status": "error", "message": str(e)}
+
 # --- ENDPOINTS PITRONB DRIVE ---
 
 @app.get("/storage/tree")

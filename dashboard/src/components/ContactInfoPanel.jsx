@@ -1,13 +1,39 @@
-
-import { Mail, Phone, Briefcase, MapPin, User, Copy, Edit3, ChevronDown, ChevronUp, History, ExternalLink, Globe } from 'lucide-react'
+import { Mail, Phone, Briefcase, MapPin, User, Copy, Edit3, ChevronDown, ChevronUp, History, ExternalLink, RefreshCw, Loader2 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { supabase } from '../supabase'
 
 export function ContactInfoPanel({ lead, isDarkMode }) {
     const [expandedSections, setExpandedSections] = useState({
         attributes: true,
         previous: false
     })
+    const [syncing, setSyncing] = useState(false)
+    const BACKEND_URL = import.meta.env.VITE_API_URL
+
+    const syncPicture = async () => {
+        if (syncing || !lead?.id) return
+        setSyncing(true)
+        try {
+            const res = await fetch(`${BACKEND_URL}/leads/sync_picture`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lead_id: lead.id })
+            })
+            const data = await res.json()
+            if (data.status === 'success') {
+                toast.success('Foto sincronizada desde WhatsApp')
+                // No necesitamos recargar, Supabase Realtime debería actualizar el lead
+                // Pero si no, podemos hacer una pequeña actualización manual si DashboardView/InboxView escuchan
+            } else {
+                toast.error(data.message || 'No se pudo obtener la foto')
+            }
+        } catch (err) {
+            toast.error('Error de conexión con el servidor')
+        } finally {
+            setSyncing(false)
+        }
+    }
 
     const toggleSection = (section) => {
         setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }))
@@ -33,14 +59,31 @@ export function ContactInfoPanel({ lead, isDarkMode }) {
             </div>
 
             {/* Profile Header */}
-            <div className="p-4 flex flex-col items-center text-center border-b border-gray-100 dark:border-white/5 bg-gray-50/20">
-                <div className="w-16 h-16 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-2xl mb-3 shadow-inner overflow-hidden border-2 border-white dark:border-white/10">
+            <div className="p-4 flex flex-col items-center text-center border-b border-gray-100 dark:border-white/5 bg-gray-50/20 relative group/avatar">
+                <div className="w-16 h-16 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-2xl mb-3 shadow-inner overflow-hidden border-2 border-white dark:border-white/10 relative">
                     {lead.profile_picture_url ? (
                         <img src={lead.profile_picture_url} alt={lead.name} className="w-full h-full object-cover" />
                     ) : (
                         lead.name?.charAt(0).toUpperCase()
                     )}
+                    {syncing && (
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                            <Loader2 size={24} className="text-white animate-spin" />
+                        </div>
+                    )}
                 </div>
+
+                <div className="absolute top-2 right-2 opacity-0 group-hover/avatar:opacity-100 transition-opacity">
+                    <button
+                        onClick={syncPicture}
+                        disabled={syncing}
+                        className="p-1.5 bg-white dark:bg-[#2a2a2a] rounded-full shadow-md border border-gray-100 dark:border-white/10 text-gray-400 hover:text-indigo-500 transition-all hover:scale-110"
+                        title="Sincronizar foto de WhatsApp"
+                    >
+                        <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
+                    </button>
+                </div>
+
                 <h3 className="font-bold text-base text-[var(--text-main)] mb-0.5 flex items-center justify-center gap-2">
                     {lead.name}
                     <ExternalLink size={12} className="text-gray-400 cursor-pointer hover:text-indigo-500" />
