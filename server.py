@@ -1316,12 +1316,12 @@ async def update_order_status(payload: OrderStatusUpdate):
 
 # --- ENDPOINTS HUMAN TAKEOVER ---
 
-class HumanMessage(BaseModel):
+class ManualChatPayload(BaseModel):
     lead_id: str
     content: str
 
 @app.post("/chat/send_manual")
-async def send_manual_message(payload: HumanMessage):
+async def send_manual_message(payload: ManualChatPayload):
     """Envía un mensaje manual desde el Dashboard"""
     try:
         # 1. Obtener teléfono del lead
