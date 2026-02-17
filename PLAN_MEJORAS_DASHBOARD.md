@@ -22,7 +22,8 @@ Este documento detalla las mejoras implementadas y la hoja de ruta para converti
 - [x] **Dashboard Home:** Crear una sección de "Resumen General" con gráficas de ventas, órdenes del día y actividad de clientes.
 
 ### 2. Operaciones Avanzadas
-- [ ] **Live Chat View:** Añadir una pestaña para visualizar la conversación de WhatsApp en tiempo real, permitiendo ver el contexto del chat mientras se gestiona la orden.
+- [x] **Live Chat View:** Añadir una pestaña para visualizar la conversación de WhatsApp en tiempo real, permitiendo ver el contexto del chat mientras se gestiona la orden.
+- [ ] **Human Takeover & Control (Intervención Humana):** Implementar un switch de "Toma de Mando" para pausar al agente IA Richard y permitir al humano responder directamente desde el dashboard. Todo el historial se guarda para que la IA retome el contexto al reactivarse.
 - [ ] **Centro de Notificaciones:** Sistema de alertas internas cuando un cliente sube un nuevo archivo o el agente detecta una intención de compra.
 - [ ] **Generador de Reportes:** Botón para exportar resúmenes financieros y listado de órdenes en formato PDF y Excel (Especial para cierres de mes).
 - [ ] **Registro de Actividad (Audit Log):** Sistema detallado para ver quién y cuándo realizó cambios críticos (cambios de precio, estado de pago, etc.).

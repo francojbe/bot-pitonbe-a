@@ -13,6 +13,7 @@ import {
 import FileExplorer from './components/FileExplorer'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChatDrawer } from './components/ChatDrawer'
+import { NotificationCenter } from './components/NotificationCenter'
 
 import { useOrders } from './hooks/useOrders'
 import { useLeads } from './hooks/useLeads'
@@ -208,6 +209,7 @@ function App() {
             <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 text-gray-500 hover:text-[var(--color-primary)] transition-colors">
               {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
             </button>
+            <NotificationCenter isDarkMode={isDarkMode} onOpenChat={(lead) => setSelectedChatLead(lead)} />
             <div className="w-10 h-10 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold shadow-lg shadow-indigo-500/20">
               PB
             </div>
