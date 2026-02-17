@@ -31,7 +31,7 @@ Este documento detalla las mejoras implementadas y la hoja de ruta para converti
 ### 3. Inteligencia Artificial Aplicada (AI-Drive)
 - [ ] **Etiquetado Automático de Archivos:** Usar la IA para analizar imágenes/PDFs subidos y asignarles tags automáticamente (ej: "Transferencia", "Factura", "Producto").
 - [ ] **Resumen Inteligente de Documentos:** Generar un pequeño resumen tipo "sticky-note" cuando se sube un archivo (ej: "Este PDF es un comprobante de $45.000 del Banco Estado").
-- [ ] **Detección de Urgencia:** IA que prioriza automáticamente ciertas órdenes en el Kanban según el tono del chat del cliente.
+
 
 ### 4. Seguridad y Escalabilidad
 - [ ] **Sistema de Autenticación:** Implementar Supabase Auth para proteger el acceso al dashboard con Login/Password.
