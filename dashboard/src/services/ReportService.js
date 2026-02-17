@@ -1,6 +1,6 @@
 
 import jsPDF from 'jspdf'
-import 'jspdf-autotable'
+import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -8,53 +8,58 @@ import { es } from 'date-fns/locale'
 export const ReportService = {
     // Generate PDF Report
     generatePDF: (data, title, stats) => {
-        const doc = new jsPDF()
-        const now = format(new Date(), 'dd/MM/yyyy HH:mm')
+        try {
+            const doc = new jsPDF()
+            const now = format(new Date(), 'dd/MM/yyyy HH:mm')
 
-        // Header Background
-        doc.setFillColor(79, 70, 229) // Indigo-600
-        doc.rect(0, 0, 210, 40, 'F')
+            // Header Background
+            doc.setFillColor(79, 70, 229) // Indigo-600
+            doc.rect(0, 0, 210, 40, 'F')
 
-        // Title
-        doc.setTextColor(255, 255, 255)
-        doc.setFontSize(22)
-        doc.text('PitonB - Reporte Estratégico', 15, 20)
+            // Title
+            doc.setTextColor(255, 255, 255)
+            doc.setFontSize(22)
+            doc.text('PitonB - ' + (title || 'Reporte'), 15, 20)
 
-        doc.setFontSize(10)
-        doc.text(`Generado: ${now}`, 15, 30)
+            doc.setFontSize(10)
+            doc.text(`Generado: ${now}`, 15, 30)
 
-        // Summary Stats Section
-        doc.setTextColor(0, 0, 0)
-        doc.setFontSize(14)
-        doc.text('Resumen General', 15, 55)
+            // Summary Stats Section
+            doc.setTextColor(0, 0, 0)
+            doc.setFontSize(14)
+            doc.text('Resumen General', 15, 55)
 
-        doc.setFontSize(10)
-        doc.text(`Total Ventas: $${stats.totalSales.toLocaleString('es-CL')}`, 15, 65)
-        doc.text(`Total Órdenes: ${stats.totalOrders}`, 80, 65)
-        doc.text(`Saldo Pendiente: $${stats.pendingBalance.toLocaleString('es-CL')}`, 140, 65)
+            doc.setFontSize(10)
+            doc.text(`Total Ventas: $${(stats?.totalSales || 0).toLocaleString('es-CL')}`, 15, 65)
+            doc.text(`Total Órdenes: ${stats?.totalOrders || 0}`, 80, 65)
+            doc.text(`Saldo Pendiente: $${(stats?.pendingBalance || 0).toLocaleString('es-CL')}`, 140, 65)
 
-        // Table
-        const tableColumn = ["ID", "Cliente", "Descripción", "Estado", "Total", "Fecha"]
-        const tableRows = data.map(order => [
-            order.id.slice(0, 5),
-            order.leads?.name || 'S/N',
-            order.description?.slice(0, 30) + '...',
-            order.status.toUpperCase(),
-            `$${(order.total_amount || 0).toLocaleString('es-CL')}`,
-            format(new Date(order.created_at), 'dd/MM/yyyy')
-        ])
+            // Table
+            const tableColumn = ["ID", "Cliente", "Descripción", "Estado", "Total", "Fecha"]
+            const tableRows = data.map(order => [
+                (order.id || '').slice(0, 5),
+                order.leads?.name || 'S/N',
+                (order.description || '-').slice(0, 30) + (order.description?.length > 30 ? '...' : ''),
+                (order.status || 'new').toUpperCase(),
+                `$${(order.total_amount || 0).toLocaleString('es-CL')}`,
+                order.created_at ? format(new Date(order.created_at), 'dd/MM/yyyy') : '-'
+            ])
 
-        doc.autoTable({
-            startY: 75,
-            head: [tableColumn],
-            body: tableRows,
-            theme: 'grid',
-            headStyles: { fillColor: [79, 70, 229], fontSize: 10 },
-            styles: { fontSize: 8 },
-            alternateRowStyles: { fillColor: [249, 250, 251] }
-        })
+            autoTable(doc, {
+                startY: 75,
+                head: [tableColumn],
+                body: tableRows,
+                theme: 'grid',
+                headStyles: { fillColor: [79, 70, 229], fontSize: 10 },
+                styles: { fontSize: 8 },
+                alternateRowStyles: { fillColor: [249, 250, 251] }
+            })
 
-        doc.save(`Reporte_PitonB_${format(new Date(), 'yyyyMMdd_HHmm')}.pdf`)
+            doc.save(`Reporte_PitonB_${format(new Date(), 'yyyyMMdd_HHmm')}.pdf`)
+        } catch (error) {
+            console.error("Error generating PDF:", error)
+            throw error
+        }
     },
 
     // 2. Generate Orders Excel
