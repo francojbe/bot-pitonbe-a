@@ -51,9 +51,16 @@ export function ChatDrawer({ lead, onClose, isDarkMode }) {
                 table: 'message_logs',
                 filter: `lead_id=eq.${lead.id}`
             }, (payload) => {
-                setMessages(prev => [...prev, payload.new])
+                setMessages(prev => {
+                    if (prev.some(m => m.id === payload.new.id)) return prev
+                    return [...prev, payload.new]
+                })
             })
-            .subscribe()
+            .subscribe((status) => {
+                if (status === 'SUBSCRIBED') {
+                    console.log('🔥 Realtime suscrito para chat:', lead.id)
+                }
+            })
 
         return () => {
             subscription.unsubscribe()
