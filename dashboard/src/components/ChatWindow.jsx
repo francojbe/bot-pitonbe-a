@@ -64,9 +64,11 @@ export function ChatWindow({ lead, isDarkMode }) {
         }
     }, [lead?.id])
 
-    // 3. Auto Scroll
+    // 3. Auto Scroll (Instant jump, no sliding)
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+        if (!loading) {
+            messagesEndRef.current?.scrollIntoView({ behavior: "auto" })
+        }
     }, [messages, loading])
 
     // 4. Handlers
