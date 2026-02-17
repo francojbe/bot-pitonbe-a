@@ -219,59 +219,58 @@ export function ChatDrawer({ lead, onClose, isDarkMode }) {
                                 </div>
                             </motion.div>
                         )}
-                    messages.map((msg, idx) => {
-                        const isUser = msg.role === 'user' // User = Client (Left), Assistant/System = Operator (Right)
-                        // In WhatsApp context: User -> Client (Left, white), Assistant -> Bot/Operator (Right, green)
+                        {messages.map((msg, idx) => {
+                            const isUser = msg.role === 'user' // User = Client (Left), Assistant/System = Operator (Right)
+                            // In WhatsApp context: User -> Client (Left, white), Assistant -> Bot/Operator (Right, green)
 
-                        // BUT common chat UI: Me (Right), Them (Left). 
-                        // Since 'assistant' is the Bot (us), let's put 'assistant' on Right (Green) and 'user' (client) on Left (White).
+                            // BUT common chat UI: Me (Right), Them (Left). 
+                            // Since 'assistant' is the Bot (us), let's put 'assistant' on Right (Green) and 'user' (client) on Left (White).
 
-                        return (
-                        <motion.div
-                            key={msg.id || idx}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className={`flex ${msg.role === 'assistant' ? 'justify-end' : 'justify-start'}`}
-                        >
-                            <div
-                                className={`
+                            return (
+                                <motion.div
+                                    key={msg.id || idx}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className={`flex ${msg.role === 'assistant' ? 'justify-end' : 'justify-start'}`}
+                                >
+                                    <div
+                                        className={`
                                         max-w-[80%] rounded-2xl px-4 py-2.5 shadow-sm text-sm relative group
                                         ${msg.role === 'assistant'
-                                        ? 'bg-indigo-600 text-white rounded-br-none'
-                                        : 'bg-white dark:bg-[#2a2a2a] text-[var(--text-main)] rounded-bl-none border border-gray-100 dark:border-white/5'
-                                    }
+                                                ? 'bg-indigo-600 text-white rounded-br-none'
+                                                : 'bg-white dark:bg-[#2a2a2a] text-[var(--text-main)] rounded-bl-none border border-gray-100 dark:border-white/5'
+                                            }
                                     `}
-                            >
-                                {/* Message Content */}
-                                <div className="whitespace-pre-wrap leading-relaxed">
-                                    {msg.content}
-                                </div>
+                                    >
+                                        {/* Message Content */}
+                                        <div className="whitespace-pre-wrap leading-relaxed">
+                                            {msg.content}
+                                        </div>
 
-                                {/* Attachments / Metadata (Future Proofing) */}
-                                {msg.metadata?.media_url && (
-                                    <div className="mt-2 rounded-lg overflow-hidden border border-white/20">
-                                        {msg.metadata.type === 'image' ? (
-                                            <img src={msg.metadata.media_url} alt="Media" className="max-w-full h-auto" />
-                                        ) : (
-                                            <div className="flex items-center gap-2 bg-black/10 p-2">
-                                                <FileText size={16} /> <span>Archivo adjunto</span>
+                                        {/* Attachments / Metadata (Future Proofing) */}
+                                        {msg.metadata?.media_url && (
+                                            <div className="mt-2 rounded-lg overflow-hidden border border-white/20">
+                                                {msg.metadata.type === 'image' ? (
+                                                    <img src={msg.metadata.media_url} alt="Media" className="max-w-full h-auto" />
+                                                ) : (
+                                                    <div className="flex items-center gap-2 bg-black/10 p-2">
+                                                        <FileText size={16} /> <span>Archivo adjunto</span>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
-                                    </div>
-                                )}
 
-                                {/* Timestamp */}
-                                <p className={`
+                                        {/* Timestamp */}
+                                        <p className={`
                                         text-[10px] mt-1 text-right opacity-70 font-medium
                                         ${msg.role === 'assistant' ? 'text-indigo-100' : 'text-gray-400'}
                                     `}>
-                                    {msg.created_at ? format(new Date(msg.created_at), 'HH:mm', { locale: es }) : '...'}
-                                </p>
-                            </div>
-                        </motion.div>
-                        )
-                    })
-                )}
+                                            {msg.created_at ? format(new Date(msg.created_at), 'HH:mm', { locale: es }) : '...'}
+                                        </p>
+                                    </div>
+                                </motion.div>
+                            )
+                        })}
                         <div ref={messagesEndRef} />
                     </>
                 )}
