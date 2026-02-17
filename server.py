@@ -89,20 +89,26 @@ def get_whatsapp_profile_picture(phone: str) -> Optional[str]:
         # Limpiar el número (solo dígitos)
         clean_phone = "".join(filter(str.isdigit, phone))
         instance_encoded = quote(INSTANCE_NAME)
-        url = f"{EVOLUTION_API_URL}/chat/fetchProfilePictureUrl/{instance_encoded}?number={clean_phone}"
-        headers = {"apikey": EVOLUTION_API_KEY}
+        # IMPORTANTE: Evolution API usa POST para este endpoint
+        url = f"{EVOLUTION_API_URL}/chat/fetchProfilePictureUrl/{instance_encoded}"
+        headers = {
+            "apikey": EVOLUTION_API_KEY,
+            "Content-Type": "application/json"
+        }
+        payload = {"number": clean_phone}
         
-        logger.info(f"📸 Consultando foto para {clean_phone} en Evolution API...")
-        response = requests.get(url, headers=headers, timeout=10)
+        logger.info(f"📸 Consultando foto para {clean_phone} en Evolution API (POST)...")
+        response = requests.post(url, headers=headers, json=payload, timeout=10)
         
-        if response.status_code == 200:
+        if response.status_code == 200 or response.status_code == 201:
             data = response.json()
-            pic_url = data.get("profilePictureUrl")
+            # La respuesta puede variar según versión, buscamos campos comunes
+            pic_url = data.get("profilePictureUrl") or data.get("url")
             if pic_url:
                 logger.info(f"✅ Foto encontrada para {clean_phone}")
                 return pic_url
             else:
-                logger.warning(f"⚠️ Evolution API respondió 200 pero sin URL para {clean_phone}")
+                logger.warning(f"⚠️ Evolution API respondió {response.status_code} pero sin URL")
         else:
             logger.error(f"❌ Error Evolution API ({response.status_code}): {response.text}")
             
