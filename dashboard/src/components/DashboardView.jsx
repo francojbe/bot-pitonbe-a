@@ -56,7 +56,7 @@ function KanbanBoard({ orders, onSelectOrder, onOpenChat }) {
                                                                 onClick={(e) => { e.stopPropagation(); onOpenChat(order.leads); }}
                                                                 className="p-1 px-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
                                                             >
-                                                                <MessageCircle size={14} />
+                                                                <img src="/whatsapp.png" alt="WhatsApp" className="w-4 h-4" />
                                                             </button>
                                                             <div className="flex flex-col text-right">
                                                                 <p className="text-xs font-bold text-[var(--color-primary)]">${(order.total_amount || 0).toLocaleString('es-CL')}</p>
@@ -267,7 +267,7 @@ export function DashboardView({ orders, search, viewMode, setViewMode, onSelectO
                                                         className="p-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-indigo-500 opacity-0 group-hover:opacity-100 transition-all"
                                                         title="Ver chat"
                                                     >
-                                                        <MessageCircle size={16} />
+                                                        <img src="/whatsapp.png" alt="WhatsApp" className="w-5 h-5" />
                                                     </button>
                                                     <button onClick={() => onDelete([order.id])} className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={16} /></button>
                                                 </div>

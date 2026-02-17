@@ -109,7 +109,7 @@ export function LeadsView({ leads, search, onEdit, onCreate, selectedIds, setSel
                                             className="p-2 rounded-xl text-indigo-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-gray-100 dark:hover:bg-white/5"
                                             title="Ver chat"
                                         >
-                                            <MessageCircle size={18} />
+                                            <img src="/whatsapp.png" alt="WhatsApp" className="w-5 h-5" />
                                         </button>
                                         <button
                                             onClick={(e) => { e.stopPropagation(); onEdit(l); }}

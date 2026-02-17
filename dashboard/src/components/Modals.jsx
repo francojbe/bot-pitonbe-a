@@ -192,7 +192,7 @@ export function OrderDrawer({ order, onClose, updateOrderLocal, isDarkMode, onOp
                             title="Ver conversación de WhatsApp"
                             className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-full text-indigo-500 transition-colors"
                         >
-                            <MessageCircle size={24} />
+                            <img src="/whatsapp.png" alt="WhatsApp" className="w-6 h-6" />
                         </button>
                         <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-full text-gray-500"><X size={24} /></button>
                     </div>
