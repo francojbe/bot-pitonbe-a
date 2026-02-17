@@ -36,4 +36,8 @@ Este documento detalla las mejoras implementadas y la hoja de ruta para converti
 ### 4. Seguridad y Escalabilidad
 - [ ] **Sistema de Autenticación:** Implementar Supabase Auth para proteger el acceso al dashboard con Login/Password.
 - [ ] **Gestores de Roles:** Diferenciar permisos (ej: Admin puede borrar archivos, Operador solo puede mover estados del Kanban).
-- la parte de usaurio queiro que sea lo mas parecido a un crm   
+
+### 5. Experiencia CRM (Relacional) 👥
+- [ ] **Perfil de Cliente 360:** Vista centralizada por cliente que muestra historial completo de órdenes, archivos compartidos y notas internas.
+- [ ] **Intervención Humana (Human Takeover):** (En progreso) Permitir al equipo silenciar a la IA y chatear directamente desde el Dashboard como un CRM moderno.
+- [ ] **Segmentación de Clientes:** Etiquetas para clasificar clientes (Ej: "VIP", "Nuevo", "Problemático").
