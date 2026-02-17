@@ -172,7 +172,7 @@ export function ReportsView({ orders, leads }) {
                                 <FileText size={18} />
                             </button>
                             <button
-                                onClick={() => ReportService.generateExcel(filteredOrders)}
+                                onClick={() => ReportService.generateOrdersExcel(filteredOrders)}
                                 className="p-2 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-100 transition-colors"
                             >
                                 <Table size={18} />
@@ -258,7 +258,7 @@ export function ReportsView({ orders, leads }) {
                     <ExportItem
                         title="Inventario de Clientes"
                         desc="Listado completo de leads con datos de contacto."
-                        onExport={() => ReportService.generateExcel(leads)}
+                        onExport={() => ReportService.generateLeadsExcel(leads)}
                     />
                     <ExportItem
                         title="Resumen Financiero Mensual"

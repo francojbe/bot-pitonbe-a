@@ -57,16 +57,16 @@ export const ReportService = {
         doc.save(`Reporte_PitonB_${format(new Date(), 'yyyyMMdd_HHmm')}.pdf`)
     },
 
-    // Generate Excel Report
-    generateExcel: (data) => {
+    // 2. Generate Orders Excel
+    generateOrdersExcel: (data) => {
         const worksheet = XLSX.utils.json_to_sheet(data.map(order => ({
-            ID: order.id,
-            Cliente: order.leads?.name,
-            Telefono: order.leads?.phone_number,
-            Descripcion: order.description,
-            Estado: order.status,
-            Total: order.total_amount,
-            Abono: order.deposit_amount,
+            ID: order.id.slice(0, 8),
+            Cliente: order.leads?.name || 'S/N',
+            Telefono: order.leads?.phone_number || '-',
+            Descripcion: order.description || '-',
+            Estado: (order.status || 'new').toUpperCase(),
+            Total: order.total_amount || 0,
+            Abono: order.deposit_amount || 0,
             Saldo: (order.total_amount || 0) - (order.deposit_amount || 0),
             Fecha: format(new Date(order.created_at), 'dd/MM/yyyy HH:mm')
         })))
@@ -74,10 +74,28 @@ export const ReportService = {
         const workbook = XLSX.utils.book_new()
         XLSX.utils.book_append_sheet(workbook, worksheet, "Órdenes")
 
-        XLSX.writeFile(workbook, `PitonB_Export_${format(new Date(), 'yyyyMMdd')}.xlsx`)
+        XLSX.writeFile(workbook, `PitonB_Ordenes_${format(new Date(), 'yyyyMMdd')}.xlsx`)
     },
 
-    // 3. Generate Audit Excel
+    // 3. Generate Leads Excel
+    generateLeadsExcel: (leads) => {
+        const worksheet = XLSX.utils.json_to_sheet(leads.map(l => ({
+            ID: l.id.slice(0, 8),
+            Nombre: l.name || 'Sin nombre',
+            Telefono: l.phone_number || '-',
+            Empresa: l.business_name || '-',
+            Email: l.email || '-',
+            Nota: l.notes || '-',
+            Fecha_Registro: format(new Date(l.created_at), 'dd/MM/yyyy')
+        })))
+
+        const workbook = XLSX.utils.book_new()
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Clientes")
+
+        XLSX.writeFile(workbook, `PitonB_Clientes_${format(new Date(), 'yyyyMMdd')}.xlsx`)
+    },
+
+    // 4. Generate Audit Excel
     generateAuditExcel: (logs) => {
         const data = logs.map(log => ({
             Fecha: format(new Date(log.created_at), 'dd/MM/yyyy HH:mm'),
