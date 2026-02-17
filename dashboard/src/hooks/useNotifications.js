@@ -28,7 +28,7 @@ export function useNotifications() {
         try {
             const { data, error } = await supabase
                 .from('notifications')
-                .select('*')
+                .select('*, leads(*)')
                 .eq('is_archived', false)
                 .order('created_at', { ascending: false })
                 .limit(20)

@@ -1337,6 +1337,11 @@ async def send_manual_message(payload: ManualChatPayload):
         # 3. Guardar en historial
         save_message_pro(payload.lead_id, phone, "assistant", payload.content, intent="HUMAN_RESPONSE", metadata={"manual": True, "whatsapp_delivery": status_wa})
         
+        # 4. Manejar timers de inactividad (Para que el bot no interrumpa al humano)
+        if phone in inactivity_timers:
+            inactivity_timers[phone].cancel()
+        inactivity_timers[phone] = asyncio.create_task(inactivity_manager(phone, payload.lead_id))
+
         return {"status": "success"}
     except Exception as e:
         logger.error(f"Error enviando mensaje manual: {e}")

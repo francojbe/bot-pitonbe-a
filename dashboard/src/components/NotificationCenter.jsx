@@ -119,8 +119,7 @@ export function NotificationCenter({ isDarkMode, onOpenChat }) {
                                                         <button
                                                             onClick={() => {
                                                                 setIsOpen(false);
-                                                                // Future: Navigate or open chat
-                                                                // onOpenChat(notif.leads); 
+                                                                onOpenChat(notif.leads);
                                                             }}
                                                             className="text-[10px] font-bold text-indigo-500 hover:underline"
                                                         >
