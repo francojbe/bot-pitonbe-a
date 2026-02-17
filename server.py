@@ -444,9 +444,20 @@ async def procesar_y_responder(phone: str, mensajes_acumulados: List[str], push_
             logger.error(f"🚫 No se pudo cargar/crear el lead para {phone}. Abortando respuesta.")
             return
 
-        lead_data = supabase.table("leads").select("name, rut, email, address").eq("id", lead_id).execute()
+        # 🟢 HUMANO AL MANDO: Verificar si la IA está activa para este lead
+        lead_data = supabase.table("leads").select("name, rut, email, address, ai_enabled").eq("id", lead_id).execute()
+        
+        # Siempre guardar el mensaje del usuario en el historial (aunque la IA esté apagada)
+        save_message_pro(lead_id, phone, "user", texto_completo)
+
         if lead_data.data:
             lead_row = lead_data.data[0]
+            
+            # Si ai_enabled es False, abortamos la respuesta automática
+            if lead_row.get("ai_enabled") is False:
+                logger.info(f"👤 INTERVENCIÓN HUMANA activa para {phone}. Richard permanece en silencio.")
+                return
+
             cliente_nombre = lead_row.get('name') or "Cliente"
             # Recuperamos datos guardados para el prompt
             saved_rut = lead_row.get('rut')
@@ -721,7 +732,6 @@ Usa el formato exacto que entrega `calculate_quote`.
             status_envio = enviar_whatsapp(phone, resp_content)
             meta_envio = {"whatsapp_delivery": status_envio}
 
-        save_message_pro(lead_id, phone, "user", texto_completo)
         save_message_pro(lead_id, phone, "assistant", resp_content, tokens=total_tokens, metadata=meta_envio)
 
         # INICIAR nuevo timer de inactividad tras la respuesta SÓLO SI no se creó una orden
@@ -1302,6 +1312,52 @@ async def update_order_status(payload: OrderStatusUpdate):
 
     except Exception as e:
         logger.error(f"Error actualizando estado: {e}")
+        return {"status": "error", "message": str(e)}
+
+# --- ENDPOINTS HUMAN TAKEOVER ---
+
+class HumanMessage(BaseModel):
+    lead_id: str
+    content: str
+
+@app.post("/chat/send_manual")
+async def send_manual_message(payload: HumanMessage):
+    """Envía un mensaje manual desde el Dashboard"""
+    try:
+        # 1. Obtener teléfono del lead
+        lead_res = supabase.table("leads").select("phone_number").eq("id", payload.lead_id).execute()
+        if not lead_res.data:
+            return {"status": "error", "message": "Lead no encontrado"}
+        
+        phone = lead_res.data[0]["phone_number"]
+        
+        # 2. Enviar por WhatsApp
+        status_wa = enviar_whatsapp(phone, payload.content)
+        
+        # 3. Guardar en historial
+        save_message_pro(payload.lead_id, phone, "assistant", payload.content, intent="HUMAN_RESPONSE", metadata={"manual": True, "whatsapp_delivery": status_wa})
+        
+        return {"status": "success"}
+    except Exception as e:
+        logger.error(f"Error enviando mensaje manual: {e}")
+        return {"status": "error", "message": str(e)}
+
+class AIToggle(BaseModel):
+    lead_id: str
+    enabled: bool
+
+@app.post("/leads/toggle_ai")
+async def toggle_ai(payload: AIToggle):
+    """Activa o desactiva la IA para un cliente específico"""
+    try:
+        supabase.table("leads").update({"ai_enabled": payload.enabled}).eq("id", payload.lead_id).execute()
+        
+        # Log de auditoría básico
+        logger.info(f"🔄 IA para Lead {payload.lead_id} cambiada a: {payload.enabled}")
+        
+        return {"status": "success", "ai_enabled": payload.enabled}
+    except Exception as e:
+        logger.error(f"Error toggle IA: {e}")
         return {"status": "error", "message": str(e)}
 
 # --- ENDPOINTS PITRONB DRIVE ---
