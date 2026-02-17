@@ -23,7 +23,6 @@ function App() {
   // --- STATE CORE ---
   const { orders, setOrders, loading: loadingOrders } = useOrders()
   const { leads, setLeads, loading: loadingLeads } = useLeads()
-  const { leads, setLeads, loading: loadingLeads } = useLeads()
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [activeTab, setActiveTab] = useState(() => localStorage.getItem('active_tab') || 'inicio')
   const [globalSearch, setGlobalSearch] = useState('')
