@@ -1,8 +1,6 @@
 
-import { DollarSign, Clock, Users, BarChart2, TrendingUp, TrendingDown, Activity, ArrowUpRight } from 'lucide-react'
-import { KpiCard } from './KpiCard'
+import { DollarSign, Clock, Users, BarChart2, Activity, ArrowUpRight, Plus, Rocket, MessageSquare, ShieldCheck, Zap, TrendingUp } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts'
 
 export function HomeView({ orders }) {
     // 1. Calculate KPIs (Real Data)
@@ -12,206 +10,133 @@ export function HomeView({ orders }) {
     const totalOrders = orders.length
     const avgTicket = totalOrders > 0 ? Math.round(totalSales / totalOrders) : 0
 
-    // 2. Prepare Chart Data (Sales by Day - Last 7 Days)
-    const chartData = processChartData(orders)
-
     return (
-        <div className="space-y-8 pb-10">
-            {/* Header Section */}
-            <div className="flex justify-between items-end">
-                <div>
-                    <h2 className="text-3xl font-bold text-[var(--text-main)]">Resumen General</h2>
-                    <p className="text-[var(--text-secondary)] mt-1">Bienvenido de nuevo. Aquí tienes lo que está pasando en tu negocio hoy.</p>
+        <div className="h-full space-y-6 overflow-y-auto pr-2 custom-scrollbar pb-6">
+            {/* Hero / Greeting */}
+            <div className="bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] p-8 rounded-[32px] text-white shadow-xl shadow-[var(--color-primary)]/10 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32 blur-3xl"></div>
+                <div className="relative z-10">
+                    <h2 className="text-3xl font-black italic uppercase tracking-tight">Hola, <span className="text-[var(--color-accent)] opacity-80">Franco</span></h2>
+                    <p className="text-white/80 font-medium mt-1">Hoy tienes <span className="font-black text-white">{active} pedidos</span> activos esperando tu gestión.</p>
+
+                    <div className="flex flex-wrap gap-3 mt-6">
+                        <ActionButton icon={<Plus size={18} />} label="Nueva Orden" color="bg-white/20 hover:bg-white/30" />
+                        <ActionButton icon={<MessageSquare size={18} />} label="Ver Mensajes" color="bg-white/20 hover:bg-white/30" />
+                    </div>
                 </div>
-                <div className="text-right hidden sm:block">
-                    <p className="text-sm font-medium text-[var(--text-secondary)]">Última actualización</p>
-                    <p className="text-lg font-bold text-[var(--text-main)] flex items-center gap-2 justify-end">
-                        <Activity size={18} className="text-green-500 animate-pulse" />
-                        En tiempo real
-                    </p>
-                </div>
+                <Zap className="absolute bottom-8 right-8 text-white/10" size={120} />
             </div>
 
-            {/* KPI Cards Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <KpiCard
-                    title="Ventas Totales"
-                    val={`$${totalSales.toLocaleString()}`}
-                    icon={<DollarSign size={24} className="text-emerald-500" />}
-                    trend="+12% vs mes anterior"
-                    color="emerald"
-                />
-                <KpiCard
-                    title="Pedidos Activos"
-                    val={active}
-                    icon={<Clock size={24} className="text-indigo-500" />}
-                    trend={`${active} en proceso`}
-                    color="indigo"
-                />
-                <KpiCard
-                    title="Ticket Promedio"
-                    val={`$${avgTicket.toLocaleString()}`}
-                    icon={<BarChart2 size={24} className="text-blue-500" />}
-                    trend="Estable"
-                    color="blue"
-                />
-                <KpiCard
-                    title="Órdenes Totales"
-                    val={totalOrders}
-                    icon={<Users size={24} className="text-purple-500" />}
-                    trend={`${completed} entregadas`}
-                    color="purple"
-                />
+            {/* Practical KPIs */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <MiniStats title="Ventas Hoy" value={`$${(totalSales > 0 ? totalSales / 10 : 0).toLocaleString()}`} icon={<DollarSign size={16} />} color="text-green-500" />
+                <MiniStats title="Pedidos" value={active} icon={<Clock size={16} />} color="text-blue-500" />
+                <MiniStats title="Clientes" value={totalOrders} icon={<Users size={16} />} color="text-purple-500" />
+                <MiniStats title="Ticket Prom" value={`$${avgTicket.toLocaleString()}`} icon={<ShieldCheck size={16} />} color="text-orange-500" />
             </div>
 
-            {/* Main Charts Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                {/* Recent Activity (Left) */}
+                <div className="lg:col-span-7 space-y-4">
+                    <div className="flex items-center justify-between px-2">
+                        <h3 className="text-sm font-black uppercase italic tracking-widest text-[var(--text-secondary)]">Actividad Reciente</h3>
+                        <button className="text-[10px] font-black uppercase text-[var(--color-accent)] hover:underline">Ver Todo</button>
+                    </div>
 
-                {/* Sales Chart (Big - 2/3 width) */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="lg:col-span-2 bg-white dark:bg-[#242424] p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-white/5"
-                >
-                    <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-xl font-bold text-[var(--text-main)]">Tendencia de Ventas</h3>
-                        <select className="bg-[var(--bg-subtle)] text-[var(--text-secondary)] text-sm rounded-lg px-3 py-1 outline-none border-none">
-                            <option>Últimos 7 días</option>
-                            <option>Este Mes</option>
-                        </select>
+                    <div className="bg-white dark:bg-[#242424] rounded-[24px] border border-gray-100 dark:border-white/5 divide-y divide-gray-50 dark:divide-white/5 overflow-hidden shadow-sm">
+                        {orders.slice(0, 5).map((order, i) => (
+                            <motion.div
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: i * 0.05 }}
+                                key={order.id}
+                                className="p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                            >
+                                <div className="w-10 h-10 rounded-xl bg-[var(--bg-subtle)] flex items-center justify-center font-bold text-[var(--color-accent)]">
+                                    {(order.leads?.name || '?').charAt(0)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-bold truncate">{order.leads?.name || 'Cliente'}</p>
+                                    <p className="text-[10px] text-gray-500">Orden #{order.id.slice(0, 4)} • {new Date(order.created_at).toLocaleDateString()}</p>
+                                </div>
+                                <div className={`text-[10px] font-black px-2 py-1 rounded-lg uppercase ${getStatusColor(order.status)}`}>
+                                    {order.status}
+                                </div>
+                            </motion.div>
+                        ))}
                     </div>
-                    <div className="h-[300px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={chartData}>
-                                <defs>
-                                    <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" opacity={0.1} />
-                                <XAxis
-                                    dataKey="date"
-                                    axisLine={false}
-                                    tickLine={false}
-                                    tick={{ fill: 'var(--text-secondary)', fontSize: 12 }}
-                                    dy={10}
-                                />
-                                <YAxis
-                                    axisLine={false}
-                                    tickLine={false}
-                                    tick={{ fill: 'var(--text-secondary)', fontSize: 12 }}
-                                    tickFormatter={(val) => `$${val / 1000}k`}
-                                />
-                                <Tooltip
-                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
-                                />
-                                <Area
-                                    type="monotone"
-                                    dataKey="amount"
-                                    stroke="#6366f1"
-                                    strokeWidth={3}
-                                    fillOpacity={1}
-                                    fill="url(#colorSales)"
-                                />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </div>
-                </motion.div>
+                </div>
 
-                {/* Status Distribution (Small - 1/3 width) */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="bg-white dark:bg-[#242424] p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-white/5"
-                >
-                    <h3 className="text-xl font-bold text-[var(--text-main)] mb-6">Estado de Órdenes</h3>
-                    <div className="h-[300px] w-full">
-                        {/* Simple Bar Chart for Status */}
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={processStatusData(orders)} layout="vertical">
-                                <XAxis type="number" hide />
-                                <YAxis
-                                    dataKey="name"
-                                    type="category"
-                                    axisLine={false}
-                                    tickLine={false}
-                                    width={100}
-                                    tick={{ fill: 'var(--text-secondary)', fontSize: 12, fontWeight: 500 }}
-                                />
-                                <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '8px' }} />
-                                <Bar dataKey="value" fill="#8b5cf6" radius={[0, 4, 4, 0]} barSize={20} />
-                            </BarChart>
-                        </ResponsiveContainer>
+                {/* Shortcuts & Quick Glance (Right) */}
+                <div className="lg:col-span-5 space-y-4">
+                    <h3 className="text-sm font-black uppercase italic tracking-widest text-[var(--text-secondary)] px-2">Accesos Rápidos</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                        <ShortcutCard icon={<Rocket className="text-orange-500" />} label="Lanzar Copilot" />
+                        <ShortcutCard icon={<TrendingUp className="text-green-500" />} label="Ir a Reportes" />
+                        <ShortcutCard icon={<Users className="text-blue-500" />} label="Gestionar Leads" />
+                        <ShortcutCard icon={<Activity className="text-purple-500" />} label="Monitor Stock" />
                     </div>
-                </motion.div>
+
+                    <div className="bg-white dark:bg-[#242424] p-6 rounded-[24px] border border-gray-100 dark:border-white/5 shadow-sm">
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-4">Pulso del Día</h4>
+                        <div className="space-y-4">
+                            <PulseItem label="Pedidos por entregar" count={active} progress={65} color="bg-blue-500" />
+                            <PulseItem label="Conversaciones hoy" count={12} progress={80} color="bg-green-500" />
+                        </div>
+                    </div>
+                </div>
             </div>
-
-            {/* Recent Activity Table (Simplified) */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="bg-white dark:bg-[#242424] rounded-3xl shadow-sm border border-gray-100 dark:border-white/5 overflow-hidden"
-            >
-                <div className="p-6 border-b border-gray-100 dark:border-white/5 flex justify-between items-center">
-                    <h3 className="text-xl font-bold text-[var(--text-main)]">Actividad Reciente</h3>
-                    <button className="text-sm font-medium text-indigo-500 hover:text-indigo-600 flex items-center gap-1">
-                        Ver todo <ArrowUpRight size={16} />
-                    </button>
-                </div>
-                <div className="p-0">
-                    <table className="w-full text-left border-collapse">
-                        <thead className="bg-[var(--bg-subtle)] text-[var(--text-secondary)] text-xs uppercase font-semibold">
-                            <tr>
-                                <th className="px-6 py-4">Cliente</th>
-                                <th className="px-6 py-4">Estado</th>
-                                <th className="px-6 py-4">Monto</th>
-                                <th className="px-6 py-4">Fecha</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100 dark:divide-white/5">
-                            {orders.slice(0, 5).map((order) => (
-                                <tr key={order.id} className="hover:bg-[var(--bg-subtle)] transition-colors">
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-bold overflow-hidden border border-gray-100 dark:border-white/10">
-                                                {order.leads?.profile_picture_url ? (
-                                                    <img src={order.leads.profile_picture_url} alt={order.leads?.name} className="w-full h-full object-cover" />
-                                                ) : (
-                                                    order.leads?.name?.charAt(0) || '?'
-                                                )}
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-bold text-[var(--text-main)]">{order.leads?.name || 'Cliente'}</p>
-                                                <p className="text-[10px] text-[var(--text-secondary)]">#{(order.id || '').slice(0, 4)}</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${getStatusColor(order.status)}`}>
-                                            {order.status}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-[var(--text-main)] font-mono">
-                                        ${(order.total_amount || 0).toLocaleString()}
-                                    </td>
-                                    <td className="px-6 py-4 text-[var(--text-secondary)] text-sm">
-                                        {new Date(order.created_at).toLocaleDateString()}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </motion.div>
         </div>
     )
 }
 
-// --- Helper Functions ---
+function ActionButton({ icon, label, color }) {
+    return (
+        <button className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${color} backdrop-blur-md border border-white/10`}>
+            {icon}
+            {label}
+        </button>
+    )
+}
+
+function MiniStats({ title, value, icon, color }) {
+    return (
+        <div className="bg-white dark:bg-[#242424] p-4 rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm flex items-center justify-between">
+            <div>
+                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{title}</p>
+                <p className="text-lg font-black text-[var(--text-main)] mt-0.5">{value}</p>
+            </div>
+            <div className={`${color} opacity-80 bg-gray-50 dark:bg-white/5 p-2 rounded-lg`}>
+                {icon}
+            </div>
+        </div>
+    )
+}
+
+function ShortcutCard({ icon, label }) {
+    return (
+        <button className="bg-white dark:bg-[#242424] p-4 rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm hover:border-[var(--color-primary)]/40 transition-all flex flex-col items-center justify-center gap-2 group text-center">
+            <div className="p-3 bg-gray-50 dark:bg-white/5 rounded-xl group-hover:scale-110 transition-transform">
+                {icon}
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-tight text-[var(--text-secondary)]">{label}</span>
+        </button>
+    )
+}
+
+function PulseItem({ label, count, progress, color }) {
+    return (
+        <div className="space-y-1.5">
+            <div className="flex justify-between text-[10px] font-bold">
+                <span className="text-gray-500 uppercase">{label}</span>
+                <span className="text-[var(--text-main)]">{count}</span>
+            </div>
+            <div className="h-1.5 w-full bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
+                <div className={`h-full ${color} rounded-full`} style={{ width: `${progress}%` }}></div>
+            </div>
+        </div>
+    )
+}
 
 function getStatusColor(status) {
     const colors = {
@@ -222,36 +147,4 @@ function getStatusColor(status) {
         'CANCELADO': 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-300'
     }
     return colors[status] || 'bg-gray-100 text-gray-600'
-}
-
-function processChartData(orders) {
-    // Generate last 7 days keys
-    const days = []
-    for (let i = 6; i >= 0; i--) {
-        const d = new Date()
-        d.setDate(d.getDate() - i)
-        days.push(d.toISOString().slice(0, 10))
-    }
-
-    return days.map(day => {
-        const dailyTotal = orders
-            .filter(o => o.created_at.startsWith(day))
-            .reduce((sum, o) => sum + (o.total_amount || 0), 0)
-        return {
-            date: day.slice(5), // MM-DD
-            amount: dailyTotal
-        }
-    })
-}
-
-function processStatusData(orders) {
-    const statusCounts = orders.reduce((acc, o) => {
-        acc[o.status] = (acc[o.status] || 0) + 1
-        return acc
-    }, {})
-
-    return Object.keys(statusCounts).map(key => ({
-        name: key,
-        value: statusCounts[key]
-    })).sort((a, b) => b.value - a.value) // Top statuses first
 }
