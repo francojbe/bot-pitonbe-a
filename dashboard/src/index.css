@@ -5,12 +5,16 @@
 @tailwind utilities;
 
 :root {
-    /* Marca Premium */
-    --color-primary: #8DC63F;
-    --color-secondary: #F7941D;
-    --color-accent: #0f1a0d;
-    /* Un negro verdoso "Onyx" muy profundo y premium */
-    --premium-glow: 0 0 20px rgba(141, 198, 63, 0.1);
+    /* Marca Pastel Premium */
+    --color-primary: #A2D5AB;
+    /* Verde Sage Pastel, suave y profesional */
+    --color-secondary: #F3C99F;
+    /* Naranja pastel suave */
+    --color-accent: #4A6D55;
+    /* Verde musgo suave para contrastes */
+    --bg-pastel-subtle: #E8F3E9;
+    /* Fondo verde muy tenue */
+    --premium-glow: 0 0 15px rgba(162, 213, 171, 0.2);
 
     /* Textos y Fondos */
     --text-main: #333333;
