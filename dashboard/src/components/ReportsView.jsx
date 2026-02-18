@@ -40,17 +40,57 @@ export function ReportsView({ orders, leads }) {
         return orders.filter(o => isAfter(new Date(o.created_at), cutoff))
     }, [orders, timeRange])
 
-    // Stats calculation
+    // Stats calculation with real trends
     const stats = useMemo(() => {
-        const totalSales = filteredOrders.reduce((acc, curr) => acc + (curr.total_amount || 0), 0)
-        const totalOrders = filteredOrders.length
+        const days = parseInt(timeRange)
+        const cutoff = subDays(new Date(), days)
+        const prevCutoff = subDays(cutoff, days)
+
+        const currentOrders = orders.filter(o => isAfter(new Date(o.created_at), cutoff))
+        const previousOrders = orders.filter(o => {
+            const date = new Date(o.created_at)
+            return isAfter(date, prevCutoff) && !isAfter(date, cutoff)
+        })
+
+        const totalSales = currentOrders.reduce((acc, curr) => acc + (curr.total_amount || 0), 0)
+        const prevSales = previousOrders.reduce((acc, curr) => acc + (curr.total_amount || 0), 0)
+
+        const totalOrders = currentOrders.length
+        const prevTotalOrders = previousOrders.length
+
         const totalLeads = leads.length
-        const pendingBalance = filteredOrders.reduce((acc, curr) =>
+        const currentNewLeads = leads.filter(l => isAfter(new Date(l.created_at), cutoff)).length
+        const prevNewLeads = leads.filter(l => {
+            const date = new Date(l.created_at)
+            return isAfter(date, prevCutoff) && !isAfter(date, cutoff)
+        }).length
+
+        const pendingBalance = currentOrders.reduce((acc, curr) =>
+            acc + ((curr.total_amount || 0) - (curr.deposit_amount || 0)), 0)
+        const prevPendingBalance = previousOrders.reduce((acc, curr) =>
             acc + ((curr.total_amount || 0) - (curr.deposit_amount || 0)), 0)
 
-        // Previous period for comparison (simulated simplified)
-        return { totalSales, totalOrders, totalLeads, pendingBalance }
-    }, [filteredOrders, leads])
+        const calculateTrend = (curr, prev) => {
+            if (!prev || prev === 0) return curr > 0 ? '+100%' : '0%'
+            const diff = ((curr - prev) / prev) * 100
+            return `${diff > 0 ? '+' : ''}${diff.toFixed(0)}%`
+        }
+
+        return {
+            totalSales,
+            salesTrend: calculateTrend(totalSales, prevSales),
+            salesIsUp: totalSales >= prevSales,
+            totalOrders,
+            ordersTrend: calculateTrend(totalOrders, prevTotalOrders),
+            ordersIsUp: totalOrders >= prevTotalOrders,
+            totalLeads,
+            leadsTrend: calculateTrend(currentNewLeads, prevNewLeads),
+            leadsIsUp: currentNewLeads >= prevNewLeads,
+            pendingBalance,
+            balanceTrend: calculateTrend(pendingBalance, prevPendingBalance),
+            balanceIsUp: pendingBalance <= prevPendingBalance // Is "up" (good) if pending balance is lower
+        }
+    }, [orders, leads, timeRange])
 
     // Chart Data: Sales by Day
     const chartData = useMemo(() => {
@@ -94,7 +134,7 @@ export function ReportsView({ orders, leads }) {
         }
     }
 
-    const COLORS = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']
+    const COLORS = ['#A2D5AB', '#4A6D55', '#F3C99F', '#EF4444', '#8B5CF6']
 
     return (
         <div className="space-y-8 pb-10">
@@ -111,10 +151,10 @@ export function ReportsView({ orders, leads }) {
                             key={range}
                             onClick={() => setTimeRange(range)}
                             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${timeRange === range
-                                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
+                                ? 'bg-[var(--color-primary)] text-[var(--color-accent)] shadow-lg shadow-[var(--color-primary)]/30'
                                 : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5'}`}
                         >
-                            Últimos {range} días
+                            {range === 'all' ? 'Todo el tiempo' : `Últimos ${range} días`}
                         </button>
                     ))}
                 </div>
@@ -125,30 +165,30 @@ export function ReportsView({ orders, leads }) {
                 <StatCard
                     title="Ventas Totales"
                     value={`$${stats.totalSales.toLocaleString('es-CL')}`}
-                    icon={<DollarSign className="text-indigo-500" />}
-                    trend="+12%"
-                    isUp
+                    icon={<DollarSign className="text-[var(--color-accent)]" />}
+                    trend={stats.salesTrend}
+                    isUp={stats.salesIsUp}
                 />
                 <StatCard
                     title="Órdenes Creadas"
                     value={stats.totalOrders}
-                    icon={<ShoppingBag className="text-blue-500" />}
-                    trend="+5%"
-                    isUp
+                    icon={<ShoppingBag className="text-[var(--color-accent)]" />}
+                    trend={stats.ordersTrend}
+                    isUp={stats.ordersIsUp}
                 />
                 <StatCard
-                    title="Clientes Activos"
+                    title="Clientes Totales"
                     value={stats.totalLeads}
-                    icon={<Users className="text-purple-500" />}
-                    trend="+8%"
-                    isUp
+                    icon={<Users className="text-[var(--color-accent)]" />}
+                    trend={stats.leadsTrend}
+                    isUp={stats.leadsIsUp}
                 />
                 <StatCard
                     title="Saldo a Cobrar"
                     value={`$${stats.pendingBalance.toLocaleString('es-CL')}`}
-                    icon={<TrendingUp className="text-green-500" />}
-                    trend="-2%"
-                    isUp={false}
+                    icon={<TrendingUp className="text-[var(--color-accent)]" />}
+                    trend={stats.balanceTrend}
+                    isUp={stats.balanceIsUp}
                 />
             </div>
 
@@ -196,7 +236,7 @@ export function ReportsView({ orders, leads }) {
                                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
                                     formatter={(value) => [`$${value.toLocaleString('es-CL')}`, 'Ventas']}
                                 />
-                                <Area type="monotone" dataKey="sales" stroke="#4F46E5" strokeWidth={3} fillOpacity={1} fill="url(#colorSales)" />
+                                <Area type="monotone" dataKey="sales" stroke="var(--color-primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorSales)" />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
