@@ -267,20 +267,6 @@ export function ContactInfoPanel({ lead, isDarkMode }) {
                             )}
                         </section>
 
-                        <section className="border-b border-gray-100 dark:border-white/5">
-                            <button
-                                onClick={() => toggleSection('previous')}
-                                className="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
-                            >
-                                <span className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Conversaciones Previas</span>
-                                {expandedSections.previous ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                            </button>
-                            {expandedSections.previous && (
-                                <div className="px-4 pb-4">
-                                    <p className="text-xs text-center text-gray-400 py-4">No hay conversaciones archivadas.</p>
-                                </div>
-                            )}
-                        </section>
                     </div>
                 </>
             ) : (
