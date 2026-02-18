@@ -12,39 +12,33 @@ export function HomeView({ orders }) {
 
     return (
         <div className="h-full space-y-6 overflow-y-auto pr-2 custom-scrollbar pb-6">
-            {/* Hero / Greeting (Glassmorphism Style) */}
-            <div className="relative p-10 rounded-[40px] border border-gray-100 dark:border-white/10 bg-white/40 dark:bg-white/[0.02] backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.2)] overflow-hidden transition-all hover:shadow-[0_25px_60px_rgba(0,0,0,0.1)]">
-                {/* Dynamic background glows */}
-                <div className="absolute -top-24 -right-24 w-96 h-96 bg-[var(--color-primary)] opacity-10 dark:opacity-[0.05] rounded-full blur-[80px] animate-pulse"></div>
-                <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-emerald-400 opacity-10 dark:opacity-[0.05] rounded-full blur-[60px]"></div>
+            {/* Compact Glass Hero */}
+            <div className="relative p-6 rounded-[32px] border border-gray-100 dark:border-white/10 bg-white/40 dark:bg-white/[0.02] backdrop-blur-xl shadow-lg overflow-hidden shrink-0">
+                <div className="absolute -top-12 -right-12 w-64 h-64 bg-[var(--color-primary)] opacity-10 rounded-full blur-3xl"></div>
 
-                <div className="relative z-10">
-                    <div className="flex items-center gap-2 mb-6">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></div>
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-primary)]">Sincronizado en vivo</span>
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div>
+                        <div className="flex items-center gap-2 mb-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></div>
+                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--color-primary)]">Sincronizado</span>
+                        </div>
+                        <h2 className="text-2xl font-black italic uppercase tracking-tighter text-[var(--text-main)]">
+                            Panel de <span className="text-[var(--color-primary)]">Control</span>
+                        </h2>
+                        <p className="text-[var(--text-secondary)] font-bold mt-1 text-sm">
+                            Franco, hay <span className="text-[var(--text-main)]">{active} pedidos</span> esperando gestión.
+                        </p>
                     </div>
 
-                    <h2 className="text-5xl font-black italic uppercase tracking-tighter leading-tight text-[var(--text-main)]">
-                        Panel de <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--color-primary)] to-emerald-600">Control</span>
-                    </h2>
-
-                    <p className="text-[var(--text-secondary)] font-medium mt-4 text-xl max-w-xl leading-relaxed">
-                        Hola Franco, el sistema reporta <span className="text-[var(--text-main)] font-black">{active} pedidos</span> en curso que requieren validación.
-                    </p>
-
-                    <div className="flex flex-wrap gap-4 mt-10">
-                        <button className="flex items-center gap-3 px-8 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest bg-[var(--color-primary)] text-[var(--color-accent)] hover:rotate-1 transition-all shadow-[0_10px_25px_-5px_rgba(162,213,171,0.5)] active:scale-95">
-                            <Plus size={18} strokeWidth={4} /> Nueva Orden
+                    <div className="flex gap-2">
+                        <button className="flex items-center gap-2 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[var(--color-primary)] text-[var(--color-accent)] hover:scale-105 transition-all shadow-md">
+                            <Plus size={14} strokeWidth={4} /> Nueva Orden
                         </button>
-                        <button className="flex items-center gap-3 px-8 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-[var(--text-main)] hover:bg-gray-50 dark:hover:bg-white/10 transition-all shadow-sm">
-                            <MessageSquare size={18} /> Chat Activo
+                        <button className="flex items-center gap-2 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-[var(--text-main)] hover:bg-gray-50 dark:hover:bg-white/10 transition-all">
+                            <MessageSquare size={14} /> Mensajes
                         </button>
                     </div>
                 </div>
-
-                {/* Decorative Elements */}
-                <Zap className="absolute top-10 right-10 text-[var(--color-primary)] opacity-20" size={40} />
-                <Activity className="absolute bottom-10 right-10 text-[var(--text-secondary)] opacity-10" size={100} />
             </div>
 
             {/* Practical KPIs */}
