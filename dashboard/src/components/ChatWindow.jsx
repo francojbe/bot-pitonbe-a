@@ -185,11 +185,17 @@ export function ChatWindow({ lead, isDarkMode }) {
                         )}
                         {messages.map((msg, idx) => (
                             <div key={msg.id || idx} className={`flex ${msg.role === 'assistant' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm shadow-sm ${msg.role === 'assistant' ? 'bg-[var(--color-accent)] text-white rounded-br-none' : 'bg-white dark:bg-[#2a2a2a] text-[var(--text-main)] rounded-bl-none border border-gray-100 dark:border-white/5'}`}>
-                                    <div className="whitespace-pre-wrap">{msg.content}</div>
-                                    <p className={`text-[9px] mt-1 text-right opacity-70 ${msg.role === 'assistant' ? 'text-white/60' : 'text-gray-400'}`}>
-                                        {msg.created_at ? format(new Date(msg.created_at), 'HH:mm', { locale: es }) : '...'}
-                                    </p>
+                                <div className={`max-w-[85%] rounded-[20px] px-5 py-3 text-sm shadow-lg ${msg.role === 'assistant'
+                                    ? 'bg-[var(--color-accent)] text-white rounded-br-none border border-white/10 shadow-[var(--premium-glow)]'
+                                    : 'bg-white dark:bg-[#2a2a2a] text-[var(--text-main)] rounded-bl-none border border-gray-100 dark:border-white/5'
+                                    }`}>
+                                    <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
+                                    <div className="flex items-center justify-end gap-1.5 mt-2">
+                                        <p className={`text-[9px] font-bold uppercase tracking-widest opacity-40 ${msg.role === 'assistant' ? 'text-white' : 'text-gray-400'}`}>
+                                            {msg.created_at ? format(new Date(msg.created_at), 'HH:mm', { locale: es }) : '...'}
+                                        </p>
+                                        {msg.role === 'assistant' && <div className="w-1 h-1 rounded-full bg-[var(--color-primary)] shadow-[0_0_5px_var(--color-primary)]"></div>}
+                                    </div>
                                 </div>
                             </div>
                         ))}

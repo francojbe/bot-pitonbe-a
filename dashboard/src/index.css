@@ -5,10 +5,12 @@
 @tailwind utilities;
 
 :root {
-    /* Marca */
+    /* Marca Premium */
     --color-primary: #8DC63F;
     --color-secondary: #F7941D;
-    --color-accent: #4F6128;
+    --color-accent: #0f1a0d;
+    /* Un negro verdoso "Onyx" muy profundo y premium */
+    --premium-glow: 0 0 20px rgba(141, 198, 63, 0.1);
 
     /* Textos y Fondos */
     --text-main: #333333;

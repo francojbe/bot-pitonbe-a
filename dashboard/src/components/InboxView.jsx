@@ -73,9 +73,9 @@ export function InboxView({ isDarkMode }) {
                                 <button
                                     key={lead.id}
                                     onClick={() => setSelectedLead(lead)}
-                                    className={`w-full p-4 flex gap-3 transition-all hover:bg-white dark:hover:bg-white/10 text-left relative ${selectedLead?.id === lead.id ? 'bg-white dark:bg-white/10 ring-1 ring-inset ring-[var(--color-primary)]/20' : ''}`}
+                                    className={`w-full p-4 flex gap-3 transition-all hover:bg-white dark:hover:bg-white/10 text-left relative ${selectedLead?.id === lead.id ? 'bg-white dark:bg-white/10 shadow-[inset_0_0_15px_rgba(141,198,63,0.05)]' : ''}`}
                                 >
-                                    {selectedLead?.id === lead.id && <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--color-primary)]"></div>}
+                                    {selectedLead?.id === lead.id && <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[var(--color-primary)] to-[var(--color-accent)]"></div>}
 
                                     <div className="w-12 h-12 rounded-full bg-[var(--color-primary)]/10 dark:bg-[var(--color-primary)]/20 text-[var(--color-accent)] dark:text-[var(--color-primary)] flex items-center justify-center font-bold text-lg flex-shrink-0 overflow-hidden border border-[var(--color-primary)]/10 dark:border-white/10">
                                         {lead.profile_picture_url ? (
