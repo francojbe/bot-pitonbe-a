@@ -12,19 +12,35 @@ export function HomeView({ orders }) {
 
     return (
         <div className="h-full space-y-6 overflow-y-auto pr-2 custom-scrollbar pb-6">
-            {/* Hero / Greeting */}
-            <div className="bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] p-8 rounded-[32px] text-white shadow-xl shadow-[var(--color-primary)]/10 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32 blur-3xl"></div>
-                <div className="relative z-10">
-                    <h2 className="text-3xl font-black italic uppercase tracking-tight">Hola, <span className="text-[var(--color-accent)] opacity-80">Franco</span></h2>
-                    <p className="text-white/80 font-medium mt-1">Hoy tienes <span className="font-black text-white">{active} pedidos</span> activos esperando tu gestión.</p>
+            {/* Hero / Greeting (Premium Dark Style) */}
+            <div className="bg-[#0b1437] p-8 rounded-[32px] text-white shadow-2xl shadow-[#0b1437]/20 relative overflow-hidden border border-white/5">
+                {/* Visual accents */}
+                <div className="absolute top-0 right-0 w-80 h-80 bg-[var(--color-primary)] opacity-10 rounded-full -translate-y-40 translate-x-40 blur-[100px]"></div>
+                <div className="absolute bottom-0 left-0 w-40 h-40 bg-[var(--color-accent)] opacity-10 rounded-full translate-y-20 -translate-x-20 blur-[60px]"></div>
 
-                    <div className="flex flex-wrap gap-3 mt-6">
-                        <ActionButton icon={<Plus size={18} />} label="Nueva Orden" color="bg-white/20 hover:bg-white/30" />
-                        <ActionButton icon={<MessageSquare size={18} />} label="Ver Mensajes" color="bg-white/20 hover:bg-white/30" />
+                <div className="relative z-10">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="px-3 py-1 rounded-full bg-white/10 border border-white/10 text-[9px] font-black uppercase tracking-widest text-[var(--color-primary)]">
+                            Operativa Activa
+                        </div>
+                    </div>
+                    <h2 className="text-4xl font-black italic uppercase tracking-tighter leading-none">
+                        F-Dashboard <span className="text-[var(--color-primary)]">Central</span>
+                    </h2>
+                    <p className="text-gray-400 font-bold mt-3 text-lg">
+                        Hola Franco, tienes <span className="text-white">{active} pedidos</span> esperando gestión hoy.
+                    </p>
+
+                    <div className="flex flex-wrap gap-3 mt-8">
+                        <button className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest bg-[var(--color-primary)] text-[var(--color-accent)] hover:scale-105 transition-all shadow-lg shadow-[var(--color-primary)]/20">
+                            <Plus size={16} strokeWidth={4} /> Nueva Orden
+                        </button>
+                        <button className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
+                            <MessageSquare size={16} /> Mensajes
+                        </button>
                     </div>
                 </div>
-                <Zap className="absolute bottom-8 right-8 text-white/10" size={120} />
+                <Rocket className="absolute bottom-[-10px] right-8 text-white/[0.02] rotate-12" size={180} />
             </div>
 
             {/* Practical KPIs */}
